@@ -114,6 +114,33 @@
             <button class="btn btn-success admin-only hidden" onclick="exportToExcel()"><i class="bi bi-file-earmark-excel-fill"></i> Xuất Excel</button>
         </div>
 
+        <div class="row mb-4 admin-only hidden" id="admin-filters">
+            <div class="col-md-3">
+                <label class="form-label text-muted small fw-bold">Lọc theo Tháng</label>
+                <select id="filter-month" class="form-select border-primary shadow-sm" onchange="applyAdminFilter()">
+                    <option value="all">Tất cả các tháng</option>
+                    <option value="01">Tháng 1</option>
+                    <option value="02">Tháng 2</option>
+                    <option value="03">Tháng 3</option>
+                    <option value="04">Tháng 4</option>
+                    <option value="05">Tháng 5</option>
+                    <option value="06">Tháng 6</option>
+                    <option value="07">Tháng 7</option>
+                    <option value="08">Tháng 8</option>
+                    <option value="09">Tháng 9</option>
+                    <option value="10">Tháng 10</option>
+                    <option value="11">Tháng 11</option>
+                    <option value="12">Tháng 12</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label text-muted small fw-bold">Lọc theo Phòng Lab</label>
+                <select id="filter-room" class="form-select border-primary shadow-sm" onchange="applyAdminFilter()">
+                    <option value="all">Tất cả các phòng</option>
+                    </select>
+            </div>
+        </div>
+
         <div id="admin-charts" class="row mb-4 admin-only hidden">
             <div class="col-md-8 mb-3">
                 <div class="card shadow-sm border-0 h-100">
@@ -612,60 +639,111 @@ async function handleForgotPassword() {
         }
     }
 
+    // Biến toàn cục để lưu trữ dữ liệu gốc
+    let allAdminBookings = []; 
+
+    // 1. HÀM TẢI DỮ LIỆU TỪ SUPABASE
     async function loadHistoryView() {
         showView('history-view');
         document.getElementById('history-list').innerHTML = '<tr><td colspan="6" class="text-center">Đang tải dữ liệu...</td></tr>';
         
         let query = _supabase.from('bookings').select('*').order('created_at', { ascending: false });
+        
         if (!currentUserProfile.is_admin) {
             query = query.eq('user_id', currentUserProfile.id);
             document.getElementById('history-title').innerText = "Nhật ký số của tôi";
         } else {
             document.getElementById('history-title').innerText = "Quản lý toàn bộ yêu cầu & Nhật ký";
+            populateRoomFilter(); // Nạp danh sách phòng vào cái Dropdown lọc
         }
 
         const { data, error } = await query;
-        // Bổ sung: Gọi hàm vẽ biểu đồ nếu là Admin
-        if (currentUserProfile.is_admin) {
-            renderCharts(data);
-        }
         if (error) return;
 
+        if (currentUserProfile.is_admin) {
+            allAdminBookings = data; // Lưu lại dữ liệu gốc
+            applyAdminFilter();      // Gọi hàm lọc (Mặc định là hiện Tất cả)
+        } else {
+            renderHistoryTable(data); // Sinh viên thì hiển thị thẳng luôn, ko cần lọc
+        }
+    }
+
+    // 2. HÀM NẠP DANH SÁCH PHÒNG VÀO DROPDOWN LỌC
+    async function populateRoomFilter() {
+        const roomSelect = document.getElementById('filter-room');
+        if (roomSelect.options.length > 1) return; // Nếu đã nạp rồi thì thôi
+
+        const { data: rooms } = await _supabase.from('rooms').select('room_name');
+        if (rooms) {
+            rooms.forEach(r => {
+                const opt = document.createElement('option');
+                opt.value = r.room_name;
+                opt.innerText = r.room_name;
+                roomSelect.appendChild(opt);
+            });
+        }
+    }
+
+    // 3. HÀM XỬ LÝ LỌC DỮ LIỆU CHÍNH
+    function applyAdminFilter() {
+        const month = document.getElementById('filter-month').value;
+        const room = document.getElementById('filter-room').value;
+
+        let filteredData = allAdminBookings; // Bắt đầu từ danh sách đầy đủ
+
+        // Lọc theo tháng (Dựa vào cột booking_date định dạng YYYY-MM-DD)
+        if (month !== 'all') {
+            filteredData = filteredData.filter(b => {
+                if (!b.booking_date) return false;
+                const bMonth = b.booking_date.split('-')[1]; // Lấy số MM ở giữa
+                return bMonth === month;
+            });
+        }
+
+        // Lọc theo phòng
+        if (room !== 'all') {
+            filteredData = filteredData.filter(b => {
+                if (!b.machine_name) return false;
+                return b.machine_name.startsWith(room); // Tìm các máy bắt đầu bằng Tên Phòng
+            });
+        }
+
+        // Vẽ lại Bảng và Biểu đồ dựa trên dữ liệu đã Lọc!
+        renderHistoryTable(filteredData);
+        renderCharts(filteredData); 
+    }
+
+    // 4. HÀM HIỂN THỊ BẢNG HTML (Được tách ra từ hàm cũ để gọi lại nhiều lần)
+    function renderHistoryTable(data) {
         let html = '';
         data.forEach(b => {
             const statusColor = b.status === 'approved' ? 'bg-free' : (b.status === 'pending' ? 'bg-waiting' : 'bg-busy');
             const statusText = b.status === 'approved' ? 'Đã duyệt' : (b.status === 'pending' ? 'Chờ duyệt' : 'Từ chối');
             
-            // Xử lý dữ liệu từ ESP32 (Thời gian và Điện năng)
             const checkIn = b.check_in_time ? b.check_in_time.substring(0,5) : '--:--';
             const checkOut = b.check_out_time ? b.check_out_time.substring(0,5) : '--:--';
             const power = b.power_usage ? b.power_usage : 0;
             
-            // Xử lý hiển thị Tình trạng & Ghi chú (Nhật ký)
             let conditionHtml = '<span class="text-muted small">Chưa báo cáo</span>';
             if (b.machine_condition) {
                 const color = b.machine_condition === 'Tốt' ? 'text-success' : 'text-danger';
-                // Nếu có ghi chú thì hiển thị ra luôn cho Admin đọc
                 const note = b.condition_note ? `<br><small class="text-muted"><i>Lỗi: ${b.condition_note}</i></small>` : '';
                 conditionHtml = `<span class="${color} fw-bold"><i class="bi bi-gear-fill"></i> ${b.machine_condition}</span>${note}`;
             }
 
             let actionBtn = '';
-            // NẾU LÀ ADMIN
             if (currentUserProfile.is_admin) {
                 if (b.status === 'pending') {
                     const userEmail = b.email ? b.email : '';
                     actionBtn = `<button class="btn btn-sm btn-success" onclick="approveBooking('${b.id}', '${userEmail}', '${b.machine_name}', '${b.qr_token}')"><i class="bi bi-envelope-check"></i> Duyệt</button>`;
                 } else {
-                    actionBtn = `<span class="text-muted small">Đã xử lý</span>`; // Lấp đầy cột trống
+                    actionBtn = `<span class="text-muted small">Đã xử lý</span>`; 
                 }
-            } 
-            // NẾU LÀ SINH VIÊN
-            else {
+            } else {
                 if (b.status === 'approved' && !b.machine_condition) {
                     actionBtn = `<button class="btn btn-sm btn-outline-primary" onclick="openReportModal('${b.id}', '${b.machine_name}')">Khai báo trả máy</button>`;
                 } else if (b.machine_condition) {
-                    actionBtn = `<span class="text-success small"><i class="bi bi-check-circle"></i> Đã báo cáo</span>`; // Lấp đầy cột trống
+                    actionBtn = `<span class="text-success small"><i class="bi bi-check-circle"></i> Đã báo cáo</span>`; 
                 }
             }
 
