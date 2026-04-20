@@ -87,46 +87,46 @@
     const _supabase = supabase.createClient(CONFIG.URL, CONFIG.KEY);
 
     async function checkSession() {
-        const { data: { user } } = await _supabase.auth.getUser();
-        
-        // Bước quan trọng: Nếu chưa có user thì hiện khung login, có rồi thì ẩn ngay
-        if (!user) {
-            document.getElementById('auth-box').classList.remove('d-none');
-            document.getElementById('app-box').classList.add('d-none');
-            return;
-        }
-
-        // ẨN LOGIN NGAY LẬP TỨC để tránh bị đè giao diện
-        document.getElementById('auth-box').classList.add('d-none');
-        document.getElementById('app-box').classList.remove('d-none');
-
-        // Sau đó mới thong thả đi lấy dữ liệu quyền hạn
-        const { data: profile, error } = await _supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', user.id)
-            .single();
-
-        if (error) {
-            console.error("Lỗi lấy profile:", error);
-            // Nếu lỗi RLS, vẫn cho hiện giao diện cơ bản nhưng báo lỗi ở dòng trạng thái
-            document.getElementById('user-role').innerHTML = '<span class="text-danger">Lỗi xác thực (RLS). Hãy kiểm tra lại Policy!</span>';
-            return;
-        }
-
-        document.getElementById('user-info').innerText = `Chào: ${profile.student_id || 'Admin'}`;
-
-        if (profile.is_admin) {
-            document.getElementById('user-role').innerText = "Quyền hạn: Quản lý phòng Lab";
-            document.getElementById('student-view').classList.add('d-none'); // Admin không cần form đăng ký
-            document.getElementById('list-container').className = "col-12";
-            loadAdminPanel();
-        } else {
-            document.getElementById('user-role').innerText = `Sinh viên - MSSV: ${profile.student_id}`;
-            document.getElementById('student-view').classList.remove('d-none');
-            loadStudentBookings(user.id);
-        }
+    const { data: { user } } = await _supabase.auth.getUser();
+    
+    // 1. Nếu KHÔNG có user: Hiện login, ẩn app
+    if (!user) {
+        document.getElementById('auth-box').classList.remove('d-none');
+        document.getElementById('app-box').classList.add('d-none');
+        return;
     }
+
+    // 2. Nếu CÓ user: ẨN LOGIN NGAY, HIỆN APP NGAY (Chống đè giao diện)
+    document.getElementById('auth-box').classList.add('d-none');
+    document.getElementById('app-box').classList.remove('d-none');
+    document.getElementById('app-box').classList.remove('hidden');
+
+    // 3. Sau đó mới lấy dữ liệu Profile
+    const { data: profile, error } = await _supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+    if (error) {
+        console.error("Lỗi lấy profile:", error);
+        document.getElementById('user-role').innerText = "Lỗi xác thực Profile.";
+        return;
+    }
+
+    document.getElementById('user-info').innerText = `Chào: ${profile.student_id || 'Admin'}`;
+
+    if (profile.is_admin) {
+        document.getElementById('user-role').innerText = "Quyền hạn: Quản lý phòng Lab";
+        document.getElementById('student-view').classList.add('d-none');
+        document.getElementById('list-container').className = "col-12";
+        loadAdminPanel();
+    } else {
+        document.getElementById('user-role').innerText = `Sinh viên khoa Cơ khí - MSSV: ${profile.student_id}`;
+        document.getElementById('student-view').classList.remove('d-none');
+        loadStudentBookings(user.id);
+    }
+}
 
     // Các hàm handleLogin, handleLogout, load... giữ nguyên như cũ
     // ...
