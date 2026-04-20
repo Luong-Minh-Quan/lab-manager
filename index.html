@@ -266,7 +266,58 @@
         if (error) Swal.fire('Lỗi', 'Sai tài khoản hoặc mật khẩu', 'error');
         else { Swal.close(); checkSession(); }
     }
+// 1. Hàm yêu cầu Supabase gửi email đặt lại mật khẩu
+async function handleForgotPassword() {
+        const email = document.getElementById('email').value;
+        if (!email) {
+            return Swal.fire('Chú ý', 'Vui lòng nhập Email của bạn vào ô trống phía trên, sau đó bấm lại nút "Quên mật khẩu".', 'info');
+        }
 
+        Swal.fire({ title: 'Đang gửi yêu cầu...', didOpen: () => Swal.showLoading() });
+        
+        // Gọi API của Supabase, tự động lấy link trang web hiện tại để đính kèm vào email
+        const { error } = await _supabase.auth.resetPasswordForEmail(email, {
+            redirectTo: window.location.origin + window.location.pathname
+        });
+
+        if (error) {
+            Swal.fire('Lỗi', 'Không tìm thấy tài khoản hoặc gửi email thất bại: ' + error.message, 'error');
+        } else {
+            Swal.fire('Thành công!', 'Vui lòng kiểm tra Hộp thư đến (hoặc mục Spam) của email để nhận link đặt lại mật khẩu.', 'success');
+        }
+    }
+
+    // 2. Lắng nghe sự kiện: Nếu người dùng truy cập web từ link trong Email
+    _supabase.auth.onAuthStateChange((event, session) => {
+        if (event === 'PASSWORD_RECOVERY') {
+            // Ẩn tất cả các màn hình khác, chỉ hiện màn hình Đổi mật khẩu
+            document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
+            document.getElementById('auth-view').classList.add('hidden');
+            document.getElementById('main-nav').classList.add('hidden');
+            
+            document.getElementById('recovery-view').classList.remove('hidden');
+        }
+    });
+
+    // 3. Hàm lưu mật khẩu mới vào Database
+    async function updateNewPassword() {
+        const newPassword = document.getElementById('new-password').value;
+        if (!newPassword || newPassword.length < 6) {
+            return Swal.fire('Lỗi', 'Mật khẩu phải có ít nhất 6 ký tự!', 'warning');
+        }
+
+        Swal.fire({ title: 'Đang cập nhật...', didOpen: () => Swal.showLoading() });
+        
+        const { error } = await _supabase.auth.updateUser({ password: newPassword });
+
+        if (error) {
+            Swal.fire('Lỗi', error.message, 'error');
+        } else {
+            Swal.fire('Hoàn tất!', 'Mật khẩu của bạn đã được thay đổi. Vui lòng đăng nhập lại.', 'success').then(() => {
+                handleLogout(); // Đăng xuất để ép người dùng nhập lại pass mới
+            });
+        }
+    }
     async function handleLogout() {
         await _supabase.auth.signOut();
         location.reload();
