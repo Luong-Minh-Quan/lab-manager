@@ -12,6 +12,8 @@
     
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
     <style>
         body { background-color: #f4f6f9; font-family: system-ui, -apple-system, sans-serif; }
@@ -107,11 +109,34 @@
     </div>
 
     <div id="history-view" class="hidden view-section">
-        <h3 class="fw-bold mb-4" id="history-title">Quản lý lịch</h3>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h3 class="fw-bold" id="history-title">Quản lý lịch</h3>
+            <button class="btn btn-success admin-only hidden" onclick="exportToExcel()"><i class="bi bi-file-earmark-excel-fill"></i> Xuất Excel</button>
+        </div>
+
+        <div id="admin-charts" class="row mb-4 admin-only hidden">
+            <div class="col-md-8 mb-3">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-body">
+                        <h6 class="fw-bold text-center text-primary mb-3">Số giờ hoạt động theo thiết bị</h6>
+                        <canvas id="barChart" height="100"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-body">
+                        <h6 class="fw-bold text-center text-danger mb-3">Tỉ lệ tình trạng thiết bị</h6>
+                        <canvas id="pieChart" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="card shadow-sm border-0">
             <div class="card-body">
                 <div class="table-responsive">
-                    <table class="table align-middle table-hover">
+                    <table class="table align-middle table-hover" id="history-table">
                         <thead class="table-light">
                             <tr>
                                 <th>Người đăng ký</th>
@@ -244,6 +269,8 @@
     let currentUserProfile = null;
     let currentAuthUser = null; 
     let bookingModalInstance, roomModalInstance, machineModalInstance;
+    let barChartInstance = null;
+    let pieChartInstance = null;
 
     document.addEventListener("DOMContentLoaded", () => {
         bookingModalInstance = new bootstrap.Modal(document.getElementById('bookingModal'));
@@ -598,6 +625,10 @@ async function handleForgotPassword() {
         }
 
         const { data, error } = await query;
+        // Bổ sung: Gọi hàm vẽ biểu đồ nếu là Admin
+        if (currentUserProfile.is_admin) {
+            renderCharts(data);
+        }
         if (error) return;
 
         let html = '';
@@ -713,6 +744,79 @@ async function handleForgotPassword() {
             Swal.fire('Đã duyệt!', 'Bản ghi đã duyệt.', 'success');
             loadHistoryView();
         }
+    }
+    // --- HÀM VẼ BIỂU ĐỒ (DÀNH CHO ADMIN) ---
+    function renderCharts(bookings) {
+        const machineHours = {};
+        let countGood = 0;
+        let countBad = 0;
+
+        // Xử lý dữ liệu
+        bookings.forEach(b => {
+            if (b.status === 'approved' && b.start && b.end) {
+                // Tính số giờ hoạt động
+                const startParts = b.start.split(':');
+                const endParts = b.end.split(':');
+                const startVal = parseInt(startParts[0]) + parseInt(startParts[1])/60;
+                const endVal = parseInt(endParts[0]) + parseInt(endParts[1])/60;
+                let hours = endVal - startVal;
+                if (hours < 0) hours = 0;
+                
+                if (!machineHours[b.machine_name]) machineHours[b.machine_name] = 0;
+                machineHours[b.machine_name] += hours;
+            }
+            // Đếm tình trạng
+            if (b.machine_condition === 'Tốt') countGood++;
+            if (b.machine_condition === 'Hư hỏng') countBad++;
+        });
+
+        // 1. Vẽ biểu đồ Cột (Số giờ hoạt động)
+        const ctxBar = document.getElementById('barChart').getContext('2d');
+        if (barChartInstance) barChartInstance.destroy(); // Xóa biểu đồ cũ nếu có
+        barChartInstance = new Chart(ctxBar, {
+            type: 'bar',
+            data: {
+                labels: Object.keys(machineHours),
+                datasets: [{
+                    label: 'Tổng số giờ máy chạy (h)',
+                    data: Object.values(machineHours).map(h => h.toFixed(2)),
+                    backgroundColor: '#0d6efd',
+                    borderRadius: 5
+                }]
+            },
+            options: { responsive: true, scales: { y: { beginAtZero: true } } }
+        });
+
+        // 2. Vẽ biểu đồ Tròn (Tỉ lệ Tốt/Hư hỏng)
+        const ctxPie = document.getElementById('pieChart').getContext('2d');
+        if (pieChartInstance) pieChartInstance.destroy();
+        pieChartInstance = new Chart(ctxPie, {
+            type: 'pie',
+            data: {
+                labels: ['Tốt / Bình thường', 'Hư hỏng / Sự cố'],
+                datasets: [{
+                    data: [countGood, countBad],
+                    backgroundColor: ['#198754', '#dc3545']
+                }]
+            },
+            options: { responsive: true }
+        });
+    }
+
+    // --- HÀM XUẤT EXCEL ---
+    function exportToExcel() {
+        // Lấy dữ liệu từ bảng HTML
+        let table = document.getElementById("history-table");
+        let cloneTable = table.cloneNode(true);
+        
+        // Xóa cột "Hành động" cuối cùng vì không cần xuất ra file báo cáo
+        cloneTable.querySelectorAll('tr').forEach(row => {
+            if(row.lastElementChild) row.removeChild(row.lastElementChild);
+        });
+
+        // Tạo file Excel và tải về
+        let wb = XLSX.utils.table_to_book(cloneTable, {sheet: "Thong_Ke_Lab"});
+        XLSX.writeFile(wb, "Bao_Cao_Thong_Ke_DUT_Lab.xlsx");
     }
 </script>
 </body>
