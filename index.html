@@ -2,185 +2,193 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Hệ thống Quản lý Lab</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DUT Lab Management</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
     <style>
-        body { font-family: sans-serif; padding: 20px; }
-        .hidden { display: none; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        th { background-color: #f4f4f4; }
-        .btn-approve { background-color: #28a745; color: white; border: none; padding: 5px 10px; cursor: pointer; }
+        body { font-family: 'Inter', sans-serif; background-color: #f8f9fa; color: #333; }
+        .auth-container { max-width: 400px; margin: 100px auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        .dashboard-card { border: none; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .btn-primary { background-color: #0d6efd; border: none; padding: 10px 20px; border-radius: 8px; }
+        .status-badge { padding: 5px 12px; border-radius: 20px; font-size: 0.85em; font-weight: 600; }
+        .bg-pending { background-color: #fff3cd; color: #856404; }
+        .bg-approved { background-color: #d1e7dd; color: #0f5132; }
+        .sidebar-user { background: #fff; padding: 15px; border-radius: 10px; margin-bottom: 20px; border-left: 5px solid #0d6efd; }
     </style>
 </head>
 <body>
 
-    <div id="auth-section">
-        <h2>Đăng nhập hệ thống</h2>
-        <input type="email" id="email" placeholder="Email">
-        <input type="password" id="password" placeholder="Mật khẩu">
-        <button onclick="handleLogin()">Đăng nhập</button>
-        <button onclick="handleSignUp()">Đăng ký tài khoản mới</button>
+<div class="container py-4">
+    <div id="auth-box" class="auth-container text-center">
+        <i class="bi bi-shield-lock-fill text-primary" style="font-size: 3rem;"></i>
+        <h3 class="mt-3 fw-bold">DUT Lab</h3>
+        <p class="text-muted">Quản lý cơ sở vật chất phòng thí nghiệm</p>
+        <input type="email" id="email" class="form-control mb-3" placeholder="Email sinh viên">
+        <input type="password" id="password" class="form-control mb-3" placeholder="Mật khẩu">
+        <button class="btn btn-primary w-100" onclick="handleLogin()">Đăng Nhập</button>
+        <div class="mt-3 small text-muted">Mật khẩu mặc định là MSSV của bạn</div>
     </div>
 
-    <div id="main-app" class="hidden">
-        <h2 id="welcome-msg">Chào mừng!</h2>
-        <button onclick="handleLogout()">Đăng xuất</button>
-        <hr>
-
-        <div id="student-view" class="hidden">
-            <h3>Đăng ký mượn máy</h3>
-            <input type="text" id="machineName" placeholder="Tên máy (VD: CNC 01)">
-            <input type="date" id="bookingDate">
-            <button onclick="submitBooking()">Gửi yêu cầu</button>
-            
-            <h3>Lịch sử đăng ký của bạn</h3>
-            <div id="my-bookings"></div>
+    <div id="app-box" class="hidden d-none">
+        <div class="sidebar-user d-flex justify-content-between align-items-center">
+            <div>
+                <h5 class="mb-0 fw-bold" id="user-info">Chào mừng!</h5>
+                <small class="text-muted" id="user-role">Đang xác định quyền...</small>
+            </div>
+            <button class="btn btn-outline-danger btn-sm" onclick="handleLogout()">Đăng xuất</button>
         </div>
 
-        <div id="admin-view" class="hidden">
-            <h3>Danh sách chờ phê duyệt</h3>
-            <table id="pending-table">
-                <thead>
-                    <tr>
-                        <th>Người đăng ký</th>
-                        <th>Máy</th>
-                        <th>Ngày</th>
-                        <th>Thao tác</th>
-                    </tr>
-                </thead>
-                <tbody id="pending-list"></tbody>
-            </table>
+        <div class="row">
+            <div id="student-view" class="col-md-5 d-none">
+                <div class="card dashboard-card">
+                    <div class="card-body">
+                        <h5 class="card-title fw-bold mb-4"><i class="bi bi-plus-circle me-2"></i>Đăng ký sử dụng</h5>
+                        <label class="form-label">Chọn thiết bị</label>
+                        <select id="machineName" class="form-select mb-3">
+                            <option value="Máy CNC 01">Máy CNC 01</option>
+                            <option value="Máy in 3D">Máy in 3D</option>
+                            <option value="Robot Cánh tay">Robot Cánh tay</option>
+                        </select>
+                        <label class="form-label">Ngày sử dụng</label>
+                        <input type="date" id="bookingDate" class="form-control mb-3">
+                        <div class="row">
+                            <div class="col"><label class="form-label">Từ</label><input type="time" id="startTime" class="form-control"></div>
+                            <div class="col"><label class="form-label">Đến</label><input type="time" id="endTime" class="form-control"></div>
+                        </div>
+                        <button class="btn btn-primary w-100 mt-4" onclick="submitBooking()">Gửi yêu cầu</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="list-container" class="col-md-7">
+                <div class="card dashboard-card">
+                    <div class="card-body">
+                        <h5 class="card-title fw-bold mb-4" id="table-title">Danh sách đăng ký</h5>
+                        <div id="data-list">
+                            </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
+</div>
 
-    <script>
-        const SUPABASE_URL = 'https://hhjulrrtmnywrbhtzlqv.supabase.co';
-        const SUPABASE_KEY = 'sb_publishable_tC-IcNRCd_myv8YaTMeaKg_IbS4XWeI';
-        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-        // --- HÀM XÁC THỰC ---
-        async function handleLogin() {
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            const { data, error } = await _supabase.auth.signInWithPassword({ email, password });
-            if (error) alert(error.message);
-            else checkUserRole(data.user);
-        }
-
-        async function handleSignUp() {
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            const { data, error } = await _supabase.auth.signUp({ email, password });
-            if (error) alert("Lỗi đăng ký: " + error.message);
-            else alert("Đăng ký thành công! Hãy kiểm tra email.");
-        }
-
-        async function handleLogout() {
-            await _supabase.auth.signOut();
-            location.reload();
-        }
-
-        // --- PHÂN QUYỀN ---
-        async function checkUserRole(user) {
-            document.getElementById('auth-section').classList.add('hidden');
-            document.getElementById('main-app').classList.remove('hidden');
-
-            // Lấy thông tin role từ bảng profiles
-            const { data: profile } = await _supabase
-                .from('profiles')
-                .select('is_admin')
-                .eq('id', user.id)
-                .single();
-
-            if (profile && profile.is_admin) {
-                document.getElementById('admin-view').classList.remove('hidden');
-                loadPendingBookings();
-            } else {
-                document.getElementById('student-view').classList.remove('hidden');
-                loadMyBookings(user.id);
-            }
-        }
-
-        // --- LOGIC ADMIN: PHÊ DUYỆT ---
-        async function loadPendingBookings() {
-            const { data } = await _supabase
-                .from('bookings')
-                .select('*')
-                .eq('status', 'pending');
-            
-            const list = document.getElementById('pending-list');
-            list.innerHTML = data.map(item => `
-                <tr>
-                    <td>${item.full_name}</td>
-                    <td>${item.machine_name}</td>
-                    <td>${item.booking_date}</td>
-                    <td><button class="btn-approve" onclick="approveBooking(${item.id})">Phê duyệt</button></td>
-                </tr>
-            `).join('');
-        }
-
-        async function approveBooking(id) {
-            const { error } = await _supabase
-                .from('bookings')
-                .update({ status: 'approved' })
-                .eq('id', id);
-            
-            if (error) alert("Lỗi!");
-            else {
-                alert("Đã phê duyệt!");
-                loadPendingBookings(); // Tải lại danh sách
-            }
-        }
-
-        // Tự động kiểm tra nếu đã đăng nhập từ trước
-        _supabase.auth.getUser().then(({data}) => {
-            if(data.user) checkUserRole(data.user);
-        });
-    </script>
-</body>
-</html>
 <script>
-    const SUPABASE_URL = 'https://hhjulrrtmnywrbhtzlqv.supabase.co';
-    const SUPABASE_KEY = 'sb_publishable_tC-IcNRCd_myv8YaTMeaKg_IbS4XWeI';
-    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const CONFIG = {
+        URL: 'https://hhjulrrtmnywrbhtzlqv.supabase.co',
+        KEY: 'sb_publishable_tC-IcNRCd_myv8YaTMeaKg_IbS4XWeI'
+    };
+    const _supabase = supabase.createClient(CONFIG.URL, CONFIG.KEY);
 
-    async function handleBooking() {
-        const name = document.getElementById('fullName').value;
-        const sId = document.getElementById('studentId').value;
-        const machine = document.getElementById('machineName').value; // Lấy tên máy
-        const date = document.getElementById('bookingDate').value;
-        const start = document.getElementById('startTime').value;
-        const end = document.getElementById('endTime').value;
+    async function handleLogin() {
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        
+        Swal.fire({ title: 'Đang đăng nhập...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
-        if (!name || !sId || !machine || !date || !start || !end) {
-            alert("Vui lòng điền đầy đủ thông tin và chọn máy!");
-            return;
-        }
-
-        const { data, error } = await _supabase
-            .from('bookings')
-            .insert([
-                { 
-                    full_name: name, 
-                    student_id: sId,
-                    machine_name: machine, // Gửi tên máy vào cột machine_name
-                    booking_date: date,
-                    start: start,
-                    end: end,
-                    status: 'pending' 
-                }
-            ]);
-
+        const { data, error } = await _supabase.auth.signInWithPassword({ email, password });
         if (error) {
-            console.error("Lỗi:", error);
-            alert("Lỗi khi đăng ký: " + error.message);
+            Swal.fire('Lỗi!', 'Sai tài khoản hoặc mật khẩu', 'error');
         } else {
-            alert("Đã gửi yêu cầu đăng ký " + machine + " thành công!");
-            // Reset form
-            document.getElementById('fullName').value = "";
-            document.getElementById('studentId').value = "";
-            document.getElementById('machineName').value = "";
+            Swal.close();
+            checkSession();
         }
     }
+
+    async function handleLogout() {
+        await _supabase.auth.signOut();
+        location.reload();
+    }
+
+    async function checkSession() {
+        const { data: { user } } = await _supabase.auth.getUser();
+        if (!user) return;
+
+        document.getElementById('auth-box').classList.add('d-none');
+        document.getElementById('app-box').classList.remove('d-none');
+
+        const { data: profile } = await _supabase.from('profiles').select('*').eq('id', user.id).single();
+        document.getElementById('user-info').innerText = `Chào: ${profile.student_id || 'Admin'}`;
+
+        if (profile.is_admin) {
+            document.getElementById('user-role').innerText = "Quyền hạn: Quản lý phòng Lab";
+            document.getElementById('list-container').className = "col-12"; // Admin xem bảng rộng
+            loadAdminPanel();
+        } else {
+            document.getElementById('user-role').innerText = `Sinh viên khoa Cơ khí - MSSV: ${profile.student_id}`;
+            document.getElementById('student-view').classList.remove('d-none');
+            loadStudentBookings(user.id);
+        }
+    }
+
+    async function submitBooking() {
+        const { data: { user } } = await _supabase.auth.getUser();
+        const payload = {
+            user_id: user.id,
+            machine_name: document.getElementById('machineName').value,
+            booking_date: document.getElementById('bookingDate').value,
+            start: document.getElementById('startTime').value,
+            end: document.getElementById('endTime').value,
+            status: 'pending'
+        };
+
+        const { error } = await _supabase.from('bookings').insert([payload]);
+        if (error) Swal.fire('Lỗi', error.message, 'error');
+        else {
+            Swal.fire('Thành công', 'Yêu cầu của bạn đã được gửi!', 'success');
+            loadStudentBookings(user.id);
+        }
+    }
+
+    async function loadStudentBookings(userId) {
+        const { data } = await _supabase.from('bookings').select('*').eq('user_id', userId).order('created_at', { ascending: false });
+        let html = data.length ? '' : '<p class="text-muted">Bạn chưa có đăng ký nào.</p>';
+        data.forEach(b => {
+            html += `
+                <div class="p-3 border rounded mb-2 bg-white shadow-sm d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="fw-bold text-primary">${b.machine_name}</div>
+                        <small class="text-muted"><i class="bi bi-calendar-event"></i> ${b.booking_date} | <i class="bi bi-clock"></i> ${b.start}-${b.end}</small>
+                    </div>
+                    <span class="status-badge bg-${b.status}">${b.status === 'pending' ? 'Đang chờ' : 'Đã duyệt'}</span>
+                </div>`;
+        });
+        document.getElementById('data-list').innerHTML = html;
+    }
+
+    async function loadAdminPanel() {
+        const { data } = await _supabase.from('bookings').select('*').eq('status', 'pending');
+        document.getElementById('table-title').innerText = "Yêu cầu chờ phê duyệt";
+        let html = '<table class="table table-hover mt-3"><thead><tr><th>MSSV</th><th>Máy</th><th>Thời gian</th><th>Duyệt</th></tr></thead><tbody>';
+        data.forEach(b => {
+            html += `
+                <tr>
+                    <td><b>${b.student_id || 'N/A'}</b></td>
+                    <td>${b.machine_name}</td>
+                    <td>${b.booking_date}<br><small>${b.start}-${b.end}</small></td>
+                    <td><button onclick="approve(${b.id})" class="btn btn-success btn-sm"><i class="bi bi-check-lg"></i></button></td>
+                </tr>`;
+        });
+        html += '</tbody></table>';
+        document.getElementById('data-list').innerHTML = data.length ? html : '<div class="text-center py-5"><i class="bi bi-check-circle text-success" style="font-size: 3rem;"></i><p class="mt-2">Không còn yêu cầu nào chờ duyệt!</p></div>';
+    }
+
+    async function approve(id) {
+        const { error } = await _supabase.from('bookings').update({ status: 'approved' }).eq('id', id);
+        if (!error) {
+            Swal.fire({ title: 'Đã duyệt!', icon: 'success', timer: 1000, showConfirmButton: false });
+            loadAdminPanel();
+        }
+    }
+
+    checkSession();
 </script>
+
+</body>
+</html>
