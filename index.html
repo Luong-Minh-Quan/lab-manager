@@ -52,8 +52,22 @@
         <div class="card-body p-4 text-center">
             <h3 class="fw-bold text-primary mb-4">Đăng nhập</h3>
             <input type="email" id="email" class="form-control mb-3" placeholder="Email (VD: 123240010@student.edu.vn)">
-            <input type="password" id="password" class="form-control mb-4" placeholder="Mật khẩu (MSSV)">
+            <input type="password" id="password" class="form-control mb-2" placeholder="Mật khẩu (MSSV)">
+            
+            <div class="text-end mb-4">
+                <a href="#" class="text-decoration-none small text-muted" onclick="handleForgotPassword()">Quên mật khẩu?</a>
+            </div>
+
             <button class="btn btn-primary w-100 py-2" onclick="handleLogin()">Đăng Nhập</button>
+        </div>
+    </div>
+
+    <div id="recovery-view" class="card mx-auto shadow hidden view-section" style="max-width: 400px; margin-top: 100px;">
+        <div class="card-body p-4 text-center">
+            <h3 class="fw-bold text-success mb-4"><i class="bi bi-key-fill"></i> Mật khẩu mới</h3>
+            <p class="text-muted small mb-4">Vui lòng nhập mật khẩu mới cho tài khoản của bạn.</p>
+            <input type="password" id="new-password" class="form-control mb-4" placeholder="Nhập mật khẩu mới (từ 6 ký tự)">
+            <button class="btn btn-success w-100 py-2" onclick="updateNewPassword()">Cập nhật mật khẩu</button>
         </div>
     </div>
 
