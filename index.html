@@ -1,17 +1,19 @@
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quản lý Phòng Thí Nghiệm</title>
-    <style>
-        body { font-family: sans-serif; text-align: center; padding: 50px; }
-        .status { color: green; font-weight: bold; }
-    </style>
-</head>
-<body>
-    <h1>Hệ Thống Quản Lý Cơ Sở Vật Chất Lab</h1>
-    <p>Trạng thái hệ thống: <span class="status">Đang hoạt động</span></p>
-    <p>Chào mừng bạn đến với trang web thử nghiệm.</p>
-</body>
-</html>
+// Kết nối với Supabase (Sử dụng API Key bạn lấy từ cài đặt Supabase)
+const supabase = supabase.createClient('URL_CUA_BAN', 'ANON_KEY_CUA_BAN')
+
+// Hàm Đăng ký
+async function signUp(email, password) {
+  const { data, error } = await supabase.auth.signUp({ email, password })
+  if (error) alert("Lỗi: " + error.message)
+  else alert("Kiểm tra email để xác nhận tài khoản!")
+}
+
+// Hàm Đăng ký sử dụng phòng Lab
+async function bookLab(labName, date) {
+  const { data, error } = await supabase
+    .from('bookings')
+    .insert([{ lab_name: labName, booking_date: date }])
+  
+  if (error) alert("Không thể đăng ký!")
+  else alert("Đăng ký phòng Lab thành công!")
+}
