@@ -8,8 +8,10 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 
     <style>
         body { background-color: #f4f6f9; font-family: system-ui, -apple-system, sans-serif; }
@@ -45,11 +47,11 @@
 </nav>
 
 <div class="container">
-    <div id="auth-view" class="card mx-auto shadow" style="max-width: 400px; margin-top: 100px;">
+    <div id="auth-view" class="card mx-auto shadow hidden" style="max-width: 400px; margin-top: 100px;">
         <div class="card-body p-4 text-center">
             <h3 class="fw-bold text-primary mb-4">Đăng nhập</h3>
             <input type="email" id="email" class="form-control mb-3" placeholder="Email (VD: 123240010@student.edu.vn)">
-            <input type="password" id="password" class="form-control mb-4" placeholder="Mật khẩu">
+            <input type="password" id="password" class="form-control mb-4" placeholder="Mật khẩu (MSSV)">
             <button class="btn btn-primary w-100 py-2" onclick="handleLogin()">Đăng Nhập</button>
         </div>
     </div>
@@ -93,7 +95,7 @@
                                 <th>Phòng - Thiết bị</th>
                                 <th>Thời gian</th>
                                 <th>Trạng thái</th>
-                                <th id="admin-action-col" class="hidden">Duyệt</th>
+                                <th id="admin-action-col" class="hidden">Hành động</th>
                             </tr>
                         </thead>
                         <tbody id="history-list"></tbody>
@@ -108,18 +110,18 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title fw-bold">Đăng ký thiết bị: <span id="modal-machine-name" class="text-primary"></span></h5>
+                <h5 class="modal-title fw-bold">Đăng ký: <span id="modal-machine-name" class="text-primary"></span></h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <input type="hidden" id="book-room">
                 <div class="mb-3">
                     <label class="form-label">Họ và tên sinh viên</label>
-                    <input type="text" id="book-name" class="form-control">
+                    <input type="text" id="book-name" class="form-control" disabled>
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Mã số sinh viên</label>
-                    <input type="text" id="book-mssv" class="form-control">
+                    <input type="text" id="book-mssv" class="form-control" disabled>
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Ngày sử dụng</label>
@@ -145,35 +147,47 @@
 </div>
 
 <script>
-    // --- CẤU HÌNH HỆ THỐNG ---
-    const CONFIG = {
-        URL: 'https://hhjulrrtmnywrbhtzlqv.supabase.co',
-        KEY: 'sb_publishable_tC-IcNRCd_myv8YaTMeaKg_IbS4XWeI'
-    };
-    const _supabase = supabase.createClient(CONFIG.URL, CONFIG.KEY);
+    // ==========================================
+    // PHẦN 1: CẤU HÌNH API
+    // ==========================================
+    
+    // 1. Cấu hình Supabase
+    const SUPABASE_URL = 'https://hhjulrrtmnywrbhtzlqv.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_tC-IcNRCd_myv8YaTMeaKg_IbS4XWeI';
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    
+    // 2. Cấu hình EmailJS (BẠN ĐIỀN SERVICE_ID VÀ TEMPLATE_ID VÀO ĐÂY NHÉ)
+    emailjs.init("f3eTdbEP6l_mNLeQX"); // Public Key bạn vừa cung cấp
+    const EMAILJS_SERVICE_ID = "f3eTdbEP6l_mNLeQX"; 
+    const EMAILJS_TEMPLATE_ID = "template_smznstn"; 
+
+    // Biến toàn cục lưu thông tin user
     let currentUserProfile = null;
+    let currentAuthUser = null; 
     let bookingModalInstance = null;
 
-    // Dữ liệu mô phỏng danh sách phòng và máy
+    // Danh sách phòng ảo
     const LAB_DATA = {
         "Phòng K101 (Xưởng Cơ Khí)": ["Máy phay CNC 01", "Máy tiện CNC 02", "Máy khoan cần"],
         "Phòng C102 (Lab Tự Động Hóa)": ["Robot Cánh Tay ABB", "Bộ thực hành PLC S7-1200", "Băng chuyền phân loại"],
         "Phòng AI (Khu Công Nghệ Cao)": ["Máy chủ AI Nvidia", "Máy in 3D Resin", "Trạm kiểm thử Camera QR"]
     };
 
-    // Khởi tạo
     document.addEventListener("DOMContentLoaded", () => {
         bookingModalInstance = new bootstrap.Modal(document.getElementById('bookingModal'));
         checkSession();
     });
 
-    // --- XỬ LÝ AUTH ---
+    // ==========================================
+    // PHẦN 2: XÁC THỰC NGƯỜI DÙNG (AUTH)
+    // ==========================================
+
     async function handleLogin() {
         const email = document.getElementById('email').value;
         const password = document.getElementById('password').value;
         if (!email || !password) return Swal.fire('Lỗi', 'Nhập đủ thông tin!', 'warning');
 
-        Swal.fire({ title: 'Đang đăng nhập...', didOpen: () => Swal.showLoading() });
+        Swal.fire({ title: 'Đang đăng nhập...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
         const { error } = await _supabase.auth.signInWithPassword({ email, password });
         
         if (error) Swal.fire('Lỗi', 'Sai tài khoản hoặc mật khẩu', 'error');
@@ -193,24 +207,28 @@
             return;
         }
 
+        currentAuthUser = user; // Lưu lại để tí nữa lấy email tự động
+        document.getElementById('auth-view').classList.add('hidden');
+        document.getElementById('main-nav').classList.remove('hidden');
+
         const { data: profile } = await _supabase.from('profiles').select('*').eq('id', user.id).single();
         currentUserProfile = profile;
         
-        document.getElementById('auth-view').classList.add('hidden');
-        document.getElementById('main-nav').classList.remove('hidden');
         document.getElementById('nav-user-info').innerText = profile.is_admin ? "Quản trị viên" : `SV: ${profile.student_id}`;
 
         renderRooms();
         showView('rooms-view');
     }
 
-    // --- ĐIỀU HƯỚNG ---
     function showView(viewId) {
         document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
         document.getElementById(viewId).classList.remove('hidden');
     }
 
-    // --- TỔNG HỢP PHÒNG LAB ---
+    // ==========================================
+    // PHẦN 3: GIAO DIỆN PHÒNG VÀ MÁY
+    // ==========================================
+
     function renderRooms() {
         const list = document.getElementById('room-list');
         list.innerHTML = Object.keys(LAB_DATA).map(room => `
@@ -223,14 +241,11 @@
         `).join('');
     }
 
-    // --- CHI TIẾT MÁY & TRẠNG THÁI ---
     async function openRoom(roomName) {
         document.getElementById('current-room-title').innerText = roomName;
-        const tbody = document.getElementById('machine-list');
-        tbody.innerHTML = '<tr><td colspan="4" class="text-center">Đang tải dữ liệu...</td></tr>';
         showView('machines-view');
+        document.getElementById('machine-list').innerHTML = '<tr><td colspan="4" class="text-center">Đang tải dữ liệu...</td></tr>';
 
-        // Lấy toàn bộ lịch đặt của ngày hôm nay đã được duyệt
         const today = new Date().toISOString().split('T')[0];
         const { data: bookings } = await _supabase
             .from('bookings')
@@ -239,27 +254,23 @@
             .eq('status', 'approved');
 
         const machines = LAB_DATA[roomName];
-        let html = '';
-
         const now = new Date();
-        const currentTime = now.toTimeString().substring(0, 5); // Định dạng "HH:MM"
+        const currentTime = now.toTimeString().substring(0, 5);
+        let html = '';
 
         machines.forEach(machine => {
             const machineBookings = (bookings || []).filter(b => b.machine_name.includes(machine));
-            
-            // Tìm trạng thái hiện tại
             let currentBooking = machineBookings.find(b => b.start <= currentTime && b.end >= currentTime);
-            // Tìm ca tiếp theo
             let nextBookings = machineBookings.filter(b => b.start > currentTime).sort((a, b) => a.start.localeCompare(b.start));
             let nextBooking = nextBookings.length > 0 ? nextBookings[0] : null;
 
             let statusHtml = '<span class="status-badge bg-free">Sẵn sàng (Đang rảnh)</span>';
-            let nextHtml = '<span class="text-muted">Không có lịch tiếp theo</span>';
+            let nextHtml = '<span class="text-muted">Không có lịch</span>';
 
             if (currentBooking) {
                 statusHtml = `
                     <span class="status-badge bg-busy">Đang bận</span><br>
-                    <small class="text-muted">Người dùng: ${currentBooking.student_id}</small><br>
+                    <small class="text-muted">SV: ${currentBooking.student_id}</small><br>
                     <small class="text-danger">Tới ${currentBooking.end}</small>
                 `;
             }
@@ -268,7 +279,6 @@
                 nextHtml = `<b>${nextBooking.start} - ${nextBooking.end}</b><br><small class="text-muted">SV: ${nextBooking.student_id}</small>`;
             }
 
-            // Sinh viên / Admin đều có thể bấm Đăng ký
             html += `
                 <tr>
                     <td class="fw-bold">${machine}</td>
@@ -278,20 +288,20 @@
                 </tr>
             `;
         });
-
-        tbody.innerHTML = html;
+        document.getElementById('machine-list').innerHTML = html;
     }
 
-    // --- ĐĂNG KÝ (MODAL & LOGIC) ---
+    // ==========================================
+    // PHẦN 4: CHỨC NĂNG ĐĂNG KÝ (SINH VIÊN)
+    // ==========================================
+
     function openBookingModal(room, machine) {
         document.getElementById('modal-machine-name').innerText = machine;
         document.getElementById('book-room').value = room;
         
-        // Tự động điền thông tin Profile
-        document.getElementById('book-name').value = currentUserProfile.full_name || '';
-        document.getElementById('book-mssv').value = currentUserProfile.student_id || '';
-        
-        // Mặc định ngày hôm nay
+        // Tự động điền (Và khóa ô không cho sửa đổi)
+        document.getElementById('book-name').value = currentUserProfile.full_name || 'Không rõ';
+        document.getElementById('book-mssv').value = currentUserProfile.student_id || 'Không rõ';
         document.getElementById('book-date').value = new Date().toISOString().split('T')[0];
         
         bookingModalInstance.show();
@@ -300,50 +310,38 @@
     async function submitBooking() {
         const room = document.getElementById('book-room').value;
         const machine = document.getElementById('modal-machine-name').innerText;
-        const name = document.getElementById('book-name').value;
-        const mssv = document.getElementById('book-mssv').value;
         const date = document.getElementById('book-date').value;
         const start = document.getElementById('book-start').value;
         const end = document.getElementById('book-end').value;
 
-        if (!name || !mssv || !date || !start || !end) {
-            return Swal.fire('Lỗi', 'Vui lòng điền đủ thông tin!', 'warning');
-        }
-        if (start >= end) {
-            return Swal.fire('Lỗi', 'Giờ kết thúc phải lớn hơn giờ bắt đầu!', 'warning');
-        }
+        if (!date || !start || !end) return Swal.fire('Lỗi', 'Vui lòng chọn giờ!', 'warning');
+        if (start >= end) return Swal.fire('Lỗi', 'Giờ kết thúc phải lớn hơn giờ bắt đầu!', 'warning');
 
-        Swal.fire({ title: 'Đang kiểm tra trùng lịch...', didOpen: () => Swal.showLoading() });
+        Swal.fire({ title: 'Đang kiểm tra...', didOpen: () => Swal.showLoading() });
 
-        // LOGIC CHỐNG TRÙNG LỊCH (Lấy lịch của máy đó vào ngày đó)
-        const fullMachineName = `${room} - ${machine}`; // Lưu gộp phòng và máy vào database
+        const fullMachineName = `${room} - ${machine}`;
         const { data: existing } = await _supabase
             .from('bookings')
             .select('start, end, status')
             .eq('machine_name', fullMachineName)
             .eq('booking_date', date)
-            .neq('status', 'rejected'); // Không xét lịch đã bị từ chối
+            .neq('status', 'rejected');
 
-        // Thuật toán kiểm tra giao nhau (Overlap)
         let isOverlap = false;
         if (existing) {
             for (let b of existing) {
-                // Nếu giờ bắt đầu mới nhỏ hơn giờ kết thúc cũ VÀ giờ kết thúc mới lớn hơn giờ bắt đầu cũ -> Trùng!
-                if (start < b.end && end > b.start) {
-                    isOverlap = true; break;
-                }
+                if (start < b.end && end > b.start) { isOverlap = true; break; }
             }
         }
 
-        if (isOverlap) {
-            return Swal.fire('Trùng lịch!', 'Khung giờ này đã có người đăng ký hoặc đang chờ duyệt. Vui lòng chọn giờ khác.', 'error');
-        }
+        if (isOverlap) return Swal.fire('Trùng lịch!', 'Khung giờ này đã bị đăng ký.', 'error');
 
-        // Nếu không trùng, tiến hành Insert
+        // CHÈN DỮ LIỆU KÈM EMAIL TỰ ĐỘNG
         const { error } = await _supabase.from('bookings').insert([{
             user_id: currentUserProfile.id,
-            full_name: name,
-            student_id: mssv,
+            full_name: currentUserProfile.full_name,
+            student_id: currentUserProfile.student_id,
+            email: currentAuthUser.email, // Lấy email tự động từ tài khoản đang đăng nhập
             machine_name: fullMachineName,
             booking_date: date,
             start: start,
@@ -351,23 +349,24 @@
             status: 'pending'
         }]);
 
-        if (error) {
-            Swal.fire('Lỗi server', error.message, 'error');
-        } else {
+        if (error) Swal.fire('Lỗi', error.message, 'error');
+        else {
             bookingModalInstance.hide();
-            Swal.fire('Thành công', 'Đã gửi yêu cầu, vui lòng chờ duyệt!', 'success');
-            openRoom(room); // Tải lại trang chi tiết máy
+            Swal.fire('Thành công', 'Đã gửi yêu cầu, hãy chờ duyệt!', 'success');
+            openRoom(room);
         }
     }
 
-    // --- LỊCH SỬ VÀ QUẢN LÝ ---
+    // ==========================================
+    // PHẦN 5: CHỨC NĂNG DUYỆT & GỬI EMAIL (ADMIN)
+    // ==========================================
+
     async function loadHistoryView() {
         showView('history-view');
         document.getElementById('history-list').innerHTML = '<tr><td colspan="5" class="text-center">Đang tải...</td></tr>';
         
         let query = _supabase.from('bookings').select('*').order('created_at', { ascending: false });
         
-        // Nếu là SV, chỉ lấy lịch của mình
         if (!currentUserProfile.is_admin) {
             query = query.eq('user_id', currentUserProfile.id);
             document.getElementById('history-title').innerText = "Lịch sử đăng ký của tôi";
@@ -378,7 +377,7 @@
         }
 
         const { data, error } = await query;
-        if (error) return Swal.fire('Lỗi tải dữ liệu', error.message, 'error');
+        if (error) return;
 
         let html = '';
         data.forEach(b => {
@@ -386,13 +385,15 @@
             const statusText = b.status === 'approved' ? 'Đã duyệt' : (b.status === 'pending' ? 'Chờ duyệt' : 'Từ chối');
             
             let actionBtn = '';
+            // NẾU LÀ ADMIN, TẠO NÚT "DUYỆT & GỬI QR" CÓ TRUYỀN THÊM EMAIL
             if (currentUserProfile.is_admin && b.status === 'pending') {
-                actionBtn = `<button class="btn btn-sm btn-success" onclick="approveBooking(${b.id})">Duyệt</button>`;
+                const userEmail = b.email ? b.email : '';
+                actionBtn = `<button class="btn btn-sm btn-success" onclick="approveBooking('${b.id}', '${userEmail}', '${b.machine_name}', '${b.qr_token}')"><i class="bi bi-envelope-check"></i> Duyệt & Gửi QR</button>`;
             }
 
             html += `
                 <tr>
-                    <td><b>${b.full_name}</b><br><small>${b.student_id}</small></td>
+                    <td><b>${b.full_name || 'SV'}</b><br><small>${b.student_id}</small></td>
                     <td>${b.machine_name}</td>
                     <td>${b.booking_date} | ${b.start} - ${b.end}</td>
                     <td><span class="status-badge ${statusColor}">${statusText}</span></td>
@@ -401,14 +402,40 @@
             `;
         });
         
-        if (data.length === 0) html = '<tr><td colspan="5" class="text-center">Không có dữ liệu</td></tr>';
-        document.getElementById('history-list').innerHTML = html;
+        document.getElementById('history-list').innerHTML = data.length ? html : '<tr><td colspan="5" class="text-center">Không có dữ liệu</td></tr>';
     }
 
-    async function approveBooking(id) {
+    async function approveBooking(id, studentEmail, machineName, qrToken) {
+        Swal.fire({ title: 'Đang phê duyệt và gửi Email...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+        // 1. Đổi trạng thái trong Supabase
         const { error } = await _supabase.from('bookings').update({ status: 'approved' }).eq('id', id);
-        if (!error) {
-            Swal.fire({ title: 'Đã duyệt!', icon: 'success', timer: 1000, showConfirmButton: false });
+        if (error) return Swal.fire('Lỗi Database', error.message, 'error');
+
+        // 2. Gửi Email nếu có địa chỉ mail
+        if (studentEmail && EMAILJS_SERVICE_ID !== "f3eTdbEP6l_mNLeQX") {
+            const qrImageLink = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${qrToken}`;
+            
+            // Thông số truyền vào Template EmailJS
+            const templateParams = {
+                to_email: studentEmail,
+                machine: machineName,
+                qr_link: qrImageLink
+            };
+
+            emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams)
+                .then(function() {
+                    Swal.fire('Thành công!', 'Đã duyệt và gửi mã QR thành công đến email sinh viên.', 'success');
+                    loadHistoryView();
+                })
+                .catch(function(err) {
+                    console.error("Lỗi EmailJS:", err);
+                    Swal.fire('Cảnh báo', 'Đã duyệt trong hệ thống nhưng việc gửi email bị lỗi. Vui lòng kiểm tra lại EmailJS.', 'warning');
+                    loadHistoryView();
+                });
+        } else {
+            // Trường hợp bạn chưa cấu hình Service ID hoặc SV cũ không có email
+            Swal.fire('Đã duyệt!', 'Bản ghi đã được duyệt (Không có email hoặc chưa cấu hình EmailJS).', 'success');
             loadHistoryView();
         }
     }
