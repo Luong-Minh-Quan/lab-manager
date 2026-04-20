@@ -117,8 +117,49 @@
                 <input type="hidden" id="book-room">
                 <div class="mb-3">
                     <label class="form-label">Họ và tên sinh viên</label>
-                    <input type="text" id="book-name" class="form-control" disabled>
+                    <input type="text" id="book-name" class="form-control" readonly>
                 </div>
+                <div class="mb-3">
+                    <label class="form-label">Mã số sinh viên</label>
+                    <input type="text" id="book-mssv" class="form-control" readonly>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col">
+                        <label class="form-label">Số người tham gia</label>
+                        <input type="number" id="book-participants" class="form-control" min="1" value="1">
+                    </div>
+                    <div class="col">
+                        <label class="form-label">Mục đích sử dụng</label>
+                        <select id="book-purpose" class="form-select">
+                            <option value="Thực hành/Học tập">Thực hành/Học tập</option>
+                            <option value="Nghiên cứu khoa học">Nghiên cứu khoa học</option>
+                            <option value="Giảng dạy">Giảng dạy</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Ngày sử dụng</label>
+                    <input type="date" id="book-date" class="form-control">
+                </div>
+                <div class="row mb-3">
+                    <div class="col">
+                        <label class="form-label">Từ giờ</label>
+                        <input type="time" id="book-start" class="form-control">
+                    </div>
+                    <div class="col">
+                        <label class="form-label">Đến giờ</label>
+                        <input type="time" id="book-end" class="form-control">
+                    </div>
+                </div>
+                
+                <div class="alert alert-info mb-0" style="font-size: 0.85em; padding: 10px;">
+                    <i class="bi bi-info-circle-fill me-1"></i> <strong>Quy định thời gian:</strong><br>
+                    - Chỉ hoạt động từ <strong>Thứ 2 đến Thứ 6</strong>.<br>
+                    - Sáng: <strong>07:30 - 11:15</strong> | Chiều: <strong>13:30 - 17:00</strong>
+                </div>
+            </div>
                 <div class="mb-3">
                     <label class="form-label">Mã số sinh viên</label>
                     <input type="text" id="book-mssv" class="form-control" disabled>
@@ -310,14 +351,40 @@
     async function submitBooking() {
         const room = document.getElementById('book-room').value;
         const machine = document.getElementById('modal-machine-name').innerText;
+        const name = document.getElementById('book-name').value;
+        const mssv = document.getElementById('book-mssv').value;
         const date = document.getElementById('book-date').value;
         const start = document.getElementById('book-start').value;
         const end = document.getElementById('book-end').value;
+        
+        // Lấy thêm 2 dữ liệu mới
+        const participants = document.getElementById('book-participants').value;
+        const purpose = document.getElementById('book-purpose').value;
 
-        if (!date || !start || !end) return Swal.fire('Lỗi', 'Vui lòng chọn giờ!', 'warning');
-        if (start >= end) return Swal.fire('Lỗi', 'Giờ kết thúc phải lớn hơn giờ bắt đầu!', 'warning');
+        if (!date || !start || !end) return Swal.fire('Lỗi', 'Vui lòng chọn ngày và giờ!', 'warning');
+        if (start >= end) return Swal.fire('Lỗi', 'Giờ kết thúc phải sau giờ bắt đầu!', 'warning');
 
-        Swal.fire({ title: 'Đang kiểm tra...', didOpen: () => Swal.showLoading() });
+        // --- BỘ LỌC 1: KIỂM TRA THỨ 2 -> THỨ 6 ---
+        const selectedDate = new Date(date);
+        const dayOfWeek = selectedDate.getDay(); // 0 là Chủ nhật, 6 là Thứ 7
+        if (dayOfWeek === 0 || dayOfWeek === 6) {
+            return Swal.fire('Ngoài giờ hành chính', 'Phòng thí nghiệm chỉ mở cửa từ Thứ 2 đến Thứ 6!', 'error');
+        }
+
+        // --- BỘ LỌC 2: KIỂM TRA KHUNG GIỜ SÁNG/CHIỀU ---
+        // Ép kiểu giờ về chuỗi để so sánh chuẩn xác (VD: "07:30")
+        const isMorning = (start >= "07:30" && end <= "11:15");
+        const isAfternoon = (start >= "13:30" && end <= "17:00");
+
+        if (!isMorning && !isAfternoon) {
+            return Swal.fire(
+                'Sai khung giờ quy định', 
+                'Chỉ được đăng ký trong ca Sáng (07:30-11:15) hoặc ca Chiều (13:30-17:00). Không đăng ký xuyên trưa hoặc ngoài giờ.', 
+                'error'
+            );
+        }
+
+        Swal.fire({ title: 'Đang kiểm tra trùng lịch...', didOpen: () => Swal.showLoading() });
 
         const fullMachineName = `${room} - ${machine}`;
         const { data: existing } = await _supabase
@@ -334,25 +401,28 @@
             }
         }
 
-        if (isOverlap) return Swal.fire('Trùng lịch!', 'Khung giờ này đã bị đăng ký.', 'error');
+        if (isOverlap) return Swal.fire('Trùng lịch!', 'Máy này đã có người đăng ký trong khung giờ bạn chọn.', 'error');
 
-        // CHÈN DỮ LIỆU KÈM EMAIL TỰ ĐỘNG
+        // BẮT ĐẦU CHÈN DB VỚI 2 CỘT MỚI
         const { error } = await _supabase.from('bookings').insert([{
             user_id: currentUserProfile.id,
-            full_name: currentUserProfile.full_name,
-            student_id: currentUserProfile.student_id,
-            email: currentAuthUser.email, // Lấy email tự động từ tài khoản đang đăng nhập
+            full_name: name,
+            student_id: mssv,
+            email: currentUserEmail,
             machine_name: fullMachineName,
             booking_date: date,
             start: start,
             end: end,
+            participants: participants, // Lưu số người
+            purpose: purpose,           // Lưu mục đích
             status: 'pending'
         }]);
 
-        if (error) Swal.fire('Lỗi', error.message, 'error');
-        else {
+        if (error) {
+            Swal.fire('Lỗi server', error.message, 'error');
+        } else {
             bookingModalInstance.hide();
-            Swal.fire('Thành công', 'Đã gửi yêu cầu, hãy chờ duyệt!', 'success');
+            Swal.fire('Thành công', 'Đã gửi yêu cầu, vui lòng chờ duyệt!', 'success');
             openRoom(room);
         }
     }
