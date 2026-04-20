@@ -37,7 +37,7 @@
             <ul class="navbar-nav me-auto">
                 <li class="nav-item"><a class="nav-link" href="#" onclick="showView('rooms-view')">Danh sách Phòng</a></li>
                 <li class="nav-item"><a class="nav-link" href="#" onclick="loadHistoryView()">Lịch sử / Quản lý</a></li>
-                <li class="nav-item admin-only hidden"><a class="nav-link" href="#" onclick="showView('admin-manage-view')">Quản lý Phòng/Máy</a></li>
+                <li class="nav-item admin-only hidden"><a class="nav-link text-warning fw-bold" href="#" onclick="showView('admin-manage-view')"><i class="bi bi-gear-fill"></i> Thiết lập Phòng/Máy</a></li>
             </ul>
             <div class="d-flex align-items-center text-white">
                 <span id="nav-user-info" class="me-3"></span>
@@ -46,7 +46,6 @@
         </div>
     </div>
 </nav>
-
 
 <div class="container">
     <div id="auth-view" class="card mx-auto shadow hidden" style="max-width: 400px; margin-top: 100px;">
@@ -57,15 +56,15 @@
             <button class="btn btn-primary w-100 py-2" onclick="handleLogin()">Đăng Nhập</button>
         </div>
     </div>
+
     <div id="admin-manage-view" class="hidden view-section">
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h3 class="fw-bold">Quản lý Cơ sở vật chất</h3>
+            <h3 class="fw-bold"><i class="bi bi-building-gear text-primary"></i> Quản lý Cơ sở vật chất</h3>
             <button class="btn btn-primary" onclick="openAddRoomModal()"><i class="bi bi-plus-lg"></i> Thêm Phòng mới</button>
         </div>
-        
-        <div id="admin-room-list" class="row">
-            </div>
+        <div id="admin-room-list" class="row"></div>
     </div>
+
     <div id="rooms-view" class="hidden view-section">
         <h3 class="fw-bold mb-4">Chọn phòng thực hành</h3>
         <div class="row" id="room-list"></div>
@@ -73,14 +72,14 @@
 
     <div id="machines-view" class="hidden view-section">
         <button class="btn btn-outline-secondary mb-3" onclick="showView('rooms-view')"><i class="bi bi-arrow-left"></i> Quay lại</button>
-        <h3 class="fw-bold mb-4" id="current-room-title">Chi tiết phòng</h3>
+        <h3 class="fw-bold mb-4 text-primary" id="current-room-title">Chi tiết phòng</h3>
         <div class="card shadow-sm border-0">
             <div class="card-body p-0">
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0">
                         <thead class="table-light">
                             <tr>
-                                <th>Thiết bị</th>
+                                <th>Thiết bị / Thông số kỹ thuật</th>
                                 <th>Trạng thái hiện tại</th>
                                 <th>Ca tiếp theo (Hôm nay)</th>
                                 <th>Thao tác</th>
@@ -103,6 +102,7 @@
                             <tr>
                                 <th>Người đăng ký</th>
                                 <th>Phòng - Thiết bị</th>
+                                <th>Mục đích / Số lượng</th>
                                 <th>Thời gian</th>
                                 <th>Trạng thái</th>
                                 <th id="admin-action-col" class="hidden">Hành động</th>
@@ -120,101 +120,98 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title fw-bold">Đăng ký thiết bị: <span id="modal-machine-name" class="text-primary"></span></h5>
+                <h5 class="modal-title fw-bold">Đăng ký: <span id="modal-machine-name" class="text-primary"></span></h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <input type="hidden" id="book-room">
-                
-                <div class="mb-3">
-                    <label class="form-label">Họ và tên sinh viên</label>
-                    <input type="text" id="book-name" class="form-control" readonly>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Mã số sinh viên</label>
-                    <input type="text" id="book-mssv" class="form-control" readonly>
-                </div>
+                <div class="mb-3"><label class="form-label">Họ và tên</label><input type="text" id="book-name" class="form-control" readonly></div>
+                <div class="mb-3"><label class="form-label">MSSV</label><input type="text" id="book-mssv" class="form-control" readonly></div>
                 
                 <div class="row mb-3">
+                    <div class="col"><label class="form-label">Số người</label><input type="number" id="book-participants" class="form-control" min="1" value="1"></div>
                     <div class="col">
-                        <label class="form-label">Số người tham gia</label>
-                        <input type="number" id="book-participants" class="form-control" min="1" value="1">
-                    </div>
-                    <div class="col">
-                        <label class="form-label">Mục đích sử dụng</label>
+                        <label class="form-label">Mục đích</label>
                         <select id="book-purpose" class="form-select">
-                            <option value="Thực hành/Học tập">Thực hành/Học tập</option>
-                            <option value="Nghiên cứu khoa học">Nghiên cứu khoa học</option>
+                            <option value="Thực hành/Học tập">Thực hành</option>
+                            <option value="Nghiên cứu">Nghiên cứu</option>
                             <option value="Giảng dạy">Giảng dạy</option>
                         </select>
                     </div>
                 </div>
 
-                <div class="mb-3">
-                    <label class="form-label">Ngày sử dụng</label>
-                    <input type="date" id="book-date" class="form-control">
-                </div>
+                <div class="mb-3"><label class="form-label">Ngày sử dụng</label><input type="date" id="book-date" class="form-control"></div>
                 <div class="row mb-3">
-                    <div class="col">
-                        <label class="form-label">Từ giờ</label>
-                        <input type="time" id="book-start" class="form-control">
-                    </div>
-                    <div class="col">
-                        <label class="form-label">Đến giờ</label>
-                        <input type="time" id="book-end" class="form-control">
-                    </div>
+                    <div class="col"><label class="form-label">Từ</label><input type="time" id="book-start" class="form-control"></div>
+                    <div class="col"><label class="form-label">Đến</label><input type="time" id="book-end" class="form-control"></div>
                 </div>
                 
                 <div class="alert alert-info mb-0" style="font-size: 0.85em; padding: 10px;">
-                    <i class="bi bi-info-circle-fill me-1"></i> <strong>Quy định thời gian:</strong><br>
-                    - Chỉ hoạt động từ <strong>Thứ 2 đến Thứ 6</strong>.<br>
-                    - Sáng: <strong>07:30 - 11:15</strong> | Chiều: <strong>13:30 - 17:00</strong>
+                    <i class="bi bi-info-circle-fill me-1"></i> <strong>Quy định:</strong> Thứ 2 - Thứ 6.<br> Sáng: <strong>07:30-11:15</strong> | Chiều: <strong>13:30-17:00</strong>
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
                 <button type="button" class="btn btn-primary" onclick="submitBooking()">Xác nhận gửi</button>
             </div>
         </div>
     </div>
 </div>
 
+<div class="modal fade" id="roomModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header"><h5 class="modal-title fw-bold">Thông tin Phòng Lab</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+            <div class="modal-body">
+                <input type="text" id="room-name-input" class="form-control mb-3" placeholder="Tên phòng (VD: Phòng K101)">
+                <input type="text" id="room-manager-input" class="form-control mb-3" placeholder="Cán bộ phụ trách">
+                <input type="text" id="room-location-input" class="form-control mb-3" placeholder="Vị trí (VD: Tòa nhà B)">
+            </div>
+            <div class="modal-footer"><button class="btn btn-primary" onclick="submitRoom()">Lưu Phòng</button></div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="machineModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header"><h5 class="modal-title fw-bold">Thông tin Thiết bị</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+            <div class="modal-body">
+                <input type="hidden" id="machine-room-id">
+                <input type="text" id="machine-name-input" class="form-control mb-3" placeholder="Tên máy (VD: Máy in 3D Resin)">
+                <textarea id="machine-specs-input" class="form-control mb-3" rows="2" placeholder="Thông số kỹ thuật / Đặc điểm"></textarea>
+                <textarea id="machine-guide-input" class="form-control mb-3" rows="2" placeholder="Hướng dẫn an toàn (nếu có)"></textarea>
+            </div>
+            <div class="modal-footer"><button class="btn btn-primary" onclick="submitMachine()">Lưu Thiết bị</button></div>
+        </div>
+    </div>
+</div>
+
 <script>
     // ==========================================
-    // PHẦN 1: CẤU HÌNH API
+    // PHẦN 1: CẤU HÌNH API (GIỮ NGUYÊN CỦA BẠN)
     // ==========================================
-    
-    // 1. Cấu hình Supabase
     const SUPABASE_URL = 'https://hhjulrrtmnywrbhtzlqv.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_tC-IcNRCd_myv8YaTMeaKg_IbS4XWeI';
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     
-    // 2. Cấu hình EmailJS (BẠN ĐIỀN SERVICE_ID VÀ TEMPLATE_ID VÀO ĐÂY NHÉ)
-    emailjs.init("f3eTdbEP6l_mNLeQX"); // Public Key bạn vừa cung cấp
+    emailjs.init("f3eTdbEP6l_mNLeQX"); 
     const EMAILJS_SERVICE_ID = "service_43o5xsl"; 
     const EMAILJS_TEMPLATE_ID = "template_smznstn"; 
 
-    // Biến toàn cục lưu thông tin user
     let currentUserProfile = null;
     let currentAuthUser = null; 
-    let bookingModalInstance = null;
-
-    // Danh sách phòng ảo
-    const LAB_DATA = {
-        "Phòng K101 (Xưởng Cơ Khí)": ["Máy phay CNC 01", "Máy tiện CNC 02", "Máy khoan cần"],
-        "Phòng C102 (Lab Tự Động Hóa)": ["Robot Cánh Tay ABB", "Bộ thực hành PLC S7-1200", "Băng chuyền phân loại"],
-        "Phòng AI (Khu Công Nghệ Cao)": ["Máy chủ AI Nvidia", "Máy in 3D Resin", "Trạm kiểm thử Camera QR"]
-    };
+    let bookingModalInstance, roomModalInstance, machineModalInstance;
 
     document.addEventListener("DOMContentLoaded", () => {
         bookingModalInstance = new bootstrap.Modal(document.getElementById('bookingModal'));
+        roomModalInstance = new bootstrap.Modal(document.getElementById('roomModal'));
+        machineModalInstance = new bootstrap.Modal(document.getElementById('machineModal'));
         checkSession();
     });
 
     // ==========================================
-    // PHẦN 2: XÁC THỰC NGƯỜI DÙNG (AUTH)
+    // PHẦN 2: XÁC THỰC NGƯỜI DÙNG
     // ==========================================
-
     async function handleLogin() {
         const email = document.getElementById('email').value;
         const password = document.getElementById('password').value;
@@ -240,7 +237,7 @@
             return;
         }
 
-        currentAuthUser = user; // Lưu lại để tí nữa lấy email tự động
+        currentAuthUser = user;
         document.getElementById('auth-view').classList.add('hidden');
         document.getElementById('main-nav').classList.remove('hidden');
 
@@ -249,7 +246,12 @@
         
         document.getElementById('nav-user-info').innerText = profile.is_admin ? "Quản trị viên" : `SV: ${profile.student_id}`;
 
-        renderRooms();
+        // Hiển thị các tính năng dành riêng cho Admin
+        if (profile.is_admin) {
+            document.querySelectorAll('.admin-only').forEach(el => el.classList.remove('hidden'));
+        }
+
+        fetchRooms(); // Load dữ liệu phòng từ Database
         showView('rooms-view');
     }
 
@@ -257,97 +259,80 @@
         document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
         document.getElementById(viewId).classList.remove('hidden');
     }
-    // Xóa bỏ biến LAB_DATA cũ và thay bằng các hàm lấy dữ liệu
-async function fetchRooms() {
-    const { data, error } = await _supabase.from('rooms').select('*');
-    if (error) return console.error(error);
-    
-    const list = document.getElementById('room-list');
-    const adminList = document.getElementById('admin-room-list');
-    
-    let html = '';
-    let adminHtml = '';
-    
-    data.forEach(room => {
-        // Giao diện cho Sinh viên chọn phòng
-        html += `
-            <div class="col-md-4 mb-4">
-                <div class="card card-room h-100 p-3" onclick="openRoom('${room.id}', '${room.room_name}')">
-                    <h5 class="fw-bold text-primary">${room.room_name}</h5>
-                    <p class="small text-muted mb-1"><i class="bi bi-person"></i> CB: ${room.manager_name || 'Chưa cập nhật'}</p>
-                    <p class="small text-muted mb-0"><i class="bi bi-geo-alt"></i> ${room.location || 'DUT'}</p>
-                </div>
-            </div>`;
+
+    // ==========================================
+    // PHẦN 3: RENDER PHÒNG & MÁY TỪ CSDL ĐỘNG
+    // ==========================================
+    async function fetchRooms() {
+        // Lấy danh sách phòng từ Database
+        const { data: rooms, error } = await _supabase.from('rooms').select('*').order('created_at', { ascending: true });
+        if (error) return console.error(error);
         
-        // Giao diện cho Admin quản lý
-        adminHtml += `
-            <div class="col-md-6 mb-3">
-                <div class="card p-3 shadow-sm border-0">
-                    <div class="d-flex justify-content-between">
-                        <h5 class="fw-bold">${room.room_name}</h5>
-                        <div>
-                            <button class="btn btn-sm btn-outline-primary" onclick="addMachineToRoom('${room.id}')"><i class="bi bi-plus"></i> Thêm máy</button>
-                            <button class="btn btn-sm btn-outline-danger" onclick="deleteRoom('${room.id}')"><i class="bi bi-trash"></i></button>
+        const list = document.getElementById('room-list');
+        const adminList = document.getElementById('admin-room-list');
+        
+        let html = '';
+        let adminHtml = '';
+        
+        rooms.forEach(room => {
+            // View cho Sinh Viên chọn phòng
+            html += `
+                <div class="col-md-4 mb-4">
+                    <div class="card card-room h-100 p-3" onclick="openRoom('${room.id}', '${room.room_name}')">
+                        <h5 class="fw-bold text-primary">${room.room_name}</h5>
+                        <p class="small text-muted mb-1"><i class="bi bi-person"></i> CB: ${room.manager_name || 'N/A'}</p>
+                        <p class="small text-muted mb-0"><i class="bi bi-geo-alt"></i> Vị trí: ${room.location || 'N/A'}</p>
+                    </div>
+                </div>`;
+            
+            // View cho Admin thiết lập thêm máy
+            adminHtml += `
+                <div class="col-md-6 mb-3">
+                    <div class="card p-3 shadow-sm border-0 border-start border-4 border-primary">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h5 class="fw-bold mb-1">${room.room_name}</h5>
+                                <small class="text-muted d-block"><i class="bi bi-person"></i> ${room.manager_name || 'N/A'}</small>
+                            </div>
+                            <div>
+                                <button class="btn btn-sm btn-success" onclick="addMachineToRoom('${room.id}')"><i class="bi bi-plus"></i> Thêm máy</button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="deleteRoom('${room.id}')"><i class="bi bi-trash"></i></button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            </div>`;
-    });
-    
-    list.innerHTML = html;
-    if(adminList) adminList.innerHTML = adminHtml;
-}
-
-// Hàm mở phòng sẽ lấy máy từ database thay vì biến cứng
-async function openRoom(roomId, roomName) {
-    document.getElementById('current-room-title').innerText = roomName;
-    showView('machines-view');
-    
-    const { data: machines, error } = await _supabase
-        .from('machines')
-        .select('*')
-        .eq('room_id', roomId);
-
-    const tbody = document.getElementById('machine-list');
-    // Logic render bảng máy tương tự như trước, nhưng dùng dữ liệu từ biến `machines`
-    // Bạn có thể hiển thị thêm cột "Hướng dẫn sử dụng" hoặc "Bảo trì" từ database ở đây.
-}
-
-    // ==========================================
-    // PHẦN 3: GIAO DIỆN PHÒNG VÀ MÁY
-    // ==========================================
-
-    function renderRooms() {
-        const list = document.getElementById('room-list');
-        list.innerHTML = Object.keys(LAB_DATA).map(room => `
-            <div class="col-md-4 mb-4">
-                <div class="card card-room h-100 p-3" onclick="openRoom('${room}')">
-                    <h5 class="fw-bold text-primary">${room}</h5>
-                    <p class="text-muted mb-0"><i class="bi bi-tools"></i> ${LAB_DATA[room].length} thiết bị</p>
-                </div>
-            </div>
-        `).join('');
+                </div>`;
+        });
+        
+        list.innerHTML = html || '<p class="text-muted">Chưa có phòng Lab nào trong hệ thống.</p>';
+        if(adminList) adminList.innerHTML = adminHtml || '<p class="text-muted">Nhấn nút "Thêm Phòng mới" ở trên.</p>';
     }
 
-    async function openRoom(roomName) {
+    async function openRoom(roomId, roomName) {
         document.getElementById('current-room-title').innerText = roomName;
         showView('machines-view');
         document.getElementById('machine-list').innerHTML = '<tr><td colspan="4" class="text-center">Đang tải dữ liệu...</td></tr>';
 
+        // Lấy danh sách MÁY thuôc PHÒNG này
+        const { data: machines } = await _supabase.from('machines').select('*').eq('room_id', roomId);
+        
+        // Lấy lịch sử đặt máy để kiểm tra trạng thái bận/rảnh
         const today = new Date().toISOString().split('T')[0];
-        const { data: bookings } = await _supabase
-            .from('bookings')
-            .select('*')
-            .eq('booking_date', today)
-            .eq('status', 'approved');
+        const { data: bookings } = await _supabase.from('bookings').select('*').eq('booking_date', today).eq('status', 'approved');
 
-        const machines = LAB_DATA[roomName];
         const now = new Date();
         const currentTime = now.toTimeString().substring(0, 5);
         let html = '';
 
+        if (!machines || machines.length === 0) {
+            document.getElementById('machine-list').innerHTML = '<tr><td colspan="4" class="text-center text-muted">Phòng này chưa có thiết bị nào.</td></tr>';
+            return;
+        }
+
         machines.forEach(machine => {
-            const machineBookings = (bookings || []).filter(b => b.machine_name.includes(machine));
+            const machineName = machine.machine_name;
+            const fullMachineName = `${roomName} - ${machineName}`;
+
+            const machineBookings = (bookings || []).filter(b => b.machine_name === fullMachineName);
             let currentBooking = machineBookings.find(b => b.start <= currentTime && b.end >= currentTime);
             let nextBookings = machineBookings.filter(b => b.start > currentTime).sort((a, b) => a.start.localeCompare(b.start));
             let nextBooking = nextBookings.length > 0 ? nextBookings[0] : null;
@@ -356,23 +341,27 @@ async function openRoom(roomId, roomName) {
             let nextHtml = '<span class="text-muted">Không có lịch</span>';
 
             if (currentBooking) {
-                statusHtml = `
-                    <span class="status-badge bg-busy">Đang bận</span><br>
-                    <small class="text-muted">SV: ${currentBooking.student_id}</small><br>
-                    <small class="text-danger">Tới ${currentBooking.end}</small>
-                `;
+                statusHtml = `<span class="status-badge bg-busy">Đang bận</span><br><small class="text-muted">SV: ${currentBooking.student_id}</small><br><small class="text-danger">Tới ${currentBooking.end}</small>`;
             }
-
             if (nextBooking) {
                 nextHtml = `<b>${nextBooking.start} - ${nextBooking.end}</b><br><small class="text-muted">SV: ${nextBooking.student_id}</small>`;
             }
 
+            // Giao diện Action (Admin có thêm nút xóa máy)
+            let actionBtn = `<button class="btn btn-sm btn-primary mb-1" onclick="openBookingModal('${roomName}', '${machineName}')">Đặt lịch</button>`;
+            if (currentUserProfile && currentUserProfile.is_admin) {
+                actionBtn += `<br><button class="btn btn-sm btn-outline-danger mt-1" onclick="deleteMachine('${machine.id}', '${roomId}')"><i class="bi bi-trash"></i> Xóa</button>`;
+            }
+
             html += `
                 <tr>
-                    <td class="fw-bold">${machine}</td>
+                    <td>
+                        <div class="fw-bold text-dark">${machineName}</div>
+                        ${machine.technical_specs ? `<small class="text-muted d-block">TSKT: ${machine.technical_specs}</small>` : ''}
+                    </td>
                     <td>${statusHtml}</td>
                     <td>${nextHtml}</td>
-                    <td><button class="btn btn-sm btn-primary" onclick="openBookingModal('${roomName}', '${machine}')">Đặt lịch</button></td>
+                    <td>${actionBtn}</td>
                 </tr>
             `;
         });
@@ -380,18 +369,75 @@ async function openRoom(roomId, roomName) {
     }
 
     // ==========================================
-    // PHẦN 4: CHỨC NĂNG ĐĂNG KÝ (SINH VIÊN)
+    // PHẦN 4: ADMIN THÊM/XÓA PHÒNG & MÁY
     // ==========================================
+    function openAddRoomModal() {
+        document.getElementById('room-name-input').value = '';
+        document.getElementById('room-manager-input').value = '';
+        document.getElementById('room-location-input').value = '';
+        roomModalInstance.show();
+    }
 
+    async function submitRoom() {
+        const name = document.getElementById('room-name-input').value;
+        const manager = document.getElementById('room-manager-input').value;
+        const loc = document.getElementById('room-location-input').value;
+        if(!name) return Swal.fire('Lỗi', 'Cần nhập tên phòng!', 'warning');
+
+        const { error } = await _supabase.from('rooms').insert([{ room_name: name, manager_name: manager, location: loc }]);
+        if(error) return Swal.fire('Lỗi Database', error.message, 'error');
+
+        roomModalInstance.hide();
+        Swal.fire('Thành công', 'Đã lưu phòng mới', 'success');
+        fetchRooms();
+    }
+
+    async function deleteRoom(id) {
+        if(confirm('CẢNH BÁO: Bạn có chắc muốn xóa phòng này? TOÀN BỘ MÁY BÊN TRONG CŨNG SẼ BỊ XÓA!')) {
+            await _supabase.from('rooms').delete().eq('id', id);
+            fetchRooms();
+        }
+    }
+
+    function addMachineToRoom(roomId) {
+        document.getElementById('machine-room-id').value = roomId;
+        document.getElementById('machine-name-input').value = '';
+        document.getElementById('machine-specs-input').value = '';
+        document.getElementById('machine-guide-input').value = '';
+        machineModalInstance.show();
+    }
+
+    async function submitMachine() {
+        const roomId = document.getElementById('machine-room-id').value;
+        const name = document.getElementById('machine-name-input').value;
+        const specs = document.getElementById('machine-specs-input').value;
+        const guide = document.getElementById('machine-guide-input').value;
+        if(!name) return Swal.fire('Lỗi', 'Cần nhập tên thiết bị!', 'warning');
+
+        const { error } = await _supabase.from('machines').insert([{ room_id: roomId, machine_name: name, technical_specs: specs, user_guide: guide }]);
+        if(error) return Swal.fire('Lỗi Database', error.message, 'error');
+
+        machineModalInstance.hide();
+        Swal.fire('Thành công', 'Đã lưu thiết bị mới', 'success');
+    }
+
+    async function deleteMachine(id, roomId) {
+        if(confirm('Bạn có chắc muốn xóa máy này?')) {
+            await _supabase.from('machines').delete().eq('id', id);
+            const currentRoomName = document.getElementById('current-room-title').innerText;
+            openRoom(roomId, currentRoomName); // Refresh lại bảng máy
+        }
+    }
+
+    // ==========================================
+    // PHẦN 5: ĐĂNG KÝ VÀ DUYỆT (GIỮ NGUYÊN)
+    // ==========================================
     function openBookingModal(room, machine) {
         document.getElementById('modal-machine-name').innerText = machine;
         document.getElementById('book-room').value = room;
-        
-        // Tự động điền (Và khóa ô không cho sửa đổi)
         document.getElementById('book-name').value = currentUserProfile.full_name || 'Không rõ';
         document.getElementById('book-mssv').value = currentUserProfile.student_id || 'Không rõ';
         document.getElementById('book-date').value = new Date().toISOString().split('T')[0];
-        
         bookingModalInstance.show();
     }
 
@@ -403,43 +449,23 @@ async function openRoom(roomId, roomName) {
         const date = document.getElementById('book-date').value;
         const start = document.getElementById('book-start').value;
         const end = document.getElementById('book-end').value;
-        
-        // Lấy thêm 2 dữ liệu mới
         const participants = document.getElementById('book-participants').value;
         const purpose = document.getElementById('book-purpose').value;
 
         if (!date || !start || !end) return Swal.fire('Lỗi', 'Vui lòng chọn ngày và giờ!', 'warning');
         if (start >= end) return Swal.fire('Lỗi', 'Giờ kết thúc phải sau giờ bắt đầu!', 'warning');
 
-        // --- BỘ LỌC 1: KIỂM TRA THỨ 2 -> THỨ 6 ---
         const selectedDate = new Date(date);
-        const dayOfWeek = selectedDate.getDay(); // 0 là Chủ nhật, 6 là Thứ 7
-        if (dayOfWeek === 0 || dayOfWeek === 6) {
-            return Swal.fire('Ngoài giờ hành chính', 'Phòng thí nghiệm chỉ mở cửa từ Thứ 2 đến Thứ 6!', 'error');
-        }
+        const dayOfWeek = selectedDate.getDay();
+        if (dayOfWeek === 0 || dayOfWeek === 6) return Swal.fire('Ngoài giờ', 'Phòng chỉ mở cửa Thứ 2 - Thứ 6!', 'error');
 
-        // --- BỘ LỌC 2: KIỂM TRA KHUNG GIỜ SÁNG/CHIỀU ---
-        // Ép kiểu giờ về chuỗi để so sánh chuẩn xác (VD: "07:30")
         const isMorning = (start >= "07:30" && end <= "11:15");
         const isAfternoon = (start >= "13:30" && end <= "17:00");
-
-        if (!isMorning && !isAfternoon) {
-            return Swal.fire(
-                'Sai khung giờ quy định', 
-                'Chỉ được đăng ký trong ca Sáng (07:30-11:15) hoặc ca Chiều (13:30-17:00). Không đăng ký xuyên trưa hoặc ngoài giờ.', 
-                'error'
-            );
-        }
+        if (!isMorning && !isAfternoon) return Swal.fire('Sai giờ', 'Chỉ đăng ký ca Sáng (07:30-11:15) hoặc Chiều (13:30-17:00).', 'error');
 
         Swal.fire({ title: 'Đang kiểm tra trùng lịch...', didOpen: () => Swal.showLoading() });
-
         const fullMachineName = `${room} - ${machine}`;
-        const { data: existing } = await _supabase
-            .from('bookings')
-            .select('start, end, status')
-            .eq('machine_name', fullMachineName)
-            .eq('booking_date', date)
-            .neq('status', 'rejected');
+        const { data: existing } = await _supabase.from('bookings').select('start, end, status').eq('machine_name', fullMachineName).eq('booking_date', date).neq('status', 'rejected');
 
         let isOverlap = false;
         if (existing) {
@@ -447,43 +473,29 @@ async function openRoom(roomId, roomName) {
                 if (start < b.end && end > b.start) { isOverlap = true; break; }
             }
         }
+        if (isOverlap) return Swal.fire('Trùng lịch!', 'Khung giờ này đã có người đăng ký.', 'error');
 
-        if (isOverlap) return Swal.fire('Trùng lịch!', 'Máy này đã có người đăng ký trong khung giờ bạn chọn.', 'error');
-
-        // BẮT ĐẦU CHÈN DB VỚI 2 CỘT MỚI
         const { error } = await _supabase.from('bookings').insert([{
-            user_id: currentUserProfile.id,
-            full_name: name,
-            student_id: mssv,
-            email: currentUserEmail,
-            machine_name: fullMachineName,
-            booking_date: date,
-            start: start,
-            end: end,
-            participants: participants, // Lưu số người
-            purpose: purpose,           // Lưu mục đích
-            status: 'pending'
+            user_id: currentUserProfile.id, full_name: name, student_id: mssv, email: currentAuthUser.email,
+            machine_name: fullMachineName, booking_date: date, start: start, end: end,
+            participants: participants, purpose: purpose, status: 'pending'
         }]);
 
-        if (error) {
-            Swal.fire('Lỗi server', error.message, 'error');
-        } else {
+        if (error) Swal.fire('Lỗi', error.message, 'error');
+        else {
             bookingModalInstance.hide();
-            Swal.fire('Thành công', 'Đã gửi yêu cầu, vui lòng chờ duyệt!', 'success');
-            openRoom(room);
+            Swal.fire('Thành công', 'Đã gửi yêu cầu!', 'success');
+            // Refresh lại bảng máy
+            const { data: currentRoom } = await _supabase.from('rooms').select('id').eq('room_name', room).single();
+            if(currentRoom) openRoom(currentRoom.id, room);
         }
     }
 
-    // ==========================================
-    // PHẦN 5: CHỨC NĂNG DUYỆT & GỬI EMAIL (ADMIN)
-    // ==========================================
-
     async function loadHistoryView() {
         showView('history-view');
-        document.getElementById('history-list').innerHTML = '<tr><td colspan="5" class="text-center">Đang tải...</td></tr>';
+        document.getElementById('history-list').innerHTML = '<tr><td colspan="6" class="text-center">Đang tải...</td></tr>';
         
         let query = _supabase.from('bookings').select('*').order('created_at', { ascending: false });
-        
         if (!currentUserProfile.is_admin) {
             query = query.eq('user_id', currentUserProfile.id);
             document.getElementById('history-title').innerText = "Lịch sử đăng ký của tôi";
@@ -502,57 +514,44 @@ async function openRoom(roomId, roomName) {
             const statusText = b.status === 'approved' ? 'Đã duyệt' : (b.status === 'pending' ? 'Chờ duyệt' : 'Từ chối');
             
             let actionBtn = '';
-            // NẾU LÀ ADMIN, TẠO NÚT "DUYỆT & GỬI QR" CÓ TRUYỀN THÊM EMAIL
             if (currentUserProfile.is_admin && b.status === 'pending') {
                 const userEmail = b.email ? b.email : '';
-                actionBtn = `<button class="btn btn-sm btn-success" onclick="approveBooking('${b.id}', '${userEmail}', '${b.machine_name}', '${b.qr_token}')"><i class="bi bi-envelope-check"></i> Duyệt & Gửi QR</button>`;
+                actionBtn = `<button class="btn btn-sm btn-success" onclick="approveBooking('${b.id}', '${userEmail}', '${b.machine_name}', '${b.qr_token}')"><i class="bi bi-envelope-check"></i> Duyệt</button>`;
             }
 
             html += `
                 <tr>
                     <td><b>${b.full_name || 'SV'}</b><br><small>${b.student_id}</small></td>
                     <td>${b.machine_name}</td>
-                    <td>${b.booking_date} | ${b.start} - ${b.end}</td>
+                    <td><span class="badge bg-secondary">${b.purpose || 'N/A'}</span><br><small>${b.participants || 1} người</small></td>
+                    <td>${b.booking_date}<br><small class="text-primary fw-bold">${b.start} - ${b.end}</small></td>
                     <td><span class="status-badge ${statusColor}">${statusText}</span></td>
                     <td class="${currentUserProfile.is_admin ? '' : 'hidden'}">${actionBtn}</td>
                 </tr>
             `;
         });
-        
-        document.getElementById('history-list').innerHTML = data.length ? html : '<tr><td colspan="5" class="text-center">Không có dữ liệu</td></tr>';
+        document.getElementById('history-list').innerHTML = data.length ? html : '<tr><td colspan="6" class="text-center">Không có dữ liệu</td></tr>';
     }
 
     async function approveBooking(id, studentEmail, machineName, qrToken) {
-        Swal.fire({ title: 'Đang phê duyệt và gửi Email...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-
-        // 1. Đổi trạng thái trong Supabase
+        Swal.fire({ title: 'Đang phê duyệt...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
         const { error } = await _supabase.from('bookings').update({ status: 'approved' }).eq('id', id);
         if (error) return Swal.fire('Lỗi Database', error.message, 'error');
 
-        // 2. Gửi Email nếu có địa chỉ mail
         if (studentEmail && EMAILJS_SERVICE_ID !== "f3eTdbEP6l_mNLeQX") {
             const qrImageLink = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${qrToken}`;
-            
-            // Thông số truyền vào Template EmailJS
-            const templateParams = {
-                to_email: studentEmail,
-                machine: machineName,
-                qr_link: qrImageLink
-            };
+            const templateParams = { to_email: studentEmail, machine: machineName, qr_link: qrImageLink };
 
             emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams)
                 .then(function() {
-                    Swal.fire('Thành công!', 'Đã duyệt và gửi mã QR thành công đến email sinh viên.', 'success');
+                    Swal.fire('Thành công!', 'Đã duyệt và gửi mã QR.', 'success');
                     loadHistoryView();
-                })
-                .catch(function(err) {
-                    console.error("Lỗi EmailJS:", err);
-                    Swal.fire('Cảnh báo', 'Đã duyệt trong hệ thống nhưng việc gửi email bị lỗi. Vui lòng kiểm tra lại EmailJS.', 'warning');
+                }).catch(function() {
+                    Swal.fire('Cảnh báo', 'Duyệt thành công nhưng gửi Email thất bại.', 'warning');
                     loadHistoryView();
                 });
         } else {
-            // Trường hợp bạn chưa cấu hình Service ID hoặc SV cũ không có email
-            Swal.fire('Đã duyệt!', 'Bản ghi đã được duyệt (Không có email hoặc chưa cấu hình EmailJS).', 'success');
+            Swal.fire('Đã duyệt!', 'Bản ghi đã duyệt.', 'success');
             loadHistoryView();
         }
     }
