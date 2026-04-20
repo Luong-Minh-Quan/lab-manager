@@ -257,6 +257,61 @@
         document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
         document.getElementById(viewId).classList.remove('hidden');
     }
+    // Xóa bỏ biến LAB_DATA cũ và thay bằng các hàm lấy dữ liệu
+async function fetchRooms() {
+    const { data, error } = await _supabase.from('rooms').select('*');
+    if (error) return console.error(error);
+    
+    const list = document.getElementById('room-list');
+    const adminList = document.getElementById('admin-room-list');
+    
+    let html = '';
+    let adminHtml = '';
+    
+    data.forEach(room => {
+        // Giao diện cho Sinh viên chọn phòng
+        html += `
+            <div class="col-md-4 mb-4">
+                <div class="card card-room h-100 p-3" onclick="openRoom('${room.id}', '${room.room_name}')">
+                    <h5 class="fw-bold text-primary">${room.room_name}</h5>
+                    <p class="small text-muted mb-1"><i class="bi bi-person"></i> CB: ${room.manager_name || 'Chưa cập nhật'}</p>
+                    <p class="small text-muted mb-0"><i class="bi bi-geo-alt"></i> ${room.location || 'DUT'}</p>
+                </div>
+            </div>`;
+        
+        // Giao diện cho Admin quản lý
+        adminHtml += `
+            <div class="col-md-6 mb-3">
+                <div class="card p-3 shadow-sm border-0">
+                    <div class="d-flex justify-content-between">
+                        <h5 class="fw-bold">${room.room_name}</h5>
+                        <div>
+                            <button class="btn btn-sm btn-outline-primary" onclick="addMachineToRoom('${room.id}')"><i class="bi bi-plus"></i> Thêm máy</button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteRoom('${room.id}')"><i class="bi bi-trash"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+    });
+    
+    list.innerHTML = html;
+    if(adminList) adminList.innerHTML = adminHtml;
+}
+
+// Hàm mở phòng sẽ lấy máy từ database thay vì biến cứng
+async function openRoom(roomId, roomName) {
+    document.getElementById('current-room-title').innerText = roomName;
+    showView('machines-view');
+    
+    const { data: machines, error } = await _supabase
+        .from('machines')
+        .select('*')
+        .eq('room_id', roomId);
+
+    const tbody = document.getElementById('machine-list');
+    // Logic render bảng máy tương tự như trước, nhưng dùng dữ liệu từ biến `machines`
+    // Bạn có thể hiển thị thêm cột "Hướng dẫn sử dụng" hoặc "Bảo trì" từ database ở đây.
+}
 
     // ==========================================
     // PHẦN 3: GIAO DIỆN PHÒNG VÀ MÁY
