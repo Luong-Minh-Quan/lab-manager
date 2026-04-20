@@ -107,25 +107,44 @@
     }
 
     async function checkSession() {
-        const { data: { user } } = await _supabase.auth.getUser();
-        if (!user) return;
+    const { data: { user } } = await _supabase.auth.getUser();
+    if (!user) return;
 
-        document.getElementById('auth-box').classList.add('d-none');
-        document.getElementById('app-box').classList.remove('d-none');
+    // Hiển thị khung ứng dụng
+    const appBox = document.getElementById('app-box');
+    appBox.classList.remove('d-none');
+    appBox.classList.remove('hidden'); // Xóa cả lớp hidden nếu còn
 
-        const { data: profile } = await _supabase.from('profiles').select('*').eq('id', user.id).single();
-        document.getElementById('user-info').innerText = `Chào: ${profile.student_id || 'Admin'}`;
+    // Lấy thông tin Profile
+    const { data: profile, error } = await _supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
 
-        if (profile.is_admin) {
-            document.getElementById('user-role').innerText = "Quyền hạn: Quản lý phòng Lab";
-            document.getElementById('list-container').className = "col-12"; // Admin xem bảng rộng
-            loadAdminPanel();
-        } else {
-            document.getElementById('user-role').innerText = `Sinh viên khoa Cơ khí - MSSV: ${profile.student_id}`;
-            document.getElementById('student-view').classList.remove('d-none');
-            loadStudentBookings(user.id);
-        }
+    if (error || !profile) {
+        console.error("Lỗi lấy profile:", error);
+        document.getElementById('user-role').innerText = "Lỗi xác định quyền. Hãy kiểm tra RLS!";
+        return;
     }
+
+    document.getElementById('user-info').innerText = `Chào: ${profile.student_id || 'Admin'}`;
+
+    if (profile.is_admin) {
+        document.getElementById('user-role').innerText = "Quyền hạn: Quản lý phòng Lab";
+        document.getElementById('list-container').className = "col-12";
+        loadAdminPanel();
+    } else {
+        document.getElementById('user-role').innerText = `Sinh viên khoa Cơ khí - MSSV: ${profile.student_id}`;
+        
+        // HIỂN THỊ FORM ĐĂNG KÝ CHO SINH VIÊN
+        const studentView = document.getElementById('student-view');
+        studentView.classList.remove('d-none');
+        studentView.classList.remove('hidden');
+        
+        loadStudentBookings(user.id);
+    }
+}
 
     async function submitBooking() {
         const { data: { user } } = await _supabase.auth.getUser();
