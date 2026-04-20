@@ -1,19 +1,41 @@
-// Kết nối với Supabase (Sử dụng API Key bạn lấy từ cài đặt Supabase)
-const supabase = supabase.createClient('URL_CUA_BAN', 'ANON_KEY_CUA_BAN')
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-// Hàm Đăng ký
-async function signUp(email, password) {
-  const { data, error } = await supabase.auth.signUp({ email, password })
-  if (error) alert("Lỗi: " + error.message)
-  else alert("Kiểm tra email để xác nhận tài khoản!")
-}
+<div id="registration-form">
+    <h2>Đăng ký sử dụng Lab</h2>
+    <input type="text" id="fullName" placeholder="Họ và tên">
+    <input type="text" id="studentId" placeholder="Mã số sinh viên">
+    <input type="date" id="bookingDate">
+    <button onclick="handleBooking()">Gửi đăng ký</button>
+</div>
 
-// Hàm Đăng ký sử dụng phòng Lab
-async function bookLab(labName, date) {
-  const { data, error } = await supabase
-    .from('bookings')
-    .insert([{ lab_name: labName, booking_date: date }])
-  
-  if (error) alert("Không thể đăng ký!")
-  else alert("Đăng ký phòng Lab thành công!")
-}
+<script>
+    // 1. Cấu hình kết nối (Lấy URL và Anon Key trong phần Project Settings của Supabase)
+    const SUBAPASE_URL = 'https://YOUR_PROJECT_ID.supabase.co';
+    const SUPABASE_KEY = 'YOUR_ANON_KEY';
+    const supabase = supabase.createClient(SUBAPASE_URL, SUPABASE_KEY);
+
+    // 2. Hàm xử lý khi nhấn nút "Gửi đăng ký"
+    async function handleBooking() {
+        const name = document.getElementById('fullName').value;
+        const sId = document.getElementById('studentId').value;
+        const date = document.getElementById('bookingDate').value;
+
+        const { data, error } = await supabase
+            .from('bookings')
+            .insert([
+                { 
+                    full_name: name, 
+                    student_id: sId, 
+                    booking_date: date,
+                    status: 'pending' 
+                }
+            ]);
+
+        if (error) {
+            console.error(error);
+            alert("Lỗi khi đăng ký: " + error.message);
+        } else {
+            alert("Đăng ký thành công! Hãy chờ quản lý phê duyệt.");
+        }
+    }
+</script>
