@@ -522,18 +522,14 @@
 
     async function loadHistoryView() {
         showView('history-view');
-        document.getElementById('history-list').innerHTML = '<tr><td colspan="7" class="text-center">Đang tải...</td></tr>';
+        document.getElementById('history-list').innerHTML = '<tr><td colspan="6" class="text-center">Đang tải dữ liệu...</td></tr>';
         
         let query = _supabase.from('bookings').select('*').order('created_at', { ascending: false });
         if (!currentUserProfile.is_admin) {
             query = query.eq('user_id', currentUserProfile.id);
             document.getElementById('history-title').innerText = "Nhật ký số của tôi";
-            document.getElementById('admin-action-col').innerText = "Báo cáo";
-            document.getElementById('admin-action-col').classList.remove('hidden');
         } else {
             document.getElementById('history-title').innerText = "Quản lý toàn bộ yêu cầu & Nhật ký";
-            document.getElementById('admin-action-col').innerText = "Hành động";
-            document.getElementById('admin-action-col').classList.remove('hidden');
         }
 
         const { data, error } = await query;
@@ -542,37 +538,54 @@
         let html = '';
         data.forEach(b => {
             const statusColor = b.status === 'approved' ? 'bg-free' : (b.status === 'pending' ? 'bg-waiting' : 'bg-busy');
+            const statusText = b.status === 'approved' ? 'Đã duyệt' : (b.status === 'pending' ? 'Chờ duyệt' : 'Từ chối');
             
-            // Dữ liệu từ ESP32 bắn lên
+            // Xử lý dữ liệu từ ESP32 (Thời gian và Điện năng)
             const checkIn = b.check_in_time ? b.check_in_time.substring(0,5) : '--:--';
             const checkOut = b.check_out_time ? b.check_out_time.substring(0,5) : '--:--';
-            const power = b.power_usage ? `${b.power_usage} kWh` : '0 kWh';
+            const power = b.power_usage ? b.power_usage : 0;
             
-            // Hiển thị tình trạng máy (Nếu đã báo cáo)
-            let conditionHtml = '';
+            // Xử lý hiển thị Tình trạng & Ghi chú (Nhật ký)
+            let conditionHtml = '<span class="text-muted small">Chưa báo cáo</span>';
             if (b.machine_condition) {
                 const color = b.machine_condition === 'Tốt' ? 'text-success' : 'text-danger';
-                conditionHtml = `<br><small class="${color} fw-bold"><i class="bi bi-gear-fill"></i> ${b.machine_condition}</small>`;
+                // Nếu có ghi chú thì hiển thị ra luôn cho Admin đọc
+                const note = b.condition_note ? `<br><small class="text-muted"><i>Lỗi: ${b.condition_note}</i></small>` : '';
+                conditionHtml = `<span class="${color} fw-bold"><i class="bi bi-gear-fill"></i> ${b.machine_condition}</span>${note}`;
             }
 
             let actionBtn = '';
-            // NẾU LÀ ADMIN: Nút Duyệt
-            if (currentUserProfile.is_admin && b.status === 'pending') {
-                const userEmail = b.email ? b.email : '';
-                actionBtn = `<button class="btn btn-sm btn-success" onclick="approveBooking('${b.id}', '${userEmail}', '${b.machine_name}', '${b.qr_token}')">Duyệt & Gửi QR</button>`;
-            }
-            // NẾU LÀ SINH VIÊN: Nút Báo cáo (Chỉ hiện khi đã được duyệt và chưa báo cáo)
-            else if (!currentUserProfile.is_admin && b.status === 'approved' && !b.machine_condition) {
-                actionBtn = `<button class="btn btn-sm btn-outline-primary" onclick="openReportModal('${b.id}', '${b.machine_name}')">Khai báo trả máy</button>`;
+            // NẾU LÀ ADMIN
+            if (currentUserProfile.is_admin) {
+                if (b.status === 'pending') {
+                    const userEmail = b.email ? b.email : '';
+                    actionBtn = `<button class="btn btn-sm btn-success" onclick="approveBooking('${b.id}', '${userEmail}', '${b.machine_name}', '${b.qr_token}')"><i class="bi bi-envelope-check"></i> Duyệt</button>`;
+                } else {
+                    actionBtn = `<span class="text-muted small">Đã xử lý</span>`; // Lấp đầy cột trống
+                }
+            } 
+            // NẾU LÀ SINH VIÊN
+            else {
+                if (b.status === 'approved' && !b.machine_condition) {
+                    actionBtn = `<button class="btn btn-sm btn-outline-primary" onclick="openReportModal('${b.id}', '${b.machine_name}')">Khai báo trả máy</button>`;
+                } else if (b.machine_condition) {
+                    actionBtn = `<span class="text-success small"><i class="bi bi-check-circle"></i> Đã báo cáo</span>`; // Lấp đầy cột trống
+                }
             }
 
             html += `
                 <tr>
                     <td><b>${b.full_name || 'SV'}</b><br><small>${b.student_id}</small></td>
-                    <td>${b.machine_name} ${conditionHtml}</td>
-                    <td>Ca: <span class="text-primary fw-bold">${b.start} - ${b.end}</span><br><small>Vào: ${checkIn} | Ra: ${checkOut}</small></td>
-                    <td><span class="badge bg-warning text-dark"><i class="bi bi-lightning-charge-fill"></i> ${power}</span></td>
-                    <td><span class="status-badge ${statusColor}">${b.status}</span></td>
+                    <td>${b.machine_name}<br><span class="badge bg-secondary">${b.purpose || 'N/A'}</span> <small>${b.participants || 1} người</small></td>
+                    <td>
+                        Ca: <span class="text-primary fw-bold">${b.start} - ${b.end}</span><br>
+                        <small class="text-muted">Vào: <b>${checkIn}</b> | Ra: <b>${checkOut}</b></small>
+                    </td>
+                    <td>
+                        <span class="badge bg-warning text-dark mb-1"><i class="bi bi-lightning-charge-fill"></i> ${power} kWh</span><br>
+                        ${conditionHtml}
+                    </td>
+                    <td><span class="status-badge ${statusColor}">${statusText}</span></td>
                     <td>${actionBtn}</td>
                 </tr>
             `;
