@@ -1,18 +1,10 @@
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-<div id="registration-form">
-    <h2>Đăng ký sử dụng Lab</h2>
-    <input type="text" id="fullName" placeholder="Họ và tên">
-    <input type="text" id="studentId" placeholder="Mã số sinh viên">
-    <input type="date" id="bookingDate">
-    <button onclick="handleBooking()">Gửi đăng ký</button>
-</div>
-
 <script>
-    // 1. Cấu hình kết nối (Lấy URL và Anon Key trong phần Project Settings của Supabase)
+    // 1. Cấu hình kết nối - Đổi tên biến thành _supabase để không trùng với thư viện
     const SUBAPASE_URL = 'https://hhjulrrtmnywrbhtzlqv.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_tC-IcNRCd_myv8YaTMeaKg_IbS4XWeI';
-    const supabase = supabase.createClient(SUBAPASE_URL, SUPABASE_KEY);
+    
+    // Lưu ý: Tên thư viện là 'supabase', còn biến của chúng ta là '_supabase'
+    const _supabase = supabase.createClient(SUBAPASE_URL, SUPABASE_KEY);
 
     // 2. Hàm xử lý khi nhấn nút "Gửi đăng ký"
     async function handleBooking() {
@@ -20,7 +12,13 @@
         const sId = document.getElementById('studentId').value;
         const date = document.getElementById('bookingDate').value;
 
-        const { data, error } = await supabase
+        // Kiểm tra xem đã nhập đủ chưa
+        if (!name || !sId || !date) {
+            alert("Vui lòng điền đầy đủ thông tin!");
+            return;
+        }
+
+        const { data, error } = await _supabase // Sử dụng tên biến mới ở đây
             .from('bookings')
             .insert([
                 { 
@@ -32,10 +30,14 @@
             ]);
 
         if (error) {
-            console.error(error);
+            console.error("Lỗi chi tiết:", error);
             alert("Lỗi khi đăng ký: " + error.message);
         } else {
-            alert("Đăng ký thành công! Hãy chờ quản lý phê duyệt.");
+            alert("Đăng ký thành công! Dữ liệu đã được gửi về hệ thống.");
+            // Xóa dữ liệu cũ trong ô nhập sau khi gửi xong
+            document.getElementById('fullName').value = "";
+            document.getElementById('studentId').value = "";
+            document.getElementById('bookingDate').value = "";
         }
     }
 </script>
