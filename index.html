@@ -1,29 +1,145 @@
-<div id="registration-form">
-    <h2>Đăng ký sử dụng Lab</h2>
-    <input type="text" id="fullName" placeholder="Họ và tên">
-    <input type="text" id="studentId" placeholder="Mã số sinh viên">
-    
-    <label>Loại máy:</label>
-    <select id="machineName">
-        <option value="">-- Chọn máy --</option>
-        <option value="Máy CNC 01">Máy CNC 01</option>
-        <option value="Máy CNC 02">Máy CNC 02</option>
-        <option value="Máy in 3D">Máy in 3D</option>
-        <option value="Bộ thực hành PLC">Bộ thực hành PLC</option>
-    </select>
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Hệ thống Quản lý Lab</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        .hidden { display: none; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f4f4f4; }
+        .btn-approve { background-color: #28a745; color: white; border: none; padding: 5px 10px; cursor: pointer; }
+    </style>
+</head>
+<body>
 
-    <br><br>
-    <label>Ngày:</label>
-    <input type="date" id="bookingDate">
-    
-    <label>Từ:</label>
-    <input type="time" id="startTime">
-    <label>Đến:</label>
-    <input type="time" id="endTime">
-    
-    <br><br>
-    <button onclick="handleBooking()">Gửi đăng ký</button>
-</div>
+    <div id="auth-section">
+        <h2>Đăng nhập hệ thống</h2>
+        <input type="email" id="email" placeholder="Email">
+        <input type="password" id="password" placeholder="Mật khẩu">
+        <button onclick="handleLogin()">Đăng nhập</button>
+        <button onclick="handleSignUp()">Đăng ký tài khoản mới</button>
+    </div>
+
+    <div id="main-app" class="hidden">
+        <h2 id="welcome-msg">Chào mừng!</h2>
+        <button onclick="handleLogout()">Đăng xuất</button>
+        <hr>
+
+        <div id="student-view" class="hidden">
+            <h3>Đăng ký mượn máy</h3>
+            <input type="text" id="machineName" placeholder="Tên máy (VD: CNC 01)">
+            <input type="date" id="bookingDate">
+            <button onclick="submitBooking()">Gửi yêu cầu</button>
+            
+            <h3>Lịch sử đăng ký của bạn</h3>
+            <div id="my-bookings"></div>
+        </div>
+
+        <div id="admin-view" class="hidden">
+            <h3>Danh sách chờ phê duyệt</h3>
+            <table id="pending-table">
+                <thead>
+                    <tr>
+                        <th>Người đăng ký</th>
+                        <th>Máy</th>
+                        <th>Ngày</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody id="pending-list"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://hhjulrrtmnywrbhtzlqv.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_tC-IcNRCd_myv8YaTMeaKg_IbS4XWeI';
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // --- HÀM XÁC THỰC ---
+        async function handleLogin() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const { data, error } = await _supabase.auth.signInWithPassword({ email, password });
+            if (error) alert(error.message);
+            else checkUserRole(data.user);
+        }
+
+        async function handleSignUp() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const { data, error } = await _supabase.auth.signUp({ email, password });
+            if (error) alert("Lỗi đăng ký: " + error.message);
+            else alert("Đăng ký thành công! Hãy kiểm tra email.");
+        }
+
+        async function handleLogout() {
+            await _supabase.auth.signOut();
+            location.reload();
+        }
+
+        // --- PHÂN QUYỀN ---
+        async function checkUserRole(user) {
+            document.getElementById('auth-section').classList.add('hidden');
+            document.getElementById('main-app').classList.remove('hidden');
+
+            // Lấy thông tin role từ bảng profiles
+            const { data: profile } = await _supabase
+                .from('profiles')
+                .select('is_admin')
+                .eq('id', user.id)
+                .single();
+
+            if (profile && profile.is_admin) {
+                document.getElementById('admin-view').classList.remove('hidden');
+                loadPendingBookings();
+            } else {
+                document.getElementById('student-view').classList.remove('hidden');
+                loadMyBookings(user.id);
+            }
+        }
+
+        // --- LOGIC ADMIN: PHÊ DUYỆT ---
+        async function loadPendingBookings() {
+            const { data } = await _supabase
+                .from('bookings')
+                .select('*')
+                .eq('status', 'pending');
+            
+            const list = document.getElementById('pending-list');
+            list.innerHTML = data.map(item => `
+                <tr>
+                    <td>${item.full_name}</td>
+                    <td>${item.machine_name}</td>
+                    <td>${item.booking_date}</td>
+                    <td><button class="btn-approve" onclick="approveBooking(${item.id})">Phê duyệt</button></td>
+                </tr>
+            `).join('');
+        }
+
+        async function approveBooking(id) {
+            const { error } = await _supabase
+                .from('bookings')
+                .update({ status: 'approved' })
+                .eq('id', id);
+            
+            if (error) alert("Lỗi!");
+            else {
+                alert("Đã phê duyệt!");
+                loadPendingBookings(); // Tải lại danh sách
+            }
+        }
+
+        // Tự động kiểm tra nếu đã đăng nhập từ trước
+        _supabase.auth.getUser().then(({data}) => {
+            if(data.user) checkUserRole(data.user);
+        });
+    </script>
+</body>
+</html>
 <script>
     const SUPABASE_URL = 'https://hhjulrrtmnywrbhtzlqv.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_tC-IcNRCd_myv8YaTMeaKg_IbS4XWeI';
