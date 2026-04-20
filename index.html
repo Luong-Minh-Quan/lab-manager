@@ -1,3 +1,12 @@
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<div id="registration-form">
+    <h2>Đăng ký sử dụng Lab</h2>
+    <input type="text" id="fullName" placeholder="Họ và tên">
+    <input type="text" id="studentId" placeholder="Mã số sinh viên">
+    <input type="date" id="bookingDate">
+    <button onclick="handleBooking()">Gửi đăng ký</button>
+</div>
 <script>
     // 1. Cấu hình kết nối - Đổi tên biến thành _supabase để không trùng với thư viện
     const SUBAPASE_URL = 'https://hhjulrrtmnywrbhtzlqv.supabase.co';
