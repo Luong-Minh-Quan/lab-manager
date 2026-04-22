@@ -95,7 +95,7 @@
                        
                         <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item" href="#" onclick="loadHistoryView()">Lịch đã đăng ký</a></li>
-                        <li><a class="dropdown-item" href="#">Lịch trống</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="showAvailableSchedule()">Lịch trống</a></li>
                         <li><a class="dropdown-item" href="#">Mã QR của tôi</a></li>
                         <li><a class="dropdown-item" href="#" onclick="loadHistoryView()">Lịch sử sử dụng</a></li>
                     </ul>
@@ -618,8 +618,8 @@
                 <td><span class="badge ${statusClass}">${statusText}</span></td>
                 <td>
                     <div class="btn-group">
-                        <button class="btn btn-sm btn-outline-primary" onclick="viewRoomDetails('${room.id}', '${room.room_name}')" title="Xem chi tiết thiết bị">
-                            <i class="bi bi-search"></i>
+                        <button class="btn btn-sm btn-outline-primary" onclick="viewRoomDetails('${room.id}', '${room.room_code}', '${room.room_name}')" title="Xem chi tiết thiết bị">
+                        <i class="bi bi-search"></i>
                         </button>
                         ${isStaff ? `
                             <button class="btn btn-sm btn-outline-warning" onclick="remoteOpenDoor('${room.room_code}')" title="Mở cửa từ xa">
@@ -628,7 +628,6 @@
                             <button class="btn btn-sm btn-outline-danger" onclick="viewPowerRealtime('${room.room_code}')" title="Xem điện năng">
                                 <i class="bi bi-lightning-charge"></i>
                             </button>
-                            <button class="btn btn-sm btn-primary" onclick="openBookingModal('${roomCode}', '${m.machine_name}')">Đặt</button>
                         ` : ''}
                     </div>
                 </td>
@@ -638,53 +637,41 @@
 
     tbody.innerHTML = html || '<tr><td colspan="6" class="text-center p-4 text-muted">Chưa có dữ liệu phòng thí nghiệm.</td></tr>';
 }
-async function viewRoomDetails(roomId, roomName) {
-    Swal.fire({
-        title: `Đang tải thiết bị tại ${roomName}...`,
-        didOpen: () => Swal.showLoading()
-    });
+async function viewRoomDetails(roomId, roomCode, roomName) {
+    Swal.fire({ title: `Đang tải thiết bị...`, didOpen: () => Swal.showLoading() });
 
-    // Truy vấn các máy có room_id khớp với phòng vừa chọn
-    const { data: machines, error } = await _supabase
-        .from('machines')
-        .select('*')
-        .eq('room_id', roomId);
-
+    const { data: machines, error } = await _supabase.from('machines').select('*').eq('room_id', roomId);
     Swal.close();
-
     if (error) return Swal.fire('Lỗi', error.message, 'error');
 
-    // Tạo nội dung hiển thị danh sách máy
     let machineListHtml = machines.length > 0 ? `
         <div class="table-responsive">
-            <table class="table table-sm text-start">
+            <table class="table table-sm text-start align-middle">
                 <thead>
                     <tr class="table-light">
                         <th>Tên máy</th>
-                        <th>Thông số</th>
                         <th>Trạng thái</th>
+                        <th>Hành động</th>
                     </tr>
                 </thead>
                 <tbody>
                     ${machines.map(m => `
                         <tr>
-                            <td><b>${m.machine_name}</b></td>
-                            <td><small>${m.technical_specs || 'N/A'}</small></td>
-                            <td><span class="badge ${m.status === 'available' ? 'bg-info' : 'bg-danger'}">${m.status}</span></td>
+                            <td><b>${m.machine_name}</b><br><small class="text-muted">${m.technical_specs || ''}</small></td>
+                            <td><span class="badge ${m.status === 'available' ? 'bg-success' : 'bg-danger'}">${m.status === 'available' ? 'Sẵn sàng' : 'Bảo trì'}</span></td>
+                            <td>
+                                ${m.status === 'available' ? 
+                                `<button class="btn btn-sm btn-primary fw-bold" onclick="Swal.close(); openBookingModal('${roomCode}', '${m.machine_name}')">Đặt lịch</button>` 
+                                : '<button class="btn btn-sm btn-secondary" disabled>Bảo trì</button>'}
+                            </td>
                         </tr>
                     `).join('')}
                 </tbody>
             </table>
         </div>
-    ` : '<p class="text-muted">Phòng này chưa có thiết bị được đăng ký.</p>';
+    ` : '<p class="text-muted">Phòng này chưa có thiết bị.</p>';
 
-    // Hiển thị Popup chi tiết
-    Swal.fire({
-        title: `<span class="text-primary">${roomName}</span>`,
-        html: machineListHtml,
-        width: '600px',
-        confirmButtonText: 'Đóng'
-    });
+    Swal.fire({ title: `<span class="text-university">${roomName}</span>`, html: machineListHtml, width: '600px', confirmButtonText: 'Đóng' });
 }
 
     // Biểu đồ giả lập (Tạm thời giữ lại để trang trí trang Giám sát)
@@ -727,47 +714,87 @@ async function viewRoomDetails(roomId, roomName) {
 
     // Xử lý gửi Form
     async function submitBooking() {
-        const room = document.getElementById('book-room').value;
-        const machine = document.getElementById('modal-machine-name').innerText;
-        const date = document.getElementById('book-date').value;
-        const start = document.getElementById('book-start').value;
-        const end = document.getElementById('book-end').value;
-        const participants = document.getElementById('book-participants').value;
-        const purpose = document.getElementById('book-purpose').value;
+    const room = document.getElementById('book-room').value;
+    const machine = document.getElementById('modal-machine-name').innerText;
+    const date = document.getElementById('book-date').value;
+    const start = document.getElementById('book-start').value;
+    const end = document.getElementById('book-end').value;
+    const participants = document.getElementById('book-participants').value;
+    const purpose = document.getElementById('book-purpose').value;
 
-        // Validation Thời gian
-        if (!date || !start || !end) return Swal.fire('Lỗi', 'Vui lòng chọn ngày và giờ!', 'warning');
-        if (start >= end) return Swal.fire('Lỗi', 'Giờ kết thúc phải sau giờ bắt đầu!', 'warning');
-        
-        const dayOfWeek = new Date(date).getDay();
-        if (dayOfWeek === 0 || dayOfWeek === 6) return Swal.fire('Lỗi', 'Chỉ mở cửa từ Thứ 2 đến Thứ 6!', 'error');
+    if (!date || !start || !end) return Swal.fire('Cảnh báo', 'Vui lòng chọn ngày và giờ!', 'warning');
+    if (start >= end) return Swal.fire('Lỗi', 'Giờ kết thúc phải sau giờ bắt đầu!', 'error');
 
-        Swal.fire({ title: 'Đang gửi...', didOpen: () => Swal.showLoading() });
+    // 1. KIỂM TRA GIỜ HÀNH CHÍNH & NGÀY TRONG TUẦN
+    const dayOfWeek = new Date(date).getDay();
+    if (dayOfWeek === 0 || dayOfWeek === 6) return Swal.fire('Lỗi', 'Chỉ mở cửa từ Thứ 2 đến Thứ 6!', 'error');
 
-        // Ghi vào Database
-        const fullMachineName = `${room} - ${machine}`;
-        const { data: user } = await _supabase.auth.getUser(); // Lấy email auth
-        
-        const { error } = await _supabase.from('bookings').insert([{
-            user_id: currentUserProfile.id,
-            full_name: currentUserProfile.full_name,
-            student_id: currentUserProfile.student_id,
-            email: user.user.email,
-            machine_name: fullMachineName,
-            booking_date: date,
-            start_time: start,
-            end_time: end,
-            purpose: purpose,
-            participants: participants
-        }]);
+    // Chuyển giờ thành phút để dễ so sánh (VD: 07:30 = 7*60+30 = 450)
+    const startMins = parseInt(start.split(':')[0]) * 60 + parseInt(start.split(':')[1]);
+    const endMins = parseInt(end.split(':')[0]) * 60 + parseInt(end.split(':')[1]);
+    
+    const isMorning = (startMins >= 450 && endMins <= 675);   // Sáng: 07:30 (450) -> 11:15 (675)
+    const isAfternoon = (startMins >= 810 && endMins <= 1020); // Chiều: 13:30 (810) -> 17:00 (1020)
 
-        if (error) {
-            Swal.fire('Lỗi', error.message, 'error');
-        } else {
-            bookingModalInstance.hide();
-            Swal.fire('Thành công', 'Đã gửi yêu cầu đăng ký!', 'success');
-        }
+    if (!isMorning && !isAfternoon) {
+        return Swal.fire('Lỗi', 'Vui lòng đặt trong Giờ hành chính:\nSáng (07:30 - 11:15)\nChiều (13:30 - 17:00)\nKhông được đặt xuyên trưa!', 'error');
     }
+
+    Swal.fire({ title: 'Đang kiểm tra lịch trống...', didOpen: () => Swal.showLoading() });
+
+    const fullMachineName = `${room} - ${machine}`;
+
+    // 2. KIỂM TRA TRÙNG LỊCH TỪ DATABASE (Phép thuật nằm ở đây)
+    const { data: existingBookings, error: fetchError } = await _supabase
+        .from('bookings')
+        .select('start_time, end_time')
+        .eq('machine_name', fullMachineName)
+        .eq('booking_date', date)
+        .in('status', ['pending', 'approved']); // Chỉ kiểm tra các đơn đang chờ hoặc đã duyệt
+
+    if (fetchError) return Swal.fire('Lỗi', fetchError.message, 'error');
+
+    // Thuật toán kiểm tra đè giờ (Overlap Logic)
+    let isConflict = false;
+    existingBookings.forEach(b => {
+        // Cắt giây (:00) từ database để so sánh chính xác với form (HH:mm)
+        const dbStart = b.start_time.substring(0, 5); 
+        const dbEnd = b.end_time.substring(0, 5);
+        
+        // Nếu Bắt đầu MỚI < Kết thúc CŨ VÀ Kết thúc MỚI > Bắt đầu CŨ => Trùng lịch!
+        if (start < dbEnd && end > dbStart) {
+            isConflict = true;
+        }
+    });
+
+    if (isConflict) {
+        return Swal.fire('Trùng lịch!', `Khung giờ này đã có người đăng ký sử dụng máy <b>${machine}</b>. Vui lòng chọn khung giờ khác!`, 'error');
+    }
+
+    // 3. GHI VÀO DATABASE NẾU MỌI THỨ HỢP LỆ
+    const { data: user } = await _supabase.auth.getUser();
+    
+    const { error: insertError } = await _supabase.from('bookings').insert([{
+        user_id: currentUserProfile.id,
+        full_name: currentUserProfile.full_name,
+        student_id: currentUserProfile.student_id,
+        email: user.user.email,
+        machine_name: fullMachineName,
+        booking_date: date,
+        start_time: start,
+        end_time: end,
+        purpose: purpose,
+        participants: participants
+    }]);
+
+    if (insertError) {
+        Swal.fire('Lỗi', insertError.message, 'error');
+    } else {
+        bookingModalInstance.hide();
+        Swal.fire('Thành công', 'Đã gửi yêu cầu đăng ký thành công! Vui lòng chờ duyệt.', 'success');
+        if (typeof loadHistoryView === "function") loadHistoryView(); // Cập nhật lại bảng nếu đang mở
+    }
+}
 
     // Tải danh sách Lịch sử / Duyệt đơn
     async function loadHistoryView() {
@@ -832,6 +859,40 @@ async function viewRoomDetails(roomId, roomName) {
                 loadHistoryView();
             });
     }
+    async function showAvailableSchedule() {
+    showView('history-view');
+    document.getElementById('history-title').innerHTML = '<i class="bi bi-calendar-check text-success"></i> Xem lịch đã được đặt (Hôm nay)';
+    const tbody = document.getElementById('history-list');
+    tbody.innerHTML = '<tr><td colspan="5">Đang tải lịch...</td></tr>';
+    
+    const today = new Date().toISOString().split('T')[0];
+
+    // Lấy lịch ĐÃ DUYỆT của ngày hôm nay
+    const { data, error } = await _supabase
+        .from('bookings')
+        .select('*')
+        .eq('booking_date', today)
+        .eq('status', 'approved')
+        .order('start_time', { ascending: true });
+
+    if (error || !data.length) {
+        return tbody.innerHTML = '<tr><td colspan="5" class="text-success p-4 fw-bold">Hiện tại chưa có ai đặt máy trong ngày hôm nay. Tất cả đều trống!</td></tr>';
+    }
+
+    let html = '';
+    data.forEach(b => {
+        html += `
+            <tr class="bg-light">
+                <td class="text-start ps-4 text-muted"><i class="bi bi-person-fill border rounded-circle p-1"></i> Đã ẩn tên</td>
+                <td class="text-start fw-bold text-danger">${b.machine_name}</td>
+                <td><span class="badge bg-danger text-white px-3 py-2"><i class="bi bi-clock"></i> Bận: ${b.start_time.substring(0,5)} - ${b.end_time.substring(0,5)}</span></td>
+                <td><span class="badge bg-secondary">Đang sử dụng</span></td>
+                <td>--</td>
+            </tr>
+        `;
+    });
+    tbody.innerHTML = html;
+}
 
     // Hàm Sinh viên tự xem mã QR của mình
     function viewMyQR(qrToken) {
