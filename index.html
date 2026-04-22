@@ -462,34 +462,34 @@
             </div>
         </div>
     </div>
-    <div class="modal fade" id="reportModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header bg-warning text-dark">
-                    <h5 class="modal-title fw-bold"><i class="bi bi-tools"></i> Khai báo trả thiết bị</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+</div>
+<div class="modal fade" id="reportModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title fw-bold"><i class="bi bi-tools"></i> Khai báo trả thiết bị</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="report-booking-id">
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Thiết bị đang báo cáo:</label>
+                    <input type="text" id="report-machine-name" class="form-control bg-light text-danger fw-bold" readonly>
                 </div>
-                <div class="modal-body">
-                    <input type="hidden" id="report-booking-id">
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Thiết bị đang báo cáo:</label>
-                        <input type="text" id="report-machine-name" class="form-control bg-light text-danger fw-bold" readonly>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Tình trạng máy sau khi dùng:</label>
-                        <select id="report-condition" class="form-select border-warning" onchange="toggleReportNote()">
-                            <option value="Tốt">Hoạt động Tốt / Bình thường</option>
-                            <option value="Hư hỏng">Có dấu hiệu Hư hỏng / Lỗi</option>
-                        </select>
-                    </div>
-                    <div class="mb-3 hidden" id="report-note-container">
-                        <label class="form-label fw-bold text-danger">Mô tả chi tiết lỗi:</label>
-                        <textarea id="report-note" class="form-control" rows="3" placeholder="VD: Máy bị kẹt phôi, không lên nguồn..."></textarea>
-                    </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Tình trạng máy sau khi dùng:</label>
+                    <select id="report-condition" class="form-select border-warning" onchange="toggleReportNote()">
+                        <option value="Tốt">Hoạt động Tốt / Bình thường</option>
+                        <option value="Hư hỏng">Có dấu hiệu Hư hỏng / Lỗi</option>
+                    </select>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-warning fw-bold px-4" onclick="submitReport()">Xác nhận Khai báo</button>
+                <div class="mb-3 hidden" id="report-note-container">
+                    <label class="form-label fw-bold text-danger">Mô tả chi tiết lỗi:</label>
+                    <textarea id="report-note" class="form-control" rows="3" placeholder="VD: Máy bị kẹt phôi, không lên nguồn..."></textarea>
                 </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-warning fw-bold px-4" onclick="submitReport()">Xác nhận Khai báo</button>
             </div>
         </div>
     </div>
