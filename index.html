@@ -401,139 +401,98 @@
 
 </div>
 
+<script>
+  // Biến lưu trữ thông tin người dùng toàn cục
+  let currentUserProfile = null;
 
-let currentUserProfile = null;
-        async function handleLogin() {
-        const email = document.getElementById('login-email').value;
-        const password = document.getElementById('login-password').value;
+// 1. Hàm Đăng nhập thật
+async function handleLogin() {
+    const email = document.getElementById('login-email').value;
+    const password = document.getElementById('login-password').value;
 
-        if (!email || !password) return Swal.fire('Thông báo', 'Vui lòng nhập đầy đủ email và mật khẩu!', 'warning');
+    if (!email || !password) return Swal.fire('Thông báo', 'Vui lòng nhập đầy đủ email và mật khẩu!', 'warning');
 
-        Swal.fire({ title: 'Đang xác thực...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+    Swal.fire({ title: 'Đang xác thực...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
-        const { data, error } = await _supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await _supabase.auth.signInWithPassword({ email, password });
 
-        if (error) {
-            Swal.fire('Lỗi', 'Email hoặc mật khẩu không chính xác!', 'error');
-        } else {
-            Swal.close();
-            checkSession(); // Đăng nhập xong thì kiểm tra phiên làm việc ngay
-        }
+    if (error) {
+        Swal.fire('Lỗi', 'Email hoặc mật khẩu không chính xác!', 'error');
+    } else {
+        Swal.close();
+        checkSession(); // Đăng nhập xong thì kiểm tra phiên làm việc ngay
+    }
+}
+
+// 2. Hàm Kiểm tra phiên làm việc & Phân quyền tự động
+async function checkSession() {
+    const { data: { user } } = await _supabase.auth.getUser();
+
+    if (!user) {
+        showView('auth-view'); // Chưa đăng nhập thì hiện màn hình login
+        return;
     }
 
-    // 2. Hàm Kiểm tra phiên làm việc & Phân quyền tự động
-    async function checkSession() {
-        const { data: { user } } = await _supabase.auth.getUser();
+    // Lấy thông tin Profile và Role từ Database
+    const { data: profile, error } = await _supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
 
-        if (!user) {
-            showView('auth-view'); // Chưa đăng nhập thì hiện màn hình login
-            return;
-        }
+    if (error || !profile) return;
+    currentUserProfile = profile;
 
-        // Lấy thông tin Profile và Role từ Database
-        const { data: profile, error } = await _supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', user.id)
-            .single();
-
-        if (error || !profile) return;
-        currentUserProfile = profile;
-
-        // Cập nhật tên hiển thị trên thanh Menu
-        const roleName = profile.role === 'admin' ? 'Ban quản lý' : (profile.role === 'manager' ? 'Quản lý PTN' : 'Sinh viên');
-        document.getElementById('user-info-display').innerHTML = `<i class="bi bi-person-circle"></i> ${profile.full_name} (${roleName})`;
-        
-        // --- LOGIC PHÂN QUYỀN TỰ ĐỘNG ---
-        // Ẩn tất cả trước
-        document.querySelectorAll('.role-level-2, .role-level-3').forEach(el => el.classList.add('hidden'));
-
-        if (profile.role === 'manager') {
-            // Quản lý PTN thấy Level 2
-            document.querySelectorAll('.role-level-2').forEach(el => el.classList.remove('hidden'));
-        } else if (profile.role === 'admin') {
-            // Ban quản lý Khoa thấy sạch Level 2 và 3
-            document.querySelectorAll('.role-level-2, .role-level-3').forEach(el => el.classList.remove('hidden'));
-        }
-        // Sinh viên (mặc định) chỉ thấy các menu cơ bản
-
-        showView('home-view'); // Chuyển vào trang chủ sau khi phân quyền xong
-        fetchRoomsData();      // Tải dữ liệu phòng lab ngay
-    }
-
-    // 3. Đổ dữ liệu thật vào danh mục Phòng thí nghiệm
-    async function fetchRoomsData() {
-        const { data: rooms, error } = await _supabase.from('rooms').select('*').order('room_code', { ascending: true });
-        if (error) return;
-
-        const tbody = document.querySelector('#dm-ptn-view tbody');
-        let html = '';
-
-        rooms.forEach(room => {
-            const statusBadge = room.status === 'active' ? 
-                '<span class="badge bg-success">Đang hoạt động</span>' : 
-                '<span class="badge bg-secondary">Bảo trì</span>';
-
-            html += `
-                <tr>
-                    <td class="text-start ps-4 fw-bold">${room.room_code || 'N/A'}</td>
-                    <td class="text-start">${room.room_name}</td>
-                    <td>${room.department || 'Cơ khí'}</td>
-                    <td>${room.manager_name || 'Chưa cập nhật'}</td>
-                    <td>${statusBadge}</td>
-                    <td>
-                        <button class="btn btn-sm btn-light border" title="Xem chi tiết"><i class="bi bi-eye"></i></button>
-                        <button class="btn btn-sm btn-warning role-level-2 ${currentUserProfile.role === 'student' ? 'hidden' : ''}" onclick="controlDoor('${room.id}', 'open')"><i class="bi bi-door-open"></i></button>
-                    </td>
-                </tr>
-            `;
-        });
-        tbody.innerHTML = html;
-    }
-
-    // =========================================
-    // MÔ PHỎNG BIỂU ĐỒ (Dùng Chart.js)
-    // =========================================
-    let powerChart, roomChart;
+    // Cập nhật tên hiển thị trên thanh Menu
+    const roleName = profile.role === 'admin' ? 'Ban quản lý' : (profile.role === 'manager' ? 'Quản lý PTN' : 'Sinh viên');
+    document.getElementById('user-info-display').innerHTML = `<i class="bi bi-person-circle"></i> ${profile.full_name} (${roleName})`;
     
-    function initFakeCharts() {
-        if(powerChart) powerChart.destroy();
-        if(roomChart) roomChart.destroy();
+    // --- LOGIC PHÂN QUYỀN TỰ ĐỘNG ---
+    // Ẩn tất cả trước
+    document.querySelectorAll('.role-level-2, .role-level-3').forEach(el => el.classList.add('hidden'));
 
-        // Biểu đồ Đường (Công suất realtime giả lập)
-        const ctx1 = document.getElementById('powerChart').getContext('2d');
-        powerChart = new Chart(ctx1, {
-            type: 'line',
-            data: {
-                labels: ['08:00', '08:15', '08:30', '08:45', '09:00', '09:15', 'Hiện tại'],
-                datasets: [{
-                    label: 'Công suất K101 (W)',
-                    data: [100, 1050, 1200, 1250, 1100, 1250, 1250],
-                    borderColor: '#cc0000',
-                    backgroundColor: 'rgba(204, 0, 0, 0.1)',
-                    borderWidth: 2, fill: true, tension: 0.3
-                }]
-            },
-            options: { responsive: true, plugins: { legend: { display: false } } }
-        });
-
-        // Biểu đồ Tròn (So sánh phòng)
-        const ctx2 = document.getElementById('roomChart').getContext('2d');
-        roomChart = new Chart(ctx2, {
-            type: 'doughnut',
-            data: {
-                labels: ['PTN K101', 'PTN C102', 'PTN Khác'],
-                datasets: [{
-                    data: [124.5, 45.2, 30.0],
-                    backgroundColor: ['#003366', '#009933', '#e0e0e0']
-                }]
-            },
-            options: { responsive: true }
-        });
+    if (profile.role === 'manager') {
+        // Quản lý PTN thấy Level 2
+        document.querySelectorAll('.role-level-2').forEach(el => el.classList.remove('hidden'));
+    } else if (profile.role === 'admin') {
+        // Ban quản lý Khoa thấy sạch Level 2 và 3
+        document.querySelectorAll('.role-level-2, .role-level-3').forEach(el => el.classList.remove('hidden'));
     }
+    // Sinh viên (mặc định) chỉ thấy các menu cơ bản
 
-    // Khởi động mặc định vào màn hình Test
-    showView('auth-view');
+    showView('home-view'); // Chuyển vào trang chủ sau khi phân quyền xong
+    fetchRoomsData();      // Tải dữ liệu phòng lab ngay
+}
+
+// 3. Đổ dữ liệu thật vào danh mục Phòng thí nghiệm
+async function fetchRoomsData() {
+    const { data: rooms, error } = await _supabase.from('rooms').select('*').order('room_code', { ascending: true });
+    if (error) return;
+
+    const tbody = document.querySelector('#dm-ptn-view tbody');
+    let html = '';
+
+    rooms.forEach(room => {
+        const statusBadge = room.status === 'active' ? 
+            '<span class="badge bg-success">Đang hoạt động</span>' : 
+            '<span class="badge bg-secondary">Bảo trì</span>';
+
+        html += `
+            <tr>
+                <td class="text-start ps-4 fw-bold">${room.room_code || 'N/A'}</td>
+                <td class="text-start">${room.room_name}</td>
+                <td>${room.department || 'Cơ khí'}</td>
+                <td>${room.manager_name || 'Chưa cập nhật'}</td>
+                <td>${statusBadge}</td>
+                <td>
+                    <button class="btn btn-sm btn-light border" title="Xem chi tiết"><i class="bi bi-eye"></i></button>
+                    <button class="btn btn-sm btn-warning role-level-2 ${currentUserProfile.role === 'student' ? 'hidden' : ''}" onclick="controlDoor('${room.id}', 'open')"><i class="bi bi-door-open"></i></button>
+                </td>
+            </tr>
+        `;
+    });
+    tbody.innerHTML = html;
+}
 </script>
 </body>
 </html>
