@@ -462,6 +462,37 @@
             </div>
         </div>
     </div>
+    <div class="modal fade" id="reportModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-warning text-dark">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-tools"></i> Khai báo trả thiết bị</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="report-booking-id">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Thiết bị đang báo cáo:</label>
+                        <input type="text" id="report-machine-name" class="form-control bg-light text-danger fw-bold" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Tình trạng máy sau khi dùng:</label>
+                        <select id="report-condition" class="form-select border-warning" onchange="toggleReportNote()">
+                            <option value="Tốt">Hoạt động Tốt / Bình thường</option>
+                            <option value="Hư hỏng">Có dấu hiệu Hư hỏng / Lỗi</option>
+                        </select>
+                    </div>
+                    <div class="mb-3 hidden" id="report-note-container">
+                        <label class="form-label fw-bold text-danger">Mô tả chi tiết lỗi:</label>
+                        <textarea id="report-note" class="form-control" rows="3" placeholder="VD: Máy bị kẹt phôi, không lên nguồn..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-warning fw-bold px-4" onclick="submitReport()">Xác nhận Khai báo</button>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -714,7 +745,15 @@
             if (currentUserProfile.role !== 'student' && b.status === 'pending') {
                 actionBtn = `<button class="btn btn-sm btn-primary fw-bold" onclick="approveBooking('${b.id}', '${b.email}', '${b.machine_name}', '${b.qr_token}')">Duyệt & Gửi QR</button>`;
             } else if (currentUserProfile.role === 'student' && b.status === 'approved') {
-                actionBtn = `<button class="btn btn-sm btn-outline-success" onclick="viewMyQR('${b.qr_token}')"><i class="bi bi-qr-code"></i> Xem QR</button>`;
+                actionBtn = `<button class="btn btn-sm btn-outline-success mb-1 w-100" onclick="viewMyQR('${b.qr_token}')"><i class="bi bi-qr-code"></i> Xem QR</button><br>`;
+                
+                // Nếu chưa báo cáo thì hiện nút Báo cáo, nếu báo rồi thì hiện chữ Đã báo cáo
+                if (!b.machine_condition) {
+                    actionBtn += `<button class="btn btn-sm btn-warning w-100 fw-bold" onclick="openReportModal('${b.id}', '${b.machine_name}')"><i class="bi bi-tools"></i> Khai báo</button>`;
+                } else {
+                    const conditionColor = b.machine_condition === 'Tốt' ? 'text-success' : 'text-danger';
+                    actionBtn += `<span class="small fw-bold ${conditionColor}"> Đã báo: ${b.machine_condition}</span>`;
+                }
             } else {
                 actionBtn = `<span class="text-muted small">--</span>`;
             }
@@ -778,6 +817,60 @@
             imageUrl: `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${qrToken}`,
             imageWidth: 250, imageHeight: 250, confirmButtonText: 'Đóng'
         });
+    }
+    // Biến toàn cục chứa Modal Báo cáo
+    let reportModalInstance = null;
+
+    // 1. Hiển thị ô nhập mô tả nếu chọn "Hư hỏng"
+    function toggleReportNote() {
+        const condition = document.getElementById('report-condition').value;
+        const noteContainer = document.getElementById('report-note-container');
+        if (condition === 'Hư hỏng') {
+            noteContainer.classList.remove('hidden');
+        } else {
+            noteContainer.classList.add('hidden');
+        }
+    }
+
+    // 2. Mở form Báo cáo
+    function openReportModal(bookingId, machineName) {
+        if (!reportModalInstance) {
+            reportModalInstance = new bootstrap.Modal(document.getElementById('reportModal'));
+        }
+        document.getElementById('report-booking-id').value = bookingId;
+        document.getElementById('report-machine-name').value = machineName;
+        document.getElementById('report-condition').value = 'Tốt'; // Mặc định là tốt
+        toggleReportNote(); // Reset giao diện
+        reportModalInstance.show();
+    }
+
+    // 3. Lưu báo cáo vào Database
+    async function submitReport() {
+        const bookingId = document.getElementById('report-booking-id').value;
+        const condition = document.getElementById('report-condition').value;
+        const note = document.getElementById('report-note').value;
+
+        if (condition === 'Hư hỏng' && !note.trim()) {
+            return Swal.fire('Cảnh báo', 'Vui lòng mô tả chi tiết lỗi để kỹ thuật viên kiểm tra!', 'warning');
+        }
+
+        Swal.fire({ title: 'Đang lưu nhật ký...', didOpen: () => Swal.showLoading() });
+
+        // Cập nhật tình trạng vào bảng bookings
+        const { error } = await _supabase.from('bookings')
+            .update({ 
+                machine_condition: condition, 
+                condition_note: note 
+            })
+            .eq('id', bookingId);
+
+        if (error) {
+            Swal.fire('Lỗi', error.message, 'error');
+        } else {
+            reportModalInstance.hide();
+            Swal.fire('Hoàn tất', 'Cảm ơn bạn đã khai báo tình trạng thiết bị!', 'success');
+            loadHistoryView(); // Tải lại bảng lịch sử
+        }
     }
 
     // Biểu đồ trang trí
