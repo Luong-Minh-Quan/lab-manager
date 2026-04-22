@@ -527,40 +527,105 @@
 
     // Tải dữ liệu phòng thí nghiệm thật từ Supabase
     async function fetchRoomsData() {
-        const { data: rooms, error } = await _supabase
-            .from('rooms')
-            .select('*')
-            .order('room_code', { ascending: true });
+    // 1. Truy vấn toàn bộ danh sách phòng từ Supabase
+    const { data: rooms, error } = await _supabase
+        .from('rooms')
+        .select('*')
+        .order('room_code', { ascending: true });
 
-        if (error) return;
-
-        const tbody = document.querySelector('#dm-ptn-view tbody');
-        let html = '';
-
-        rooms.forEach(room => {
-            const statusBadge = room.status === 'active' ? 
-                '<span class="badge bg-success">Đang hoạt động</span>' : 
-                '<span class="badge bg-secondary">Bảo trì</span>';
-
-            html += `
-                <tr>
-                    <td class="text-start ps-4 fw-bold">${room.room_code || 'N/A'}</td>
-                    <td class="text-start">${room.room_name}</td>
-                    <td>${room.department || 'Cơ khí'}</td>
-                    <td>${room.manager_name || 'Chưa rõ'}</td>
-                    <td>${statusBadge}</td>
-                    <td>
-                        <button class="btn btn-sm btn-light border" title="Xem chi tiết"><i class="bi bi-eye"></i></button>
-                        ${currentUserProfile.role !== 'student' ? `
-                            <button class="btn btn-sm btn-warning" title="Mở cửa từ xa"><i class="bi bi-door-open"></i></button>
-                            <button class="btn btn-sm btn-info" title="Camera"><i class="bi bi-camera-video"></i></button>
-                        ` : ''}
-                    </td>
-                </tr>
-            `;
-        });
-        tbody.innerHTML = html;
+    if (error) {
+        console.error("Lỗi lấy dữ liệu phòng:", error.message);
+        return;
     }
+
+    const tbody = document.querySelector('#dm-ptn-view tbody');
+    let html = '';
+
+    // 2. Duyệt qua từng phòng để tạo dòng trong bảng
+    rooms.forEach(room => {
+        // Định dạng nhãn trạng thái (Active/Maintenance)
+        const statusClass = room.status === 'active' ? 'bg-success' : 'bg-secondary';
+        const statusText = room.status === 'active' ? 'Đang hoạt động' : 'Bảo trì';
+
+        // Kiểm tra quyền: Chỉ Manager và Admin mới thấy các nút điều khiển IoT 
+        const isStaff = currentUserProfile.role === 'admin' || currentUserProfile.role === 'manager';
+
+        html += `
+            <tr>
+                <td class="text-start ps-4 fw-bold text-primary">${room.room_code || 'N/A'}</td>
+                <td class="text-start fw-semibold">${room.room_name}</td>
+                <td>${room.department || 'Bách Khoa'}</td>
+                <td>${room.manager_name || 'Chưa rõ'}</td>
+                <td><span class="badge ${statusClass}">${statusText}</span></td>
+                <td>
+                    <div class="btn-group">
+                        <button class="btn btn-sm btn-outline-primary" onclick="viewRoomDetails('${room.id}', '${room.room_name}')" title="Xem chi tiết thiết bị">
+                            <i class="bi bi-search"></i>
+                        </button>
+                        ${isStaff ? `
+                            <button class="btn btn-sm btn-outline-warning" onclick="remoteOpenDoor('${room.room_code}')" title="Mở cửa từ xa">
+                                <i class="bi bi-door-open"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="viewPowerRealtime('${room.room_code}')" title="Xem điện năng">
+                                <i class="bi bi-lightning-charge"></i>
+                            </button>
+                        ` : ''}
+                    </div>
+                </td>
+            </tr>
+        `;
+    });
+
+    tbody.innerHTML = html || '<tr><td colspan="6" class="text-center p-4 text-muted">Chưa có dữ liệu phòng thí nghiệm.</td></tr>';
+}
+async function viewRoomDetails(roomId, roomName) {
+    Swal.fire({
+        title: `Đang tải thiết bị tại ${roomName}...`,
+        didOpen: () => Swal.showLoading()
+    });
+
+    // Truy vấn các máy có room_id khớp với phòng vừa chọn
+    const { data: machines, error } = await _supabase
+        .from('machines')
+        .select('*')
+        .eq('room_id', roomId);
+
+    Swal.close();
+
+    if (error) return Swal.fire('Lỗi', error.message, 'error');
+
+    // Tạo nội dung hiển thị danh sách máy
+    let machineListHtml = machines.length > 0 ? `
+        <div class="table-responsive">
+            <table class="table table-sm text-start">
+                <thead>
+                    <tr class="table-light">
+                        <th>Tên máy</th>
+                        <th>Thông số</th>
+                        <th>Trạng thái</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${machines.map(m => `
+                        <tr>
+                            <td><b>${m.machine_name}</b></td>
+                            <td><small>${m.technical_specs || 'N/A'}</small></td>
+                            <td><span class="badge ${m.status === 'available' ? 'bg-info' : 'bg-danger'}">${m.status}</span></td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        </div>
+    ` : '<p class="text-muted">Phòng này chưa có thiết bị được đăng ký.</p>';
+
+    // Hiển thị Popup chi tiết
+    Swal.fire({
+        title: `<span class="text-primary">${roomName}</span>`,
+        html: machineListHtml,
+        width: '600px',
+        confirmButtonText: 'Đóng'
+    });
+}
 
     // Biểu đồ giả lập (Tạm thời giữ lại để trang trí trang Giám sát)
     let powerChart, roomChart;
