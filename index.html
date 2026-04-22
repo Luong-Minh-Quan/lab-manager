@@ -31,7 +31,7 @@
 
         /* Dashboard & Cards */
         .hero-banner {
-            background: linear-gradient(rgba(0,51,102, 0.7), rgba(0,51,102, 0.8)), url('SlideShow01.png') center/cover;
+            background: linear-gradient(rgba(0,51,102, 0.7), rgba(0,51,102, 0.8)), url('logo-dut.jpg') center/cover;
             height: 250px; display: flex; align-items: center; justify-content: center; color: white; border-radius: 12px; margin-bottom: 25px;
         }
         .stat-card { border: none; border-left: 5px solid #003366; transition: 0.3s; border-radius: 8px; }
@@ -401,17 +401,9 @@
 
 </div>
 
-<script>
-    // =========================================
-    // LOGIC ĐIỀU HƯỚNG VÀ PHÂN QUYỀN (RBAC)
-    // =========================================
-    
-    // Hàm hiển thị view tương ứng
-    // Biến lưu trữ thông tin người dùng toàn cục
-    let currentUserProfile = null;
 
-    // 1. Hàm Đăng nhập thật
-    async function handleLogin() {
+let currentUserProfile = null;
+        async function handleLogin() {
         const email = document.getElementById('login-email').value;
         const password = document.getElementById('login-password').value;
 
