@@ -700,15 +700,24 @@ async function viewRoomDetails(roomId, roomCode, roomName) {
         bookingModalInstance = new bootstrap.Modal(document.getElementById('bookingModal'));
     });
 
-    // Mở Form Đăng ký (Gắn vào nút khi xem danh sách máy)
+    // Mở Form Đăng ký 
     function openBookingModal(roomCode, machineName) {
+        // 1. Chốt chặn an toàn: Khởi tạo modal ngay lúc bấm nếu nó bị mất kết nối
+        if (!bookingModalInstance) {
+            const modalElement = document.getElementById('bookingModal');
+            if (!modalElement) {
+                return Swal.fire('Lỗi giao diện', 'Không tìm thấy khung Form đăng ký (id="bookingModal") trong HTML!', 'error');
+            }
+            bookingModalInstance = new bootstrap.Modal(modalElement);
+        }
+        
+        // 2. Điền thông tin vào form
         document.getElementById('modal-machine-name').innerText = machineName;
         document.getElementById('book-room').value = roomCode;
-        
-        // Tự động điền thông tin người đăng nhập
         document.getElementById('book-name').value = currentUserProfile.full_name || 'Không rõ';
         document.getElementById('book-date').value = new Date().toISOString().split('T')[0];
         
+        // 3. Hiển thị form lên
         bookingModalInstance.show();
     }
 
