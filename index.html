@@ -146,8 +146,8 @@
             </ul>
             
             <div class="d-flex text-white align-items-center bg-dark bg-opacity-25 rounded px-3 py-1">
-                <span id="user-info-display" class="me-3 fw-semibold"><i class="bi bi-person-circle"></i> Vui lòng đăng nhập</span>
-                <button class="btn btn-sm btn-outline-light" onclick="showView('auth-view')">Đăng xuất</button>
+                <span id="user-info-display" class="me-3 fw-semibold"><i class="bi bi-person-circle"></i> Đăng nhập</span>
+                <button id="btn-auth" class="btn btn-sm btn-outline-light" onclick="showView('auth-view')">Đăng nhập</button>
             </div>
         </div>
     </div>
@@ -156,25 +156,20 @@
 <div class="container py-4">
 
     <div id="auth-view" class="view-section">
-        <div class="card mx-auto shadow-lg border-0" style="max-width: 450px; margin-top: 60px; border-radius: 15px; overflow: hidden;">
+        <div class="card mx-auto shadow-lg border-0" style="max-width: 400px; margin-top: 60px; border-radius: 15px; overflow: hidden;">
             <div class="bg-university text-center py-4 text-white">
-                <h4 class="fw-bold mb-0">ĐĂNG NHẬP HỆ THỐNG</h4>
-                <small class="opacity-75">Trình giả lập Phân quyền (Test Mode)</small>
+                <h4 class="fw-bold mb-0">ĐĂNG NHẬP</h4>
+                <small class="opacity-75">Hệ thống Quản lý Cơ sở vật chất</small>
             </div>
             <div class="card-body p-4 text-center">
-                <p class="text-muted mb-4">Bạn muốn đăng nhập vào hệ thống với vai trò gì?</p>
+                <input type="email" id="login-email" class="form-control mb-3 py-2" placeholder="Email (VD: sv@student.edu.vn)">
+                <input type="password" id="login-password" class="form-control mb-2 py-2" placeholder="Mật khẩu (MSSV)">
                 
-                <button class="btn btn-outline-primary w-100 mb-3 py-3 text-start fw-bold" onclick="simulateLogin('student')">
-                    <i class="bi bi-person-badge fs-4 me-3 align-middle"></i> 1. Sinh Viên (Chỉ ĐK & Báo lỗi)
-                </button>
-                
-                <button class="btn btn-outline-success w-100 mb-3 py-3 text-start fw-bold" onclick="simulateLogin('manager')">
-                    <i class="bi bi-person-workspace fs-4 me-3 align-middle"></i> 2. Quản lý PTN (Giám sát, Duyệt, Mở cửa)
-                </button>
-                
-                <button class="btn btn-outline-danger w-100 mb-3 py-3 text-start fw-bold" onclick="simulateLogin('admin')">
-                    <i class="bi bi-shield-lock-fill fs-4 me-3 align-middle"></i> 3. Ban Quản Lý Khoa (Full Admin)
-                </button>
+                <div class="text-end mb-4">
+                    <a href="#" class="text-decoration-none small text-danger" onclick="handleForgotPassword()">Quên mật khẩu?</a>
+                </div>
+
+                <button class="btn btn-primary w-100 py-2 fw-bold" onclick="handleLogin()">Đăng Nhập</button>
             </div>
         </div>
     </div>
