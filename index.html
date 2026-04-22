@@ -407,40 +407,96 @@
     // =========================================
     
     // Hàm hiển thị view tương ứng
-    function showView(viewId) {
-        document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
-        document.getElementById(viewId).classList.remove('hidden');
-        
-        // Render chart nếu vào trang Điện năng
-        if(viewId === 'monitor-energy-view') initFakeCharts();
+    // Biến lưu trữ thông tin người dùng toàn cục
+    let currentUserProfile = null;
+
+    // 1. Hàm Đăng nhập thật
+    async function handleLogin() {
+        const email = document.getElementById('login-email').value;
+        const password = document.getElementById('login-password').value;
+
+        if (!email || !password) return Swal.fire('Thông báo', 'Vui lòng nhập đầy đủ email và mật khẩu!', 'warning');
+
+        Swal.fire({ title: 'Đang xác thực...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+        const { data, error } = await _supabase.auth.signInWithPassword({ email, password });
+
+        if (error) {
+            Swal.fire('Lỗi', 'Email hoặc mật khẩu không chính xác!', 'error');
+        } else {
+            Swal.close();
+            checkSession(); // Đăng nhập xong thì kiểm tra phiên làm việc ngay
+        }
     }
 
-    // Hàm giả lập đăng nhập và set quyền
-    function simulateLogin(role) {
-        let displayHtml = '';
-        
-        // Mặc định ẩn tất cả các menu Level 2 và 3
-        document.querySelectorAll('.role-level-2').forEach(el => el.classList.add('hidden'));
-        document.querySelectorAll('.role-level-3').forEach(el => el.classList.add('hidden'));
+    // 2. Hàm Kiểm tra phiên làm việc & Phân quyền tự động
+    async function checkSession() {
+        const { data: { user } } = await _supabase.auth.getUser();
 
-        if (role === 'student') {
-            displayHtml = '<i class="bi bi-person-badge-fill text-info"></i> SV Nguyễn Văn A';
-            // Sinh viên chỉ thấy trang chủ, danh mục, đăng ký, hỗ trợ (Level 1)
-        } 
-        else if (role === 'manager') {
-            displayHtml = '<i class="bi bi-person-workspace text-warning"></i> QL. Trần Thị B';
-            // Quản lý thấy thêm Giám sát, Báo cáo (Level 2)
-            document.querySelectorAll('.role-level-2').forEach(el => el.classList.remove('hidden'));
-        } 
-        else if (role === 'admin') {
-            displayHtml = '<i class="bi bi-shield-lock-fill text-danger"></i> Admin Khoa';
-            // Admin thấy tất cả (Level 2 + Level 3)
-            document.querySelectorAll('.role-level-2').forEach(el => el.classList.remove('hidden'));
-            document.querySelectorAll('.role-level-3').forEach(el => el.classList.remove('hidden'));
+        if (!user) {
+            showView('auth-view'); // Chưa đăng nhập thì hiện màn hình login
+            return;
         }
 
-        document.getElementById('user-info-display').innerHTML = displayHtml;
-        showView('home-view'); // Chuyển về trang chủ
+        // Lấy thông tin Profile và Role từ Database
+        const { data: profile, error } = await _supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', user.id)
+            .single();
+
+        if (error || !profile) return;
+        currentUserProfile = profile;
+
+        // Cập nhật tên hiển thị trên thanh Menu
+        const roleName = profile.role === 'admin' ? 'Ban quản lý' : (profile.role === 'manager' ? 'Quản lý PTN' : 'Sinh viên');
+        document.getElementById('user-info-display').innerHTML = `<i class="bi bi-person-circle"></i> ${profile.full_name} (${roleName})`;
+        
+        // --- LOGIC PHÂN QUYỀN TỰ ĐỘNG ---
+        // Ẩn tất cả trước
+        document.querySelectorAll('.role-level-2, .role-level-3').forEach(el => el.classList.add('hidden'));
+
+        if (profile.role === 'manager') {
+            // Quản lý PTN thấy Level 2
+            document.querySelectorAll('.role-level-2').forEach(el => el.classList.remove('hidden'));
+        } else if (profile.role === 'admin') {
+            // Ban quản lý Khoa thấy sạch Level 2 và 3
+            document.querySelectorAll('.role-level-2, .role-level-3').forEach(el => el.classList.remove('hidden'));
+        }
+        // Sinh viên (mặc định) chỉ thấy các menu cơ bản
+
+        showView('home-view'); // Chuyển vào trang chủ sau khi phân quyền xong
+        fetchRoomsData();      // Tải dữ liệu phòng lab ngay
+    }
+
+    // 3. Đổ dữ liệu thật vào danh mục Phòng thí nghiệm
+    async function fetchRoomsData() {
+        const { data: rooms, error } = await _supabase.from('rooms').select('*').order('room_code', { ascending: true });
+        if (error) return;
+
+        const tbody = document.querySelector('#dm-ptn-view tbody');
+        let html = '';
+
+        rooms.forEach(room => {
+            const statusBadge = room.status === 'active' ? 
+                '<span class="badge bg-success">Đang hoạt động</span>' : 
+                '<span class="badge bg-secondary">Bảo trì</span>';
+
+            html += `
+                <tr>
+                    <td class="text-start ps-4 fw-bold">${room.room_code || 'N/A'}</td>
+                    <td class="text-start">${room.room_name}</td>
+                    <td>${room.department || 'Cơ khí'}</td>
+                    <td>${room.manager_name || 'Chưa cập nhật'}</td>
+                    <td>${statusBadge}</td>
+                    <td>
+                        <button class="btn btn-sm btn-light border" title="Xem chi tiết"><i class="bi bi-eye"></i></button>
+                        <button class="btn btn-sm btn-warning role-level-2 ${currentUserProfile.role === 'student' ? 'hidden' : ''}" onclick="controlDoor('${room.id}', 'open')"><i class="bi bi-door-open"></i></button>
+                    </td>
+                </tr>
+            `;
+        });
+        tbody.innerHTML = html;
     }
 
     // =========================================
