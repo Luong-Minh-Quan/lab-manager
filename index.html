@@ -139,7 +139,6 @@
                                 </ul>
                         </li>
                         <li><a class="dropdown-item" href="#">Báo cáo sử dụng PTN</a></li>
-                        <li><a class="dropdown-item" href="#">Báo cáo điện năng</a></li>
                         <li><a class="dropdown-item" href="#">Báo cáo bảo trì</a></li>
                         <li><a class="dropdown-item" href="#">Báo cáo hư hỏng</a></li>
                         <li><a class="dropdown-item" href="#">Báo cáo sinh viên sử dụng</a></li>
@@ -328,7 +327,28 @@
             </div>
         </div>
     </div>
-
+    <div id="maintenance-view" class="view-section hidden">
+        <h3 class="fw-bold mb-4 text-danger"><i class="bi bi-tools"></i> Báo cáo & Xử lý Hư hỏng</h3>
+        <div class="card shadow-sm border-0 border-top border-4 border-danger">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table align-middle table-hover text-center mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="text-start ps-4 text-danger">Thiết bị báo lỗi</th>
+                                <th>Thời gian báo cáo</th>
+                                <th>Người báo cáo</th>
+                                <th>Mô tả chi tiết lỗi</th>
+                                <th>Trạng thái xử lý</th>
+                            </tr>
+                        </thead>
+                        <tbody id="maintenance-list">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
     <div id="dm-ptn-view" class="view-section hidden">
         <h3 class="fw-bold mb-4 text-university"><i class="bi bi-building"></i> Danh mục Phòng Thí Nghiệm</h3>
         <div class="card shadow-sm border-0">
