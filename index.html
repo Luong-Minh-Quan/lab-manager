@@ -309,7 +309,7 @@
                             <tr>
                                 <th class="text-start ps-4">Người đăng ký</th>
                                 <th class="text-start">Thiết bị & Mục đích</th>
-                                <th>Thời gian (Ca)</th>
+                                <th>Thời gian (Ca)</th><th>Nhật ký thiết bị</th>
                                 <th>Trạng thái</th>
                                 <th>Hành động</th>
                             </tr>
@@ -746,16 +746,23 @@
                 actionBtn = `<button class="btn btn-sm btn-primary fw-bold" onclick="approveBooking('${b.id}', '${b.email}', '${b.machine_name}', '${b.qr_token}')">Duyệt & Gửi QR</button>`;
             } else if (currentUserProfile.role === 'student' && b.status === 'approved') {
                 actionBtn = `<button class="btn btn-sm btn-outline-success mb-1 w-100" onclick="viewMyQR('${b.qr_token}')"><i class="bi bi-qr-code"></i> Xem QR</button><br>`;
-                
-                // Nếu chưa báo cáo thì hiện nút Báo cáo, nếu báo rồi thì hiện chữ Đã báo cáo
                 if (!b.machine_condition) {
                     actionBtn += `<button class="btn btn-sm btn-warning w-100 fw-bold" onclick="openReportModal('${b.id}', '${b.machine_name}')"><i class="bi bi-tools"></i> Khai báo</button>`;
                 } else {
-                    const conditionColor = b.machine_condition === 'Tốt' ? 'text-success' : 'text-danger';
-                    actionBtn += `<span class="small fw-bold ${conditionColor}"> Đã báo: ${b.machine_condition}</span>`;
+                    actionBtn += `<span class="small fw-bold text-muted"><i class="bi bi-check2-circle"></i> Đã báo cáo</span>`;
                 }
             } else {
                 actionBtn = `<span class="text-muted small">--</span>`;
+            }
+
+            // Xử lý cột Nhật ký thiết bị
+            let conditionHtml = '<span class="text-muted small"><i>Chưa báo cáo</i></span>';
+            if (b.machine_condition) {
+                const isGood = b.machine_condition === 'Tốt';
+                const color = isGood ? 'text-success' : 'text-danger';
+                const icon = isGood ? 'bi-check-circle-fill' : 'bi-exclamation-triangle-fill';
+                const note = b.condition_note ? `<br><small class="text-muted">Lỗi: ${b.condition_note}</small>` : '';
+                conditionHtml = `<span class="${color} fw-bold"><i class="bi ${icon}"></i> ${b.machine_condition}</span>${note}`;
             }
 
             html += `
@@ -763,7 +770,7 @@
                     <td class="text-start ps-4"><b>${b.full_name}</b><br><small class="text-muted">${b.email}</small></td>
                     <td class="text-start"><b>${b.machine_name}</b><br><span class="badge bg-light text-dark border">${b.purpose}</span></td>
                     <td><span class="text-primary fw-bold">${b.booking_date}</span><br><small>${b.start_time.substring(0,5)} - ${b.end_time.substring(0,5)}</small></td>
-                    <td><span class="badge ${statusColor}">${b.status === 'approved' ? 'Đã duyệt' : (b.status === 'pending' ? 'Chờ duyệt' : 'Từ chối')}</span></td>
+                    <td>${conditionHtml}</td> <td><span class="badge ${statusColor}">${b.status === 'approved' ? 'Đã duyệt' : (b.status === 'pending' ? 'Chờ duyệt' : 'Từ chối')}</span></td>
                     <td>${actionBtn}</td>
                 </tr>
             `;
