@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hệ Thống Quản Lý PTN Thông Minh</title>
+    <title>Hệ Thống Quản Lý Cơ Sở Vật Chất PTN</title>
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -11,101 +11,143 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
-        body { background-color: #f4f6f9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #f0f2f5; font-family: 'Segoe UI', system-ui, sans-serif; }
         
-        /* Màu xanh chuẩn của cổng thông tin Đại học */
-        .bg-university { background-color: #3b5998; color: white; }
-        .text-university { color: #3b5998; }
+        /* Theme Đại học Bách Khoa (Xanh đậm & Đỏ) */
+        .bg-university { background-color: #003366; color: white; }
+        .text-university { color: #003366; }
+        .bg-accent { background-color: #cc0000; color: white; }
         
-        /* Banner hình ảnh Trang chủ */
+        /* Header & Navbar */
+        .top-header { border-bottom: 3px solid #cc0000; background: white; }
+        .navbar-custom { background-color: #003366; padding: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .navbar-custom .nav-link { color: #fff !important; font-weight: 500; padding: 15px 18px; transition: 0.2s; font-size: 0.95rem; }
+        .navbar-custom .nav-link:hover, .navbar-custom .nav-item.active { background-color: #004080; }
+        
+        /* Dropdown */
+        .dropdown-menu { border: none; box-shadow: 0 10px 20px rgba(0,0,0,0.1); border-radius: 0 0 8px 8px; margin-top: 0; padding: 10px 0; }
+        .dropdown-item { padding: 8px 20px; font-size: 0.95rem; transition: 0.2s; }
+        .dropdown-item:hover { background-color: #f0f4f8; color: #003366; font-weight: 500; border-left: 3px solid #cc0000; }
+
+        /* Dashboard & Cards */
         .hero-banner {
-            background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('https://images.unsplash.com/photo-1562774053-701939374585?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80') center/cover;
-            height: 300px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            background: linear-gradient(rgba(0,51,102, 0.7), rgba(0,51,102, 0.8)), url('https://images.unsplash.com/photo-1562774053-701939374585?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80') center/cover;
+            height: 250px; display: flex; align-items: center; justify-content: center; color: white; border-radius: 12px; margin-bottom: 25px;
         }
+        .stat-card { border: none; border-left: 5px solid #003366; transition: 0.3s; border-radius: 8px; }
+        .stat-card:hover { transform: translateY(-5px); box-shadow: 0 8px 20px rgba(0,0,0,0.08); }
+        .stat-icon { font-size: 2.5rem; opacity: 0.15; position: absolute; right: 20px; top: 15px; }
+        
+        /* System Log Terminal */
+        .terminal-log { background: #1e1e1e; color: #00ff00; font-family: monospace; font-size: 0.85rem; height: 250px; overflow-y: auto; padding: 10px; border-radius: 5px; }
+        .log-error { color: #ff4444; } .log-info { color: #00aaff; } .log-warn { color: #ffaa00; }
 
-        /* Tùy chỉnh Navbar */
-        .navbar-custom { background-color: #3b5998; padding: 0; }
-        .navbar-custom .nav-link { color: #fff !important; font-weight: 500; padding: 15px 20px; transition: 0.3s; }
-        .navbar-custom .nav-link:hover { background-color: #2d4373; }
-        .dropdown-menu { border: none; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border-radius: 0 0 8px 8px; }
-        .dropdown-item:hover { background-color: #f0f4f8; color: #3b5998; }
-
-        /* Card Thống kê */
-        .stat-card { border-left: 5px solid #3b5998; transition: transform 0.3s; cursor: pointer; }
-        .stat-card:hover { transform: translateY(-5px); }
-        .stat-icon { font-size: 2.5rem; opacity: 0.2; position: absolute; right: 20px; top: 20px; }
-
-        /* Giao diện đăng nhập giống ảnh */
-        .login-card { max-width: 400px; margin: 100px auto; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.08); border-radius: 12px; }
-        .login-header { font-size: 1.5rem; font-weight: bold; color: #0d6efd; text-align: center; margin-bottom: 20px; }
-
+        /* Tiện ích */
         .hidden { display: none !important; }
-        .view-section { animation: fadeIn 0.5s; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .view-section { animation: fadeIn 0.4s; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .table-custom th { background-color: #f8f9fa; color: #003366; font-weight: 600; }
     </style>
 </head>
 <body>
 
-<div class="bg-white py-3 shadow-sm">
+<div class="top-header py-3">
     <div class="container d-flex align-items-center">
-        <div class="bg-university text-white fw-bold d-flex align-items-center justify-content-center rounded" style="width: 50px; height: 50px; font-size: 24px; margin-right: 15px;">DUT</div>
+        <div class="bg-university text-white fw-bold d-flex align-items-center justify-content-center rounded-circle shadow-sm" style="width: 55px; height: 55px; font-size: 20px; margin-right: 15px;">BK</div>
         <div>
-            <h4 class="mb-0 text-university fw-bold text-uppercase">HỆ THỐNG QUẢN LÝ PHÒNG THÍ NGHIỆM THÔNG MINH</h4>
-            <small class="text-muted">Khoa Cơ Khí - Đại học Bách Khoa</small>
+            <h4 class="mb-0 text-university fw-bold text-uppercase" style="letter-spacing: 0.5px;">HỆ THỐNG QUẢN LÝ CƠ SỞ VẬT CHẤT PHÒNG THÍ NGHIỆM</h4>
+            <div class="text-muted fw-semibold">ĐẠI HỌC BÁCH KHOA</div>
         </div>
     </div>
 </div>
 
-<nav class="navbar navbar-expand-lg navbar-custom sticky-top shadow" id="main-nav">
+<nav class="navbar navbar-expand-lg navbar-custom sticky-top" id="main-nav">
     <div class="container">
         <button class="navbar-toggler border-0 text-white" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
             <span class="navbar-toggler-icon" style="filter: invert(1);"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav me-auto">
-                <li class="nav-item"><a class="nav-link" href="#" onclick="showView('home-view')"><i class="bi bi-house-door"></i> Trang chủ</a></li>
+                <li class="nav-item"><a class="nav-link" href="#" onclick="showView('home-view')"><i class="bi bi-house-door-fill"></i> Trang chủ</a></li>
                 
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">Danh mục</a>
                     <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="#">Danh mục Phòng thí nghiệm</a></li>
-                        <li><a class="dropdown-item" href="#">Danh mục Thiết bị</a></li>
-                        <li><a class="dropdown-item" href="#">Danh mục Cán bộ</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="showView('dm-ptn-view')"><i class="bi bi-building"></i> Danh mục phòng thí nghiệm</a></li>
+                        <li><a class="dropdown-item" href="#"><i class="bi bi-cpu"></i> Danh mục thiết bị</a></li>
+                        <li><a class="dropdown-item" href="#"><i class="bi bi-person-badge"></i> Danh mục cán bộ quản lý</a></li>
+                        <li><a class="dropdown-item" href="#"><i class="bi bi-diagram-3"></i> Danh mục khoa / bộ môn</a></li>
+                        <li><a class="dropdown-item" href="#"><i class="bi bi-calendar-check"></i> Danh mục lịch bảo trì</a></li>
+                        <li><a class="dropdown-item" href="#"><i class="bi bi-box-seam"></i> Danh mục vật tư tiêu hao</a></li>
                     </ul>
                 </li>
 
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">Đăng ký sử dụng</a>
                     <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="#">Đăng ký phòng/máy</a></li>
+                        <li><a class="dropdown-item" href="#">Đăng ký phòng thí nghiệm</a></li>
+                        <li><a class="dropdown-item" href="#">Đăng ký thiết bị</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="#">Lịch đã đăng ký</a></li>
                         <li><a class="dropdown-item" href="#">Lịch trống</a></li>
                         <li><a class="dropdown-item" href="#">Mã QR của tôi</a></li>
+                        <li><a class="dropdown-item" href="#">Lịch sử sử dụng</a></li>
+                    </ul>
+                </li>
+
+                <li class="nav-item dropdown role-level-2 hidden">
+                    <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown"><i class="bi bi-broadcast"></i> Giám sát</a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item fw-bold text-primary" href="#" onclick="showView('monitor-energy-view')"><i class="bi bi-lightning-charge"></i> Theo dõi điện năng (KC868)</a></li>
+                        <li><a class="dropdown-item fw-bold text-danger" href="#" onclick="showView('monitor-door-view')"><i class="bi bi-door-open"></i> Mở cửa từ xa (ESP32)</a></li>
+                        <li><a class="dropdown-item" href="#">Theo dõi sử dụng máy</a></li>
+                        <li><a class="dropdown-item" href="#">Camera PTN</a></li>
+                        <li><a class="dropdown-item" href="#">Điều khiển thiết bị</a></li>
+                        <li><a class="dropdown-item" href="#">Cảnh báo bất thường</a></li>
+                    </ul>
+                </li>
+
+                <li class="nav-item dropdown role-level-2 hidden">
+                    <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">Báo cáo</a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#">Báo cáo sử dụng PTN</a></li>
+                        <li><a class="dropdown-item" href="#">Báo cáo điện năng</a></li>
+                        <li><a class="dropdown-item" href="#">Báo cáo bảo trì</a></li>
+                        <li><a class="dropdown-item" href="#">Báo cáo hư hỏng</a></li>
+                        <li><a class="dropdown-item" href="#">Báo cáo sinh viên sử dụng</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-success" href="#"><i class="bi bi-file-earmark-excel"></i> Xuất Excel / PDF</a></li>
+                    </ul>
+                </li>
+
+                <li class="nav-item dropdown role-level-3 hidden">
+                    <a class="nav-link dropdown-toggle text-warning" href="#" data-bs-toggle="dropdown"><i class="bi bi-gear-fill"></i> Quản trị</a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#">Quản lý tài khoản</a></li>
+                        <li><a class="dropdown-item" href="#">Phân quyền</a></li>
+                        <li><a class="dropdown-item" href="#">Duyệt đăng ký</a></li>
+                        <li><a class="dropdown-item" href="#">Cấu hình hệ thống</a></li>
+                        <li><a class="dropdown-item" href="#">Kết nối thiết bị KC868</a></li>
+                        <li><a class="dropdown-item" href="#">Cấu hình ESP32 / RFID / QR</a></li>
+                        <li><a class="dropdown-item" href="#">Backup dữ liệu</a></li>
                     </ul>
                 </li>
 
                 <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown"><i class="bi bi-broadcast"></i> Giám sát</a>
+                    <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">Hỗ trợ</a>
                     <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="#" onclick="showView('monitor-view')">Theo dõi Điện năng (KC868)</a></li>
-                        <li><a class="dropdown-item" href="#" onclick="showView('door-view')">Mở cửa từ xa (ESP32)</a></li>
-                        <li><a class="dropdown-item" href="#">Camera PTN</a></li>
+                        <li><a class="dropdown-item" href="#">Hướng dẫn sử dụng</a></li>
+                        <li><a class="dropdown-item" href="#">Video hướng dẫn</a></li>
+                        <li><a class="dropdown-item" href="#">Liên hệ kỹ thuật</a></li>
+                        <li><a class="dropdown-item" href="#">Gửi phản ánh lỗi</a></li>
+                        <li><a class="dropdown-item" href="#">FAQ</a></li>
                     </ul>
                 </li>
-
-                <li class="nav-item"><a class="nav-link" href="#">Báo cáo</a></li>
-                <li class="nav-item"><a class="nav-link" href="#">Quản trị</a></li>
-                <li class="nav-item"><a class="nav-link" href="#">Hỗ trợ</a></li>
             </ul>
-            <div class="d-flex text-white align-items-center">
-                <span id="user-info-display" class="me-3 small"><i class="bi bi-person-circle"></i> Khách</span>
-                <button class="btn btn-outline-light btn-sm" id="btn-auth" onclick="toggleAuth()">Đăng nhập</button>
+            
+            <div class="d-flex text-white align-items-center bg-dark bg-opacity-25 rounded px-3 py-1">
+                <span id="user-info-display" class="me-3 fw-semibold"><i class="bi bi-person-circle"></i> Vui lòng đăng nhập</span>
+                <button class="btn btn-sm btn-outline-light" onclick="showView('auth-view')">Đăng xuất</button>
             </div>
         </div>
     </div>
@@ -114,140 +156,128 @@
 <div class="container py-4">
 
     <div id="auth-view" class="view-section">
-        <div class="card login-card">
-            <div class="card-body p-4">
-                <div class="login-header">Đăng nhập</div>
-                <div class="mb-3">
-                    <input type="email" class="form-control py-2" placeholder="Email (VD: 123230001@student.edu.vn)">
-                </div>
-                <div class="mb-3">
-                    <input type="password" class="form-control py-2" placeholder="Mật khẩu (MSSV)">
-                </div>
-                <div class="text-end mb-4">
-                    <a href="#" class="text-decoration-none small text-muted">Quên mật khẩu?</a>
-                </div>
-                <button class="btn btn-primary w-100 py-2 fw-bold" onclick="fakeLogin()">Đăng Nhập</button>
+        <div class="card mx-auto shadow-lg border-0" style="max-width: 450px; margin-top: 60px; border-radius: 15px; overflow: hidden;">
+            <div class="bg-university text-center py-4 text-white">
+                <h4 class="fw-bold mb-0">ĐĂNG NHẬP HỆ THỐNG</h4>
+                <small class="opacity-75">Trình giả lập Phân quyền (Test Mode)</small>
+            </div>
+            <div class="card-body p-4 text-center">
+                <p class="text-muted mb-4">Bạn muốn đăng nhập vào hệ thống với vai trò gì?</p>
+                
+                <button class="btn btn-outline-primary w-100 mb-3 py-3 text-start fw-bold" onclick="simulateLogin('student')">
+                    <i class="bi bi-person-badge fs-4 me-3 align-middle"></i> 1. Sinh Viên (Chỉ ĐK & Báo lỗi)
+                </button>
+                
+                <button class="btn btn-outline-success w-100 mb-3 py-3 text-start fw-bold" onclick="simulateLogin('manager')">
+                    <i class="bi bi-person-workspace fs-4 me-3 align-middle"></i> 2. Quản lý PTN (Giám sát, Duyệt, Mở cửa)
+                </button>
+                
+                <button class="btn btn-outline-danger w-100 mb-3 py-3 text-start fw-bold" onclick="simulateLogin('admin')">
+                    <i class="bi bi-shield-lock-fill fs-4 me-3 align-middle"></i> 3. Ban Quản Lý Khoa (Full Admin)
+                </button>
             </div>
         </div>
     </div>
 
     <div id="home-view" class="view-section hidden">
-        <div class="hero-banner">
-            <div class="text-center">
-                <h1 class="display-5 fw-bold text-white shadow-sm">Chào mừng đến với Hệ thống PTN</h1>
-                <p class="lead">Tra cứu, đăng ký và giám sát thiết bị thông minh theo thời gian thực.</p>
+        <div class="hero-banner shadow-sm">
+            <div class="text-center px-3">
+                <h1 class="display-5 fw-bold text-white mb-3">Tối ưu hóa quản lý, nâng tầm thực hành</h1>
+                <p class="lead fw-light">Tra cứu, đăng ký và giám sát thiết bị PTN thông minh theo thời gian thực.</p>
             </div>
         </div>
 
         <div class="row g-3 mb-4">
-            <div class="col-md-4 col-lg-2">
-                <div class="card stat-card h-100 shadow-sm">
-                    <div class="card-body">
-                        <h6 class="text-muted mb-2">PTN đang dùng</h6>
-                        <h3 class="fw-bold text-primary">8 <small class="fs-6 text-muted">phòng</small></h3>
-                        <i class="bi bi-building stat-icon text-primary"></i>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4 col-lg-3">
-                <div class="card stat-card h-100 shadow-sm border-success">
-                    <div class="card-body">
-                        <h6 class="text-muted mb-2">Thiết bị hoạt động</h6>
-                        <h3 class="fw-bold text-success">32 <small class="fs-6 text-muted">máy</small></h3>
-                        <i class="bi bi-cpu stat-icon text-success"></i>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4 col-lg-3">
-                <div class="card stat-card h-100 shadow-sm border-info">
-                    <div class="card-body">
-                        <h6 class="text-muted mb-2">Sinh viên thực hành</h6>
-                        <h3 class="fw-bold text-info">114 <small class="fs-6 text-muted">người</small></h3>
-                        <i class="bi bi-people stat-icon text-info"></i>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-6 col-lg-2">
-                <div class="card stat-card h-100 shadow-sm border-warning">
-                    <div class="card-body">
-                        <h6 class="text-muted mb-2">Điện năng (Hôm nay)</h6>
-                        <h3 class="fw-bold text-warning">86 <small class="fs-6 text-muted">kWh</small></h3>
-                        <i class="bi bi-lightning-charge stat-icon text-warning"></i>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-6 col-lg-2">
-                <div class="card stat-card h-100 shadow-sm border-danger">
-                    <div class="card-body">
-                        <h6 class="text-muted mb-2">Lỗi thiết bị</h6>
-                        <h3 class="fw-bold text-danger">2 <small class="fs-6 text-muted">lỗi</small></h3>
-                        <i class="bi bi-exclamation-triangle stat-icon text-danger"></i>
-                    </div>
-                </div>
-            </div>
+            <div class="col-md-4 col-lg-2"><div class="card stat-card h-100 shadow-sm"><div class="card-body"><h6 class="text-muted mb-2">PTN đang dùng</h6><h3 class="fw-bold text-university">8</h3><i class="bi bi-building stat-icon text-university"></i></div></div></div>
+            <div class="col-md-4 col-lg-2"><div class="card stat-card h-100 shadow-sm"><div class="card-body"><h6 class="text-muted mb-2">Thiết bị hoạt động</h6><h3 class="fw-bold text-success">32</h3><i class="bi bi-cpu stat-icon text-success"></i></div></div></div>
+            <div class="col-md-4 col-lg-3"><div class="card stat-card h-100 shadow-sm"><div class="card-body"><h6 class="text-muted mb-2">Sinh viên đang TH</h6><h3 class="fw-bold text-info">114</h3><i class="bi bi-people stat-icon text-info"></i></div></div></div>
+            <div class="col-md-6 col-lg-3"><div class="card stat-card h-100 shadow-sm"><div class="card-body"><h6 class="text-muted mb-2">Điện năng hôm nay</h6><h3 class="fw-bold text-warning">86.5 <small class="fs-6">kWh</small></h3><i class="bi bi-lightning-charge stat-icon text-warning"></i></div></div></div>
+            <div class="col-md-6 col-lg-2"><div class="card stat-card h-100 shadow-sm border-danger"><div class="card-body"><h6 class="text-muted mb-2">Lỗi thiết bị</h6><h3 class="fw-bold text-danger">2</h3><i class="bi bi-exclamation-triangle stat-icon text-danger"></i></div></div></div>
         </div>
 
         <div class="row">
-            <div class="col-md-8">
-                <div class="card shadow-sm border-0">
-                    <div class="card-header bg-white fw-bold py-3"><i class="bi bi-calendar-event text-university me-2"></i> Lịch PTN hôm nay</div>
+            <div class="col-md-7 mb-4">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-header bg-white fw-bold py-3 text-university"><i class="bi bi-megaphone-fill me-2 text-danger"></i> Thông báo mới nhất về hệ thống</div>
                     <div class="card-body p-0">
-                        <ul class="list-group list-group-flush">
-                            <li class="list-group-item d-flex justify-content-between align-items-center p-3">
-                                <div><h6 class="mb-0 fw-bold">Phòng K101 (Thực hành Tiện CNC)</h6><small class="text-muted">GV: Nguyễn Văn A - Lớp: 20C1</small></div>
-                                <span class="badge bg-success rounded-pill">Đang diễn ra (Tiết 1-3)</span>
-                            </li>
-                            <li class="list-group-item d-flex justify-content-between align-items-center p-3">
-                                <div><h6 class="mb-0 fw-bold">Phòng C102 (Tự động hóa)</h6><small class="text-muted">Nghiên cứu khoa học sinh viên</small></div>
-                                <span class="badge bg-warning text-dark rounded-pill">Sắp diễn ra (Tiết 4-6)</span>
-                            </li>
-                        </ul>
+                        <div class="list-group list-group-flush">
+                            <a href="#" class="list-group-item list-group-item-action p-3">
+                                <div class="d-flex w-100 justify-content-between"><h6 class="mb-1 fw-bold text-dark">Lịch bảo trì máy CNC - PTN K101</h6><small class="text-muted">3 giờ trước</small></div>
+                                <p class="mb-1 small text-muted">Toàn bộ máy tiện CNC tại K101 sẽ tạm ngưng để bảo trì định kỳ vào sáng Thứ 7 tuần này.</p>
+                            </a>
+                            <a href="#" class="list-group-item list-group-item-action p-3 bg-light">
+                                <div class="d-flex w-100 justify-content-between"><h6 class="mb-1 fw-bold text-danger">Cập nhật nội quy khai báo trả máy</h6><small class="text-muted">Hôm qua</small></div>
+                                <p class="mb-1 small text-muted">Bắt buộc khai báo tình trạng thiết bị trên Web/App sau khi quét mã QR kết thúc ca thực hành.</p>
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="col-md-4">
-                <div class="card shadow-sm border-0">
-                    <div class="card-header bg-white fw-bold py-3 text-danger"><i class="bi bi-bell-fill me-2"></i> Cảnh báo hệ thống</div>
-                    <div class="card-body">
-                        <div class="alert alert-danger py-2 small"><i class="bi bi-tools"></i> Máy in 3D (Phòng K101) báo lỗi kẹt nhựa lúc 08:15.</div>
-                        <div class="alert alert-warning py-2 small"><i class="bi bi-lightning"></i> Tủ điện Phòng C102 có dòng điện tăng cao bất thường.</div>
+            <div class="col-md-5 mb-4">
+                <div class="card shadow-sm border-0 mb-3">
+                    <div class="card-header bg-white fw-bold py-3"><i class="bi bi-calendar-event me-2"></i> Lịch PTN hôm nay</div>
+                    <div class="card-body p-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2 border-bottom pb-2">
+                            <div><div class="fw-bold">K101 - Thực hành Tiện CNC</div><small class="text-muted">GV: Nguyễn Văn A</small></div>
+                            <span class="badge bg-success">Đang diễn ra</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div><div class="fw-bold">C102 - NCKH Tự động hóa</div><small class="text-muted">Nhóm SV năm 4</small></div>
+                            <span class="badge bg-warning text-dark">Ca chiều (13h30)</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card shadow-sm border-0 border-start border-4 border-danger">
+                    <div class="card-body py-2 px-3">
+                        <div class="d-flex align-items-center text-danger fw-bold small"><i class="bi bi-exclamation-triangle-fill me-2"></i> CẢNH BÁO LỖI MỚI NHẤT</div>
+                        <div class="small mt-1 text-muted">Máy in 3D (Phòng K101) - Kẹt nhựa đùn (Báo lúc 08:15)</div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div id="monitor-view" class="view-section hidden">
-        <h3 class="fw-bold mb-4 text-university"><i class="bi bi-lightning-charge"></i> Giám sát Điện năng (Realtime)</h3>
+    <div id="dm-ptn-view" class="view-section hidden">
+        <h3 class="fw-bold mb-4 text-university"><i class="bi bi-building"></i> Danh mục Phòng Thí Nghiệm</h3>
         <div class="card shadow-sm border-0">
-            <div class="card-body">
-                <table class="table table-hover align-middle text-center">
-                    <thead class="table-light">
+            <div class="card-body p-0">
+                <table class="table table-hover align-middle table-custom mb-0 text-center">
+                    <thead>
                         <tr>
-                            <th class="text-start">Thiết bị / Tủ điện</th>
-                            <th>Công suất (W)</th>
-                            <th>Điện áp (V)</th>
-                            <th>Dòng điện (A)</th>
-                            <th>Tổng (kWh)</th>
-                            <th>Trạng thái kết nối</th>
+                            <th class="text-start ps-4">Mã phòng</th>
+                            <th class="text-start">Tên phòng</th>
+                            <th>Khoa</th>
+                            <th>Quản lý</th>
+                            <th>Trạng thái</th>
+                            <th>Thao tác nhanh</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
-                            <td class="text-start fw-bold"><i class="bi bi-hdd-rack text-primary"></i> KC868-A16 (Phòng K101)</td>
-                            <td class="text-danger fw-bold">1250 W</td>
-                            <td>221.5 V</td>
-                            <td>5.64 A</td>
-                            <td class="text-primary fw-bold">124.5 kWh</td>
-                            <td><span class="badge bg-success">Online</span></td>
+                            <td class="text-start ps-4 fw-bold">K101</td>
+                            <td class="text-start">PTN Cơ Khí Chế Tạo 1</td>
+                            <td>Cơ Khí</td>
+                            <td>TS. Lê Văn B</td>
+                            <td><span class="badge bg-success">Đang hoạt động</span></td>
+                            <td>
+                                <button class="btn btn-sm btn-light border" title="Xem chi tiết"><i class="bi bi-eye"></i></button>
+                                <button class="btn btn-sm btn-warning role-level-2 hidden" title="Mở cửa từ xa"><i class="bi bi-door-open"></i></button>
+                                <button class="btn btn-sm btn-info role-level-2 hidden" title="Camera"><i class="bi bi-camera-video"></i></button>
+                                <button class="btn btn-sm btn-primary role-level-2 hidden" title="Điện năng"><i class="bi bi-lightning"></i></button>
+                            </td>
                         </tr>
                         <tr>
-                            <td class="text-start fw-bold"><i class="bi bi-hdd-rack text-primary"></i> KC868-A16 (Phòng C102)</td>
-                            <td class="text-success fw-bold">120 W</td>
-                            <td>220.1 V</td>
-                            <td>0.54 A</td>
-                            <td class="text-primary fw-bold">45.2 kWh</td>
-                            <td><span class="badge bg-success">Online</span></td>
+                            <td class="text-start ps-4 fw-bold">C102</td>
+                            <td class="text-start">PTN Tự Động Hóa</td>
+                            <td>Điện - Điện Tử</td>
+                            <td>ThS. Trần Thị C</td>
+                            <td><span class="badge bg-secondary">Bảo trì</span></td>
+                            <td>
+                                <button class="btn btn-sm btn-light border"><i class="bi bi-eye"></i></button>
+                                <button class="btn btn-sm btn-warning role-level-2 hidden"><i class="bi bi-door-open"></i></button>
+                                <button class="btn btn-sm btn-info role-level-2 hidden"><i class="bi bi-camera-video"></i></button>
+                                <button class="btn btn-sm btn-primary role-level-2 hidden"><i class="bi bi-lightning"></i></button>
+                            </td>
                         </tr>
                     </tbody>
                 </table>
@@ -255,37 +285,89 @@
         </div>
     </div>
 
-    <div id="door-view" class="view-section hidden">
-        <h3 class="fw-bold mb-4 text-university"><i class="bi bi-door-open"></i> Điều khiển Cửa & Thiết bị</h3>
+    <div id="monitor-energy-view" class="view-section hidden">
+        <h3 class="fw-bold mb-4 text-university"><i class="bi bi-lightning-charge-fill text-warning"></i> Giám sát Điện năng (Realtime KC868)</h3>
+        
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-body p-0">
+                <table class="table table-hover align-middle text-center table-custom mb-0">
+                    <thead>
+                        <tr><th class="text-start ps-4">Thiết bị (Tủ điện)</th><th>Công suất</th><th>Điện áp</th><th>Dòng điện</th><th>Tổng kWh</th><th>Trạng thái</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="text-start ps-4 fw-bold"><i class="bi bi-hdd-rack text-primary me-2"></i> KC868-A16_Tủ_K101</td>
+                            <td class="text-danger fw-bold">1250 W</td><td>221.5 V</td><td>5.64 A</td><td class="text-primary fw-bold">124.5</td>
+                            <td><span class="badge bg-success"><span class="spinner-grow spinner-grow-sm" style="width: 8px; height: 8px;"></span> Online</span></td>
+                        </tr>
+                        <tr>
+                            <td class="text-start ps-4 fw-bold"><i class="bi bi-hdd-rack text-primary me-2"></i> KC868-A16_Tủ_C102</td>
+                            <td class="text-success fw-bold">120 W</td><td>220.1 V</td><td>0.54 A</td><td class="text-primary fw-bold">45.2</td>
+                            <td><span class="badge bg-success"><span class="spinner-grow spinner-grow-sm" style="width: 8px; height: 8px;"></span> Online</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
         <div class="row">
             <div class="col-md-8">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-body">
+                        <h6 class="fw-bold text-center text-muted mb-3">Công suất tiêu thụ theo thời gian (W)</h6>
+                        <canvas id="powerChart" height="100"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-body d-flex flex-column justify-content-center">
+                        <h6 class="fw-bold text-center text-muted mb-3">So sánh điện năng các phòng</h6>
+                        <canvas id="roomChart" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="monitor-door-view" class="view-section hidden">
+        <h3 class="fw-bold mb-4 text-university"><i class="bi bi-door-open-fill text-danger"></i> Điều khiển Cửa & Thiết bị (ESP32)</h3>
+        <div class="row">
+            <div class="col-md-7">
                 <div class="card shadow-sm border-0">
-                    <table class="table mb-0 align-middle">
-                        <thead class="table-light">
-                            <tr><th>Phòng Thí Nghiệm</th><th>Trạng thái cửa</th><th>Thao tác điều khiển</th></tr>
-                        </thead>
+                    <table class="table mb-0 align-middle table-hover table-custom text-center">
+                        <thead><tr><th class="text-start ps-4">Phòng PTN</th><th>Trạng thái cửa</th><th>Nút điều khiển</th></tr></thead>
                         <tbody>
                             <tr>
-                                <td class="fw-bold">PTN Cơ khí 1 (K101)</td>
-                                <td><span class="badge bg-danger"><i class="bi bi-lock-fill"></i> Đang khóa</span></td>
-                                <td><button class="btn btn-success btn-sm fw-bold"><i class="bi bi-unlock-fill"></i> MỞ CỬA</button></td>
+                                <td class="text-start ps-4 fw-bold">PTN Cơ khí 1 (K101)</td>
+                                <td><span class="badge bg-danger px-3 py-2"><i class="bi bi-lock-fill"></i> Đang khóa</span></td>
+                                <td><button class="btn btn-success btn-sm fw-bold px-3"><i class="bi bi-unlock-fill"></i> MỞ CỬA</button></td>
                             </tr>
                             <tr>
-                                <td class="fw-bold">PTN Tự động hóa (C102)</td>
-                                <td><span class="badge bg-success"><i class="bi bi-unlock-fill"></i> Đang mở</span></td>
-                                <td><button class="btn btn-danger btn-sm fw-bold"><i class="bi bi-lock-fill"></i> KHÓA CỬA</button></td>
+                                <td class="text-start ps-4 fw-bold">PTN CNC (K102)</td>
+                                <td><span class="badge bg-success px-3 py-2"><i class="bi bi-unlock-fill"></i> Đang mở</span></td>
+                                <td><button class="btn btn-danger btn-sm fw-bold px-3"><i class="bi bi-lock-fill"></i> KHÓA CỬA</button></td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
             </div>
-            <div class="col-md-4">
-                <div class="card shadow-sm border-0 bg-light">
-                    <div class="card-header bg-dark text-white fw-bold"><i class="bi bi-terminal"></i> System Log</div>
-                    <div class="card-body p-2" style="height: 150px; overflow-y: auto; font-family: monospace; font-size: 0.85em;">
-                        <div class="text-success">[10:05:22] Lương Minh Quân đã MỞ CỬA phòng C102.</div>
-                        <div class="text-muted">[08:00:15] SV 123240010 quét QR hợp lệ tại K101.</div>
-                        <div class="text-danger">[07:55:00] CẢNH BÁO: Quét QR sai tại C102!</div>
+            <div class="col-md-5">
+                <div class="card shadow-lg border-0 bg-dark text-light h-100">
+                    <div class="card-header border-secondary d-flex justify-content-between align-items-center">
+                        <span class="fw-bold"><i class="bi bi-terminal"></i> System Activity Log</span>
+                        <span class="spinner-border spinner-border-sm text-success"></span>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="terminal-log">
+                            <div class="log-info">[08:45:12] SYSTEM: Kết nối ESP32-K101 ổn định.</div>
+                            <div class="text-white">[08:50:05] SENSOR: SV 123240010 quét QR tại K101 -> Hợp lệ.</div>
+                            <div class="log-warn">[08:50:08] ACTION: Relay K101 kích hoạt MỞ CỬA.</div>
+                            <div class="log-error">[09:12:30] ALERT: Cửa C102 mở quá 5 phút chưa đóng!</div>
+                            <div class="log-info">[09:15:00] ADMIN: Trần Văn C đã bấm KHÓA CỬA C102 từ xa.</div>
+                            <div class="text-white">[09:15:02] ACTION: Relay C102 đóng thành công.</div>
+                            <div class="log-info blink">_</div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -295,35 +377,90 @@
 </div>
 
 <script>
-    // Hàm điều hướng siêu tốc giữa các màn hình
+    // =========================================
+    // LOGIC ĐIỀU HƯỚNG VÀ PHÂN QUYỀN (RBAC)
+    // =========================================
+    
+    // Hàm hiển thị view tương ứng
     function showView(viewId) {
         document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
         document.getElementById(viewId).classList.remove('hidden');
+        
+        // Render chart nếu vào trang Điện năng
+        if(viewId === 'monitor-energy-view') initFakeCharts();
     }
 
-    // Hàm mô phỏng Đăng nhập (Tạm thời để bạn xem giao diện)
-    function fakeLogin() {
-        document.getElementById('user-info-display').innerHTML = '<i class="bi bi-person-badge-fill"></i> Lương Minh Quân (Admin)';
-        document.getElementById('btn-auth').innerText = 'Đăng xuất';
-        document.getElementById('btn-auth').classList.replace('btn-outline-light', 'btn-danger');
-        showView('home-view'); // Đăng nhập xong nhảy vào Trang chủ
-    }
+    // Hàm giả lập đăng nhập và set quyền
+    function simulateLogin(role) {
+        let displayHtml = '';
+        
+        // Mặc định ẩn tất cả các menu Level 2 và 3
+        document.querySelectorAll('.role-level-2').forEach(el => el.classList.add('hidden'));
+        document.querySelectorAll('.role-level-3').forEach(el => el.classList.add('hidden'));
 
-    function toggleAuth() {
-        const btn = document.getElementById('btn-auth');
-        if (btn.innerText === 'Đăng xuất') {
-            btn.innerText = 'Đăng nhập';
-            btn.classList.replace('btn-danger', 'btn-outline-light');
-            document.getElementById('user-info-display').innerHTML = '<i class="bi bi-person-circle"></i> Khách';
-            showView('auth-view');
-        } else {
-            showView('auth-view');
+        if (role === 'student') {
+            displayHtml = '<i class="bi bi-person-badge-fill text-info"></i> SV Nguyễn Văn A';
+            // Sinh viên chỉ thấy trang chủ, danh mục, đăng ký, hỗ trợ (Level 1)
+        } 
+        else if (role === 'manager') {
+            displayHtml = '<i class="bi bi-person-workspace text-warning"></i> QL. Trần Thị B';
+            // Quản lý thấy thêm Giám sát, Báo cáo (Level 2)
+            document.querySelectorAll('.role-level-2').forEach(el => el.classList.remove('hidden'));
+        } 
+        else if (role === 'admin') {
+            displayHtml = '<i class="bi bi-shield-lock-fill text-danger"></i> Admin Khoa';
+            // Admin thấy tất cả (Level 2 + Level 3)
+            document.querySelectorAll('.role-level-2').forEach(el => el.classList.remove('hidden'));
+            document.querySelectorAll('.role-level-3').forEach(el => el.classList.remove('hidden'));
         }
+
+        document.getElementById('user-info-display').innerHTML = displayHtml;
+        showView('home-view'); // Chuyển về trang chủ
     }
 
-    // Khởi động mặc định vào màn hình Đăng nhập
+    // =========================================
+    // MÔ PHỎNG BIỂU ĐỒ (Dùng Chart.js)
+    // =========================================
+    let powerChart, roomChart;
+    
+    function initFakeCharts() {
+        if(powerChart) powerChart.destroy();
+        if(roomChart) roomChart.destroy();
+
+        // Biểu đồ Đường (Công suất realtime giả lập)
+        const ctx1 = document.getElementById('powerChart').getContext('2d');
+        powerChart = new Chart(ctx1, {
+            type: 'line',
+            data: {
+                labels: ['08:00', '08:15', '08:30', '08:45', '09:00', '09:15', 'Hiện tại'],
+                datasets: [{
+                    label: 'Công suất K101 (W)',
+                    data: [100, 1050, 1200, 1250, 1100, 1250, 1250],
+                    borderColor: '#cc0000',
+                    backgroundColor: 'rgba(204, 0, 0, 0.1)',
+                    borderWidth: 2, fill: true, tension: 0.3
+                }]
+            },
+            options: { responsive: true, plugins: { legend: { display: false } } }
+        });
+
+        // Biểu đồ Tròn (So sánh phòng)
+        const ctx2 = document.getElementById('roomChart').getContext('2d');
+        roomChart = new Chart(ctx2, {
+            type: 'doughnut',
+            data: {
+                labels: ['PTN K101', 'PTN C102', 'PTN Khác'],
+                datasets: [{
+                    data: [124.5, 45.2, 30.0],
+                    backgroundColor: ['#003366', '#009933', '#e0e0e0']
+                }]
+            },
+            options: { responsive: true }
+        });
+    }
+
+    // Khởi động mặc định vào màn hình Test
     showView('auth-view');
 </script>
-
 </body>
 </html>
