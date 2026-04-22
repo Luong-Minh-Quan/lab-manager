@@ -8,6 +8,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -15,37 +16,27 @@
 
     <style>
         body { background-color: #f0f2f5; font-family: 'Segoe UI', system-ui, sans-serif; }
-        
-        /* Theme Đại học Bách Khoa (Xanh đậm & Đỏ) */
         .bg-university { background-color: #003366; color: white; }
         .text-university { color: #003366; }
         .bg-accent { background-color: #cc0000; color: white; }
         
-        /* Header & Navbar */
         .top-header { border-bottom: 3px solid #cc0000; background: white; }
         .navbar-custom { background-color: #003366; padding: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         .navbar-custom .nav-link { color: #fff !important; font-weight: 500; padding: 15px 18px; transition: 0.2s; font-size: 0.95rem; }
         .navbar-custom .nav-link:hover, .navbar-custom .nav-item.active { background-color: #004080; }
         
-        /* Dropdown */
         .dropdown-menu { border: none; box-shadow: 0 10px 20px rgba(0,0,0,0.1); border-radius: 0 0 8px 8px; margin-top: 0; padding: 10px 0; }
         .dropdown-item { padding: 8px 20px; font-size: 0.95rem; transition: 0.2s; }
         .dropdown-item:hover { background-color: #f0f4f8; color: #003366; font-weight: 500; border-left: 3px solid #cc0000; }
 
-        /* Dashboard & Cards */
-        .hero-banner {
-            background: linear-gradient(rgba(0,51,102, 0.7), rgba(0,51,102, 0.8)), url('SlideShow01') center/cover;
-            height: 250px; display: flex; align-items: center; justify-content: center; color: white; border-radius: 12px; margin-bottom: 25px;
-        }
+        .hero-banner { background: linear-gradient(rgba(0,51,102, 0.7), rgba(0,51,102, 0.8)), url('SlideShow01') center/cover; height: 250px; display: flex; align-items: center; justify-content: center; color: white; border-radius: 12px; margin-bottom: 25px; }
         .stat-card { border: none; border-left: 5px solid #003366; transition: 0.3s; border-radius: 8px; }
         .stat-card:hover { transform: translateY(-5px); box-shadow: 0 8px 20px rgba(0,0,0,0.08); }
         .stat-icon { font-size: 2.5rem; opacity: 0.15; position: absolute; right: 20px; top: 15px; }
         
-        /* System Log Terminal */
         .terminal-log { background: #1e1e1e; color: #00ff00; font-family: monospace; font-size: 0.85rem; height: 250px; overflow-y: auto; padding: 10px; border-radius: 5px; }
         .log-error { color: #ff444a; } .log-info { color: #0088ff; } .log-warn { color: #ffaa00; }
 
-        /* Tiện ích */
         .hidden { display: none !important; }
         .view-section { animation: fadeIn 0.4s; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -56,12 +47,10 @@
 
 <div class="top-header py-3">
     <div class="container d-flex align-items-center">
-          <img src="logo-dut.jpg" 
-             onerror="this.src='https://via.placeholder.com/65x65?text=DUT'" 
-             alt="Logo Bách Khoa" 
-             style="width: 65px; height: 65px; object-fit: contain; margin-right: 15px;">
+          <img src="logo-dut.jpg" onerror="this.src='https://via.placeholder.com/65x65?text=DUT'" alt="Logo Bách Khoa" style="width: 65px; height: 65px; object-fit: contain; margin-right: 15px;">
+        <div>
             <h4 class="mb-0 text-university fw-bold text-uppercase" style="letter-spacing: 0.5px;">HỆ THỐNG QUẢN LÝ CƠ SỞ VẬT CHẤT PHÒNG THÍ NGHIỆM</h4>
-            <small class="text-muted">ĐẠI HỌC BÁCH KHOA</small>
+            <small class="text-muted fw-semibold">ĐẠI HỌC BÁCH KHOA</small>
         </div>
     </div>
 </div>
@@ -78,25 +67,16 @@
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">Danh mục</a>
                     <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="#" onclick="showView('dm-ptn-view')"><i class="bi bi-building"></i> Danh mục phòng thí nghiệm</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="showView('dm-ptn-view')"><i class="bi bi-building"></i> Danh mục PTN</a></li>
                         <li><a class="dropdown-item" href="#"><i class="bi bi-cpu"></i> Danh mục thiết bị</a></li>
-                        <li><a class="dropdown-item" href="#"><i class="bi bi-person-badge"></i> Danh mục cán bộ quản lý</a></li>
-                        <li><a class="dropdown-item" href="#"><i class="bi bi-diagram-3"></i> Danh mục khoa / bộ môn</a></li>
-                        <li><a class="dropdown-item" href="#"><i class="bi bi-calendar-check"></i> Danh mục lịch bảo trì</a></li>
-                        <li><a class="dropdown-item" href="#"><i class="bi bi-box-seam"></i> Danh mục vật tư tiêu hao</a></li>
                     </ul>
                 </li>
 
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">Đăng ký sử dụng</a>
                     <ul class="dropdown-menu">
-                        
-                        
-                       
-                        <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item" href="#" onclick="loadHistoryView()">Lịch đã đăng ký</a></li>
                         <li><a class="dropdown-item" href="#" onclick="showAvailableSchedule()">Lịch trống</a></li>
-                        <li><a class="dropdown-item" href="#">Mã QR của tôi</a></li>
                         <li><a class="dropdown-item" href="#" onclick="loadHistoryView()">Lịch sử sử dụng</a></li>
                     </ul>
                 </li>
@@ -105,51 +85,21 @@
                     <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown"><i class="bi bi-broadcast"></i> Giám sát</a>
                     <ul class="dropdown-menu">
                         <li><a class="dropdown-item fw-bold text-primary" href="#" onclick="showView('monitor-energy-view')"><i class="bi bi-lightning-charge"></i> Theo dõi điện năng</a></li>
-                        <li><a class="dropdown-item fw-bold text-danger" href="#" onclick="showView('monitor-door-view')"><i class="bi bi-door-open"></i> Mở cửa từ xa </a></li>
-                        <li><a class="dropdown-item" href="#">Theo dõi sử dụng máy</a></li>
-                        <li><a class="dropdown-item" href="#">Camera PTN</a></li>
-                        <li><a class="dropdown-item" href="#">Điều khiển thiết bị</a></li>
-                        <li><a class="dropdown-item" href="#">Cảnh báo bất thường</a></li>
-                    </ul>
-                </li>
-
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">Báo cáo</a>
-                    <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="#">Báo cáo tình trạng PTN</a></li>
-                        <li><a class="dropdown-item" href="#">Báo cáo hư hỏng máy</a></li>
-                        <li><a class="dropdown-item" href="#">Báo cáo sinh viên sử dụng</a></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item text-success" href="#"><i class="bi bi-file-earmark-excel"></i> Xuất Excel / PDF</a></li>
+                        <li><a class="dropdown-item fw-bold text-danger" href="#" onclick="showView('monitor-door-view')"><i class="bi bi-door-open"></i> Mở cửa từ xa</a></li>
                     </ul>
                 </li>
 
                 <li class="nav-item dropdown role-level-3 hidden">
                     <a class="nav-link dropdown-toggle text-warning" href="#" data-bs-toggle="dropdown"><i class="bi bi-gear-fill"></i> Quản trị</a>
                     <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="#">Quản lý tài khoản</a></li>
-                        <li><a class="dropdown-item" href="#">Phân quyền</a></li>
                         <li><a class="dropdown-item" href="#" onclick="loadHistoryView()">Duyệt đăng ký</a></li>
-                        <li><a class="dropdown-item" href="#">Cấu hình hệ thống</a></li>
-                        <li><a class="dropdown-item" href="#">Kết nối thiết bị</a></li>
-                 
-                        <li><a class="dropdown-item" href="#">Backup dữ liệu</a></li>
-                    </ul>
-                </li>
-
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">Hỗ trợ</a>
-                    <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="#">Hướng dẫn sử dụng</a></li>
-                        <li><a class="dropdown-item" href="#">Video hướng dẫn</a></li>
-                        <li><a class="dropdown-item" href="#">Liên hệ kỹ thuật</a></li>
-                        
+                        <li><a class="dropdown-item" href="#">Quản lý tài khoản</a></li>
                     </ul>
                 </li>
             </ul>
             
             <div class="d-flex text-white align-items-center bg-dark bg-opacity-25 rounded px-3 py-1">
-                <span id="user-info-display" class="me-3 fw-semibold"><i class="bi bi-person-circle"></i>Vui lòng đăng nhập</span>
+                <span id="user-info-display" class="me-3 fw-semibold"><i class="bi bi-person-circle"></i> Vui lòng đăng nhập</span>
                 <button id="btn-auth" class="btn btn-sm btn-outline-light" onclick="showView('auth-view')">Đăng nhập</button>
             </div>
         </div>
@@ -167,11 +117,9 @@
             <div class="card-body p-4 text-center">
                 <input type="email" id="login-email" class="form-control mb-3 py-2" placeholder="Email (VD: sv@student.edu.vn)">
                 <input type="password" id="login-password" class="form-control mb-2 py-2" placeholder="Mật khẩu (MSSV)">
-                
                 <div class="text-end mb-4">
                     <a href="#" class="text-decoration-none small text-danger" onclick="handleForgotPassword()">Quên mật khẩu?</a>
                 </div>
-
                 <button class="btn btn-primary w-100 py-2 fw-bold" onclick="handleLogin()">Đăng Nhập</button>
             </div>
         </div>
@@ -193,47 +141,7 @@
             <div class="col-md-6 col-lg-2"><div class="card stat-card h-100 shadow-sm border-danger"><div class="card-body"><h6 class="text-muted mb-2">Lỗi thiết bị</h6><h3 class="fw-bold text-danger">2</h3><i class="bi bi-exclamation-triangle stat-icon text-danger"></i></div></div></div>
         </div>
 
-        <div class="row">
-            <div class="col-md-7 mb-4">
-                <div class="card shadow-sm border-0 h-100">
-                    <div class="card-header bg-white fw-bold py-3 text-university"><i class="bi bi-megaphone-fill me-2 text-danger"></i> Thông báo mới nhất</div>
-                    <div class="card-body p-0">
-                        <div class="list-group list-group-flush">
-                            <a href="#" class="list-group-item list-group-item-action p-3">
-                                <div class="d-flex w-100 justify-content-between"><h6 class="mb-1 fw-bold text-dark">Lịch bảo trì máy CNC - PTN K101</h6><small class="text-muted">3 giờ trước</small></div>
-                                <p class="mb-1 small text-muted">Toàn bộ máy tiện CNC tại K101 sẽ tạm ngưng để bảo trì định kỳ vào sáng Thứ 7 tuần này.</p>
-                            </a>
-                            <a href="#" class="list-group-item list-group-item-action p-3 bg-light">
-                                <div class="d-flex w-100 justify-content-between"><h6 class="mb-1 fw-bold text-danger">Cập nhật nội quy khai báo trả máy</h6><small class="text-muted">Hôm qua</small></div>
-                                <p class="mb-1 small text-muted">Bắt buộc khai báo tình trạng thiết bị trên Web/App sau khi quét mã QR kết thúc ca thực hành.</p>
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-5 mb-4">
-                <div class="card shadow-sm border-0 mb-3">
-                    <div class="card-header bg-white fw-bold py-3"><i class="bi bi-calendar-event me-2"></i> Lịch PTN hôm nay</div>
-                    <div class="card-body p-3">
-                        <div class="d-flex justify-content-between align-items-center mb-2 border-bottom pb-2">
-                            <div><div class="fw-bold">K101 - Thực hành Tiện CNC</div><small class="text-muted">GV: Nguyễn Văn A</small></div>
-                            <span class="badge bg-success">Đang diễn ra</span>
-                        </div>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div><div class="fw-bold">C102 - NCKH Tự động hóa</div><small class="text-muted">Nhóm SV năm 4</small></div>
-                            <span class="badge bg-warning text-dark">Ca chiều (13h30)</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="card shadow-sm border-0 border-start border-4 border-danger">
-                    <div class="card-body py-2 px-3">
-                        <div class="d-flex align-items-center text-danger fw-bold small"><i class="bi bi-exclamation-triangle-fill me-2"></i> CẢNH BÁO LỖI MỚI NHẤT</div>
-                        <div class="small mt-1 text-muted">Máy in 3D (Phòng K101) - Kẹt nhựa đùn (Báo lúc 08:15)</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-<div class="mt-2 mb-5">
+        <div class="mt-2 mb-5">
             <div class="card shadow-sm border-0 border-top border-4 border-danger">
                 <div class="card-body p-4">
                     <h5 class="fw-bold text-university mb-4"><i class="bi bi-file-earmark-ruled-fill me-2 text-danger"></i> NỘI QUY - QUY CHẾ PHÒNG THÍ NGHIỆM</h5>
@@ -251,68 +159,29 @@
                             <ul class="list-unstyled">
                                 <li class="mb-2"><i class="bi bi-exclamation-triangle-fill text-danger me-2"></i> Cấm mang thức ăn, đồ uống và chất dễ cháy nổ vào khu vực PTN.</li>
                                 <li class="mb-2"><i class="bi bi-exclamation-triangle-fill text-danger me-2"></i> <strong>Tuyệt đối không</strong> tự ý bật/tắt aptomat tổng của PTN.</li>
-                                <li class="mb-2"><i class="bi bi-exclamation-triangle-fill text-warning me-2"></i> Khi hoàn thành, phải <strong>quét mã QR để Check-out</strong> và khai báo tình trạng thiết bị (Tốt/Hư hỏng).</li>
                             </ul>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-        <div id="history-view" class="view-section hidden">
-            <h3 class="fw-bold mb-4 text-university" id="history-title"><i class="bi bi-clock-history"></i> Lịch sử & Xét duyệt</h3>
-            <div class="card shadow-sm border-0">
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table align-middle table-hover text-center mb-0 table-custom">
-                            <thead>
-                                <tr>
-                                    <th class="text-start ps-4">Người đăng ký</th>
-                                    <th class="text-start">Thiết bị & Mục đích</th>
-                                    <th>Thời gian (Ca)</th>
-                                    <th>Trạng thái</th>
-                                    <th>Hành động</th>
-                                </tr>
-                            </thead>
-                            <tbody id="history-list"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-    
-        <div class="modal fade" id="bookingModal" tabindex="-1">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header bg-university text-white">
-                        <h5 class="modal-title fw-bold">Đăng ký: <span id="modal-machine-name" class="text-warning"></span></h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <input type="hidden" id="book-room">
-                        <div class="mb-3"><label class="form-label fw-bold">Họ và tên</label><input type="text" id="book-name" class="form-control bg-light" readonly></div>
-                        <div class="row mb-3">
-                            <div class="col"><label class="form-label fw-bold">Số người</label><input type="number" id="book-participants" class="form-control" min="1" value="1"></div>
-                            <div class="col">
-                                <label class="form-label fw-bold">Mục đích</label>
-                                <select id="book-purpose" class="form-select">
-                                    <option value="Thực hành">Thực hành</option>
-                                    <option value="Nghiên cứu">Nghiên cứu</option>
-                                    <option value="Giảng dạy">Giảng dạy</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="mb-3"><label class="form-label fw-bold">Ngày sử dụng</label><input type="date" id="book-date" class="form-control"></div>
-                        <div class="row mb-3">
-                            <div class="col"><label class="form-label fw-bold">Từ giờ</label><input type="time" id="book-start" class="form-control"></div>
-                            <div class="col"><label class="form-label fw-bold">Đến giờ</label><input type="time" id="book-end" class="form-control"></div>
-                        </div>
-                        <div class="alert alert-warning mb-0 small">
-                            <i class="bi bi-info-circle-fill"></i> Chỉ ĐK Thứ 2-Thứ 6. (Sáng: 07:30-11:15 | Chiều: 13:30-17:00)
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-primary fw-bold px-4" onclick="submitBooking()">Xác nhận Gửi</button>
-                    </div>
+    </div> <div id="history-view" class="view-section hidden">
+        <h3 class="fw-bold mb-4 text-university" id="history-title"><i class="bi bi-clock-history"></i> Quản lý Lịch & Xét duyệt</h3>
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table align-middle table-hover text-center mb-0 table-custom">
+                        <thead>
+                            <tr>
+                                <th class="text-start ps-4">Người đăng ký</th>
+                                <th class="text-start">Thiết bị & Mục đích</th>
+                                <th>Thời gian (Ca)</th>
+                                <th>Trạng thái</th>
+                                <th>Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-list"></tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -333,34 +202,7 @@
                             <th>Thao tác nhanh</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <tr>
-                            <td class="text-start ps-4 fw-bold">K101</td>
-                            <td class="text-start">PTN Cơ Khí Chế Tạo 1</td>
-                            <td>Cơ Khí</td>
-                            <td>TS. Lê Văn B</td>
-                            <td><span class="badge bg-success">Đang hoạt động</span></td>
-                            <td>
-                                <button class="btn btn-sm btn-light border" title="Xem chi tiết"><i class="bi bi-eye"></i></button>
-                                <button class="btn btn-sm btn-warning role-level-2 hidden" title="Mở cửa từ xa"><i class="bi bi-door-open"></i></button>
-                                <button class="btn btn-sm btn-info role-level-2 hidden" title="Camera"><i class="bi bi-camera-video"></i></button>
-                                <button class="btn btn-sm btn-primary role-level-2 hidden" title="Điện năng"><i class="bi bi-lightning"></i></button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="text-start ps-4 fw-bold">C102</td>
-                            <td class="text-start">PTN Tự Động Hóa</td>
-                            <td>Điện - Điện Tử</td>
-                            <td>ThS. Trần Thị C</td>
-                            <td><span class="badge bg-secondary">Bảo trì</span></td>
-                            <td>
-                                <button class="btn btn-sm btn-light border"><i class="bi bi-eye"></i></button>
-                                <button class="btn btn-sm btn-warning role-level-2 hidden"><i class="bi bi-door-open"></i></button>
-                                <button class="btn btn-sm btn-info role-level-2 hidden"><i class="bi bi-camera-video"></i></button>
-                                <button class="btn btn-sm btn-primary role-level-2 hidden"><i class="bi bi-lightning"></i></button>
-                            </td>
-                        </tr>
-                    </tbody>
+                    <tbody id="dm-ptn-tbody"></tbody>
                 </table>
             </div>
         </div>
@@ -368,44 +210,15 @@
 
     <div id="monitor-energy-view" class="view-section hidden">
         <h3 class="fw-bold mb-4 text-university"><i class="bi bi-lightning-charge-fill text-warning"></i> Giám sát Điện năng</h3>
-        
-        <div class="card shadow-sm border-0 mb-4">
-            <div class="card-body p-0">
-                <table class="table table-hover align-middle text-center table-custom mb-0">
-                    <thead>
-                        <tr><th class="text-start ps-4">Thiết bị (Tủ điện)</th><th>Công suất</th><th>Điện áp</th><th>Dòng điện</th><th>Tổng kWh</th><th>Trạng thái</th></tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td class="text-start ps-4 fw-bold"><i class="bi bi-hdd-rack text-primary me-2"></i> KC868-A16_Tủ_K101</td>
-                            <td class="text-danger fw-bold">1250 W</td><td>221.5 V</td><td>5.64 A</td><td class="text-primary fw-bold">124.5</td>
-                            <td><span class="badge bg-success"><span class="spinner-grow spinner-grow-sm" style="width: 8px; height: 8px;"></span> Online</span></td>
-                        </tr>
-                        <tr>
-                            <td class="text-start ps-4 fw-bold"><i class="bi bi-hdd-rack text-primary me-2"></i> KC868-A16_Tủ_C102</td>
-                            <td class="text-success fw-bold">120 W</td><td>220.1 V</td><td>0.54 A</td><td class="text-primary fw-bold">45.2</td>
-                            <td><span class="badge bg-success"><span class="spinner-grow spinner-grow-sm" style="width: 8px; height: 8px;"></span> Online</span></td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
         <div class="row">
             <div class="col-md-8">
                 <div class="card shadow-sm border-0 h-100">
-                    <div class="card-body">
-                        <h6 class="fw-bold text-center text-muted mb-3">Công suất tiêu thụ theo thời gian (W)</h6>
-                        <canvas id="powerChart" height="100"></canvas>
-                    </div>
+                    <div class="card-body"><canvas id="powerChart" height="100"></canvas></div>
                 </div>
             </div>
             <div class="col-md-4">
                 <div class="card shadow-sm border-0 h-100">
-                    <div class="card-body d-flex flex-column justify-content-center">
-                        <h6 class="fw-bold text-center text-muted mb-3">So sánh điện năng các phòng</h6>
-                        <canvas id="roomChart" height="200"></canvas>
-                    </div>
+                    <div class="card-body d-flex flex-column justify-content-center"><canvas id="roomChart" height="200"></canvas></div>
                 </div>
             </div>
         </div>
@@ -413,251 +226,170 @@
 
     <div id="monitor-door-view" class="view-section hidden">
         <h3 class="fw-bold mb-4 text-university"><i class="bi bi-door-open-fill text-danger"></i> Điều khiển Cửa & Thiết bị</h3>
-        <div class="row">
-            <div class="col-md-7">
-                <div class="card shadow-sm border-0">
-                    <table class="table mb-0 align-middle table-hover table-custom text-center">
-                        <thead><tr><th class="text-start ps-4">Phòng PTN</th><th>Trạng thái cửa</th><th>Nút điều khiển</th></tr></thead>
-                        <tbody>
-                            <tr>
-                                <td class="text-start ps-4 fw-bold">PTN Cơ khí 1 (K101)</td>
-                                <td><span class="badge bg-danger px-3 py-2"><i class="bi bi-lock-fill"></i> Đang khóa</span></td>
-                                <td><button class="btn btn-success btn-sm fw-bold px-3"><i class="bi bi-unlock-fill"></i> MỞ CỬA</button></td>
-                            </tr>
-                            <tr>
-                                <td class="text-start ps-4 fw-bold">PTN CNC (K102)</td>
-                                <td><span class="badge bg-success px-3 py-2"><i class="bi bi-unlock-fill"></i> Đang mở</span></td>
-                                <td><button class="btn btn-danger btn-sm fw-bold px-3"><i class="bi bi-lock-fill"></i> KHÓA CỬA</button></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+        <div class="card shadow-sm border-0 p-4 text-center text-muted">Tính năng đang cập nhật (ESP32)</div>
+    </div>
+
+</div> <div class="modal fade" id="bookingModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-university text-white">
+                <h5 class="modal-title fw-bold">Đăng ký: <span id="modal-machine-name" class="text-warning"></span></h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <div class="col-md-5">
-                <div class="card shadow-lg border-0 bg-dark text-light h-100">
-                    <div class="card-header border-secondary d-flex justify-content-between align-items-center">
-                        <span class="fw-bold"><i class="bi bi-terminal"></i> System Activity Log</span>
-                        <span class="spinner-border spinner-border-sm text-success"></span>
-                    </div>
-                    <div class="card-body p-0">
-                        <div class="terminal-log">
-                            <div class="log-info">[08:45:12] SYSTEM: Kết nối ESP32-K101 ổn định.</div>
-                            <div class="text-white">[08:50:05] SENSOR: SV 123240010 quét QR tại K101 -> Hợp lệ.</div>
-                            <div class="log-warn">[08:50:08] ACTION: Relay K101 kích hoạt MỞ CỬA.</div>
-                            <div class="log-error">[09:12:30] ALERT: Cửa C102 mở quá 5 phút chưa đóng!</div>
-                            <div class="log-info">[09:15:00] ADMIN: Trần Văn C đã bấm KHÓA CỬA C102 từ xa.</div>
-                            <div class="text-white">[09:15:02] ACTION: Relay C102 đóng thành công.</div>
-                            <div class="log-info blink">_</div>
-                        </div>
+            <div class="modal-body">
+                <input type="hidden" id="book-room">
+                <div class="mb-3"><label class="form-label fw-bold">Họ và tên</label><input type="text" id="book-name" class="form-control bg-light" readonly></div>
+                <div class="row mb-3">
+                    <div class="col"><label class="form-label fw-bold">Số người</label><input type="number" id="book-participants" class="form-control" min="1" value="1"></div>
+                    <div class="col">
+                        <label class="form-label fw-bold">Mục đích</label>
+                        <select id="book-purpose" class="form-select">
+                            <option value="Thực hành">Thực hành</option>
+                            <option value="Nghiên cứu">Nghiên cứu</option>
+                        </select>
                     </div>
                 </div>
+                <div class="mb-3"><label class="form-label fw-bold">Ngày sử dụng</label><input type="date" id="book-date" class="form-control"></div>
+                <div class="row mb-3">
+                    <div class="col"><label class="form-label fw-bold">Từ giờ</label><input type="time" id="book-start" class="form-control"></div>
+                    <div class="col"><label class="form-label fw-bold">Đến giờ</label><input type="time" id="book-end" class="form-control"></div>
+                </div>
+                <div class="alert alert-warning mb-0 small"><i class="bi bi-info-circle-fill"></i> Chỉ ĐK Thứ 2-Thứ 6. (Sáng: 07:30-11:15 | Chiều: 13:30-17:00)</div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary fw-bold px-4" onclick="submitBooking()">Xác nhận Gửi</button>
             </div>
         </div>
     </div>
-
 </div>
 
 <script>
- // ==========================================
-    // PHẦN 1: CẤU HÌNH HỆ THỐNG
+    // ==========================================
+    // CẤU HÌNH HỆ THỐNG
     // ==========================================
     const SUPABASE_URL = 'https://hhjulrrtmnywrbhtzlqv.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_tC-IcNRCd_myv8YaTMeaKg_IbS4XWeI';
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     
-    // Cấu hình EmailJS (Dùng cho Giai đoạn 2)
     emailjs.init("f3eTdbEP6l_mNLeQX"); 
     const EMAILJS_SERVICE_ID = "service_43o5xsl"; 
     const EMAILJS_TEMPLATE_ID = "template_smznstn"; 
 
-    let currentUserProfile = null; // Lưu profile người dùng đang đăng nhập
+    let currentUserProfile = null;
+    let bookingModalInstance = null;
 
-    // Khởi chạy khi trang web tải xong
     document.addEventListener("DOMContentLoaded", () => {
-        checkSession(); // Kiểm tra xem người dùng đã đăng nhập chưa
+        checkSession();
+        // Khởi tạo an toàn modal
+        const modalEl = document.getElementById('bookingModal');
+        if(modalEl) bookingModalInstance = new bootstrap.Modal(modalEl);
     });
 
     // ==========================================
-    // PHẦN 2: XÁC THỰC & PHÂN QUYỀN THẬT
+    // ĐIỀU HƯỚNG MÀN HÌNH
     // ==========================================
-
-    // Hàm đăng nhập thật kết nối với Supabase
-    async function handleLogin() {
-        // Lưu ý: Bạn cần kiểm tra ID của ô Input trong HTML của bạn có đúng là 'login-email' không nhé
-        const email = document.querySelector('#auth-view input[type="email"]').value;
-        const password = document.querySelector('#auth-view input[type="password"]').value;
-
-        if (!email || !password) return Swal.fire('Thông báo', 'Vui lòng nhập đủ Email và Mật khẩu!', 'warning');
-
-        Swal.fire({ title: 'Đang xác thực...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-
-        const { data, error } = await _supabase.auth.signInWithPassword({ email, password });
-
-        if (error) {
-            Swal.fire('Lỗi', 'Tài khoản hoặc mật khẩu không đúng!', 'error');
-        } else {
-            Swal.close();
-            checkSession(); // Đăng nhập xong thì kiểm tra quyền ngay
-        }
-    }
-    // Hàm yêu cầu Supabase gửi email đặt lại mật khẩu
-    async function handleForgotPassword() {
-        const email = document.querySelector('#auth-view input[type="email"]').value;
-        if (!email) {
-            return Swal.fire('Chú ý', 'Vui lòng nhập Email của bạn vào ô trống phía trên, sau đó bấm lại nút "Quên mật khẩu?".', 'info');
-        }
-
-        Swal.fire({ title: 'Đang gửi yêu cầu...', didOpen: () => Swal.showLoading() });
-        
-        const { error } = await _supabase.auth.resetPasswordForEmail(email, {
-            redirectTo: window.location.origin + window.location.pathname
-        });
-
-        if (error) {
-            Swal.fire('Lỗi', 'Không tìm thấy tài khoản hoặc gửi email thất bại: ' + error.message, 'error');
-        } else {
-            Swal.fire('Thành công!', 'Vui lòng kiểm tra Hộp thư đến (hoặc mục Spam) của email để nhận link đặt lại mật khẩu.', 'success');
-        }
-    }
-
-    // Hàm đăng xuất
-    async function handleLogout() {
-        await _supabase.auth.signOut();
-        location.reload(); // Tải lại trang để xóa sạch dữ liệu cũ
-    }
-
-    // Hàm kiểm tra phiên làm việc và Tự động phân quyền
-    async function checkSession() {
-        const { data: { user } } = await _supabase.auth.getUser();
-
-        if (!user) {
-            showView('auth-view'); // Nếu chưa đăng nhập, bắt buộc ở màn hình Login
-            return;
-        }
-
-        // Lấy thông tin quyền hạn (role) từ bảng profiles trong Supabase
-        const { data: profile, error } = await _supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', user.id)
-            .single();
-
-        if (error || !profile) {
-            console.error("Lỗi lấy profile:", error);
-            return;
-        }
-
-        currentUserProfile = profile; // Lưu vào biến toàn cục
-
-        // Cập nhật tên hiển thị trên thanh Menu
-        const roleText = profile.role === 'admin' ? 'Ban Quản Lý' : (profile.role === 'manager' ? 'Quản lý PTN' : 'Sinh viên');
-        document.getElementById('user-info-display').innerHTML = `<i class="bi bi-person-circle"></i> ${profile.full_name} (${roleText})`;
-        document.querySelector('#btn-auth').innerText = 'Đăng xuất';
-        document.querySelector('#btn-auth').setAttribute('onclick', 'handleLogout()');
-
-        // --- TỰ ĐỘNG ẨN/HIỆN MENU THEO QUYỀN (RBAC) ---
-        // Ẩn tất cả các mục cấp cao trước
-        document.querySelectorAll('.role-level-2, .role-level-3').forEach(el => el.classList.add('hidden'));
-
-        if (profile.role === 'manager') {
-            // Nếu là Quản lý PTN: Hiện thêm mục Giám sát, Báo cáo
-            document.querySelectorAll('.role-level-2').forEach(el => el.classList.remove('hidden'));
-        } 
-        else if (profile.role === 'admin') {
-            // Nếu là Ban Quản Lý Khoa: Hiện tất cả (Giám sát, Báo cáo, Quản trị)
-            document.querySelectorAll('.role-level-2, .role-level-3').forEach(el => el.classList.remove('hidden'));
-        }
-
-        showView('home-view'); // Vào trang chủ
-        fetchRoomsData();      // Tải danh sách phòng từ Database
-    }
-
-    // ==========================================
-    // PHẦN 3: ĐIỀU HƯỚNG & DỮ LIỆU
-    // ==========================================
-
     function showView(viewId) {
         document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
         document.getElementById(viewId).classList.remove('hidden');
-        
-        // Nếu vào trang giám sát điện năng thì khởi tạo biểu đồ
-        if(viewId === 'monitor-energy-view') initFakeCharts(); 
+        if(viewId === 'monitor-energy-view') initFakeCharts();
     }
 
-    // Tải dữ liệu phòng thí nghiệm thật từ Supabase
+    // ==========================================
+    // XÁC THỰC & PHÂN QUYỀN
+    // ==========================================
+    async function handleLogin() {
+        const email = document.getElementById('login-email').value;
+        const password = document.getElementById('login-password').value;
+        if (!email || !password) return Swal.fire('Thông báo', 'Nhập đủ Email/Pass!', 'warning');
+
+        Swal.fire({ title: 'Đang xác thực...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+        const { data, error } = await _supabase.auth.signInWithPassword({ email, password });
+
+        if (error) {
+            Swal.fire('Lỗi', 'Sai tài khoản hoặc mật khẩu!', 'error');
+        } else {
+            Swal.close();
+            checkSession();
+        }
+    }
+
+    async function handleForgotPassword() {
+        const email = document.getElementById('login-email').value;
+        if (!email) return Swal.fire('Chú ý', 'Nhập Email vào ô rồi bấm lại Quên mật khẩu', 'info');
+        Swal.fire({ title: 'Đang gửi...', didOpen: () => Swal.showLoading() });
+        const { error } = await _supabase.auth.resetPasswordForEmail(email, { redirectTo: window.location.href });
+        if (error) Swal.fire('Lỗi', error.message, 'error');
+        else Swal.fire('Thành công', 'Kiểm tra email của bạn.', 'success');
+    }
+
+    async function handleLogout() {
+        await _supabase.auth.signOut();
+        location.reload();
+    }
+
+    async function checkSession() {
+        const { data: { user } } = await _supabase.auth.getUser();
+        if (!user) { showView('auth-view'); return; }
+
+        const { data: profile } = await _supabase.from('profiles').select('*').eq('id', user.id).single();
+        if (!profile) return;
+        currentUserProfile = profile;
+
+        const roleText = profile.role === 'admin' ? 'Ban Quản Lý' : (profile.role === 'manager' ? 'Quản lý PTN' : 'Sinh viên');
+        document.getElementById('user-info-display').innerHTML = `<i class="bi bi-person-circle"></i> ${profile.full_name} (${roleText})`;
+        document.getElementById('btn-auth').innerText = 'Đăng xuất';
+        document.getElementById('btn-auth').setAttribute('onclick', 'handleLogout()');
+
+        document.querySelectorAll('.role-level-2, .role-level-3').forEach(el => el.classList.add('hidden'));
+        if (profile.role === 'manager') document.querySelectorAll('.role-level-2').forEach(el => el.classList.remove('hidden'));
+        if (profile.role === 'admin') document.querySelectorAll('.role-level-2, .role-level-3').forEach(el => el.classList.remove('hidden'));
+
+        showView('home-view');
+        fetchRoomsData();
+    }
+
+    // ==========================================
+    // DANH MỤC PHÒNG & THIẾT BỊ
+    // ==========================================
     async function fetchRoomsData() {
-    // 1. Truy vấn toàn bộ danh sách phòng từ Supabase
-    const { data: rooms, error } = await _supabase
-        .from('rooms')
-        .select('*')
-        .order('room_code', { ascending: true });
+        const { data: rooms, error } = await _supabase.from('rooms').select('*').order('room_code');
+        if (error) return;
 
-    if (error) {
-        console.error("Lỗi lấy dữ liệu phòng:", error.message);
-        return;
+        const tbody = document.getElementById('dm-ptn-tbody');
+        let html = '';
+        const isStaff = currentUserProfile.role !== 'student';
+
+        rooms.forEach(room => {
+            html += `
+                <tr>
+                    <td class="text-start ps-4 fw-bold text-primary">${room.room_code || 'N/A'}</td>
+                    <td class="text-start">${room.room_name}</td>
+                    <td>${room.department || 'Bách Khoa'}</td>
+                    <td>${room.manager_name || 'Chưa rõ'}</td>
+                    <td><span class="badge ${room.status === 'active' ? 'bg-success' : 'bg-secondary'}">${room.status === 'active' ? 'Hoạt động' : 'Bảo trì'}</span></td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary" onclick="viewRoomDetails('${room.id}', '${room.room_code}', '${room.room_name}')" title="Xem thiết bị"><i class="bi bi-search"></i></button>
+                        ${isStaff ? `<button class="btn btn-sm btn-outline-warning"><i class="bi bi-door-open"></i></button>` : ''}
+                    </td>
+                </tr>
+            `;
+        });
+        tbody.innerHTML = html;
     }
 
-    const tbody = document.querySelector('#dm-ptn-view tbody');
-    let html = '';
+    async function viewRoomDetails(roomId, roomCode, roomName) {
+        Swal.fire({ title: `Đang tải thiết bị...`, didOpen: () => Swal.showLoading() });
+        const { data: machines, error } = await _supabase.from('machines').select('*').eq('room_id', roomId);
+        Swal.close();
+        if (error) return;
 
-    // 2. Duyệt qua từng phòng để tạo dòng trong bảng
-    rooms.forEach(room => {
-        // Định dạng nhãn trạng thái (Active/Maintenance)
-        const statusClass = room.status === 'active' ? 'bg-success' : 'bg-secondary';
-        const statusText = room.status === 'active' ? 'Đang hoạt động' : 'Bảo trì';
-
-        // Kiểm tra quyền: Chỉ Manager và Admin mới thấy các nút điều khiển IoT 
-        const isStaff = currentUserProfile.role === 'admin' || currentUserProfile.role === 'manager';
-
-        html += `
-            <tr>
-                <td class="text-start ps-4 fw-bold text-primary">${room.room_code || 'N/A'}</td>
-                <td class="text-start fw-semibold">${room.room_name}</td>
-                <td>${room.department || 'Bách Khoa'}</td>
-                <td>${room.manager_name || 'Chưa rõ'}</td>
-                <td><span class="badge ${statusClass}">${statusText}</span></td>
-                <td>
-                    <div class="btn-group">
-                        <button class="btn btn-sm btn-outline-primary" onclick="viewRoomDetails('${room.id}', '${room.room_code}', '${room.room_name}')" title="Xem chi tiết thiết bị">
-                        <i class="bi bi-search"></i>
-                        </button>
-                        ${isStaff ? `
-                            <button class="btn btn-sm btn-outline-warning" onclick="remoteOpenDoor('${room.room_code}')" title="Mở cửa từ xa">
-                                <i class="bi bi-door-open"></i>
-                            </button>
-                            <button class="btn btn-sm btn-outline-danger" onclick="viewPowerRealtime('${room.room_code}')" title="Xem điện năng">
-                                <i class="bi bi-lightning-charge"></i>
-                            </button>
-                        ` : ''}
-                    </div>
-                </td>
-            </tr>
-        `;
-    });
-
-    tbody.innerHTML = html || '<tr><td colspan="6" class="text-center p-4 text-muted">Chưa có dữ liệu phòng thí nghiệm.</td></tr>';
-}
-async function viewRoomDetails(roomId, roomCode, roomName) {
-    Swal.fire({ title: `Đang tải thiết bị...`, didOpen: () => Swal.showLoading() });
-
-    const { data: machines, error } = await _supabase.from('machines').select('*').eq('room_id', roomId);
-    Swal.close();
-    if (error) return Swal.fire('Lỗi', error.message, 'error');
-
-    let machineListHtml = machines.length > 0 ? `
-        <div class="table-responsive">
+        let machineListHtml = machines.length > 0 ? `
             <table class="table table-sm text-start align-middle">
-                <thead>
-                    <tr class="table-light">
-                        <th>Tên máy</th>
-                        <th>Trạng thái</th>
-                        <th>Hành động</th>
-                    </tr>
-                </thead>
+                <thead><tr class="table-light"><th>Tên máy</th><th>Trạng thái</th><th>Hành động</th></tr></thead>
                 <tbody>
                     ${machines.map(m => `
                         <tr>
-                            <td><b>${m.machine_name}</b><br><small class="text-muted">${m.technical_specs || ''}</small></td>
+                            <td><b>${m.machine_name}</b><br><small>${m.technical_specs || ''}</small></td>
                             <td><span class="badge ${m.status === 'available' ? 'bg-success' : 'bg-danger'}">${m.status === 'available' ? 'Sẵn sàng' : 'Bảo trì'}</span></td>
                             <td>
                                 ${m.status === 'available' ? 
@@ -668,157 +400,89 @@ async function viewRoomDetails(roomId, roomCode, roomName) {
                     `).join('')}
                 </tbody>
             </table>
-        </div>
-    ` : '<p class="text-muted">Phòng này chưa có thiết bị.</p>';
+        ` : '<p>Chưa có thiết bị.</p>';
 
-    Swal.fire({ title: `<span class="text-university">${roomName}</span>`, html: machineListHtml, width: '600px', confirmButtonText: 'Đóng' });
-}
-
-    // Biểu đồ giả lập (Tạm thời giữ lại để trang trí trang Giám sát)
-    let powerChart, roomChart;
-    function initFakeCharts() {
-        if(powerChart) powerChart.destroy();
-        const ctx1 = document.getElementById('powerChart').getContext('2d');
-        powerChart = new Chart(ctx1, {
-            type: 'line',
-            data: {
-                labels: ['08:00', '08:15', '08:30', '08:45', '09:00', '09:15', 'Hiện tại'],
-                datasets: [{
-                    label: 'Công suất K101 (W)',
-                    data: [100, 1050, 1200, 1250, 1100, 1250, 1250],
-                    borderColor: '#cc0000',
-                    fill: true, tension: 0.3
-                }]
-            }
-        });
+        Swal.fire({ title: roomName, html: machineListHtml, width: '600px', confirmButtonText: 'Đóng' });
     }
-    // ==========================================
-    // 4. LUỒNG ĐĂNG KÝ & XÉT DUYỆT (GIAI ĐOẠN 2)
-    // ==========================================
-    let bookingModalInstance = null;
-    document.addEventListener("DOMContentLoaded", () => {
-        bookingModalInstance = new bootstrap.Modal(document.getElementById('bookingModal'));
-    });
 
-    // Mở Form Đăng ký 
+    // ==========================================
+    // ĐẶT LỊCH & DUYỆT (BOOKING)
+    // ==========================================
     function openBookingModal(roomCode, machineName) {
-        // 1. Chốt chặn an toàn: Khởi tạo modal ngay lúc bấm nếu nó bị mất kết nối
         if (!bookingModalInstance) {
-            const modalElement = document.getElementById('bookingModal');
-            if (!modalElement) {
-                return Swal.fire('Lỗi giao diện', 'Không tìm thấy khung Form đăng ký (id="bookingModal") trong HTML!', 'error');
-            }
-            bookingModalInstance = new bootstrap.Modal(modalElement);
+            const modalEl = document.getElementById('bookingModal');
+            if(modalEl) bookingModalInstance = new bootstrap.Modal(modalEl);
         }
-        
-        // 2. Điền thông tin vào form
         document.getElementById('modal-machine-name').innerText = machineName;
         document.getElementById('book-room').value = roomCode;
-        document.getElementById('book-name').value = currentUserProfile.full_name || 'Không rõ';
+        document.getElementById('book-name').value = currentUserProfile.full_name || '';
         document.getElementById('book-date').value = new Date().toISOString().split('T')[0];
-        
-        // 3. Hiển thị form lên
         bookingModalInstance.show();
     }
 
-    // Xử lý gửi Form
     async function submitBooking() {
-    const room = document.getElementById('book-room').value;
-    const machine = document.getElementById('modal-machine-name').innerText;
-    const date = document.getElementById('book-date').value;
-    const start = document.getElementById('book-start').value;
-    const end = document.getElementById('book-end').value;
-    const participants = document.getElementById('book-participants').value;
-    const purpose = document.getElementById('book-purpose').value;
+        const room = document.getElementById('book-room').value;
+        const machine = document.getElementById('modal-machine-name').innerText;
+        const date = document.getElementById('book-date').value;
+        const start = document.getElementById('book-start').value;
+        const end = document.getElementById('book-end').value;
 
-    if (!date || !start || !end) return Swal.fire('Cảnh báo', 'Vui lòng chọn ngày và giờ!', 'warning');
-    if (start >= end) return Swal.fire('Lỗi', 'Giờ kết thúc phải sau giờ bắt đầu!', 'error');
+        if (!date || !start || !end) return Swal.fire('Lỗi', 'Vui lòng chọn ngày và giờ!', 'warning');
+        if (start >= end) return Swal.fire('Lỗi', 'Giờ kết thúc phải sau giờ bắt đầu!', 'error');
 
-    // 1. KIỂM TRA GIỜ HÀNH CHÍNH & NGÀY TRONG TUẦN
-    const dayOfWeek = new Date(date).getDay();
-    if (dayOfWeek === 0 || dayOfWeek === 6) return Swal.fire('Lỗi', 'Chỉ mở cửa từ Thứ 2 đến Thứ 6!', 'error');
+        const dayOfWeek = new Date(date).getDay();
+        if (dayOfWeek === 0 || dayOfWeek === 6) return Swal.fire('Lỗi', 'Chỉ mở cửa Thứ 2 đến Thứ 6!', 'error');
 
-    // Chuyển giờ thành phút để dễ so sánh (VD: 07:30 = 7*60+30 = 450)
-    const startMins = parseInt(start.split(':')[0]) * 60 + parseInt(start.split(':')[1]);
-    const endMins = parseInt(end.split(':')[0]) * 60 + parseInt(end.split(':')[1]);
-    
-    const isMorning = (startMins >= 450 && endMins <= 675);   // Sáng: 07:30 (450) -> 11:15 (675)
-    const isAfternoon = (startMins >= 810 && endMins <= 1020); // Chiều: 13:30 (810) -> 17:00 (1020)
-
-    if (!isMorning && !isAfternoon) {
-        return Swal.fire('Lỗi', 'Vui lòng đặt trong Giờ hành chính:\nSáng (07:30 - 11:15)\nChiều (13:30 - 17:00)\nKhông được đặt xuyên trưa!', 'error');
-    }
-
-    Swal.fire({ title: 'Đang kiểm tra lịch trống...', didOpen: () => Swal.showLoading() });
-
-    const fullMachineName = `${room} - ${machine}`;
-
-    // 2. KIỂM TRA TRÙNG LỊCH TỪ DATABASE (Phép thuật nằm ở đây)
-    const { data: existingBookings, error: fetchError } = await _supabase
-        .from('bookings')
-        .select('start_time, end_time')
-        .eq('machine_name', fullMachineName)
-        .eq('booking_date', date)
-        .in('status', ['pending', 'approved']); // Chỉ kiểm tra các đơn đang chờ hoặc đã duyệt
-
-    if (fetchError) return Swal.fire('Lỗi', fetchError.message, 'error');
-
-    // Thuật toán kiểm tra đè giờ (Overlap Logic)
-    let isConflict = false;
-    existingBookings.forEach(b => {
-        // Cắt giây (:00) từ database để so sánh chính xác với form (HH:mm)
-        const dbStart = b.start_time.substring(0, 5); 
-        const dbEnd = b.end_time.substring(0, 5);
-        
-        // Nếu Bắt đầu MỚI < Kết thúc CŨ VÀ Kết thúc MỚI > Bắt đầu CŨ => Trùng lịch!
-        if (start < dbEnd && end > dbStart) {
-            isConflict = true;
+        const sMins = parseInt(start.split(':')[0]) * 60 + parseInt(start.split(':')[1]);
+        const eMins = parseInt(end.split(':')[0]) * 60 + parseInt(end.split(':')[1]);
+        if (!((sMins >= 450 && eMins <= 675) || (sMins >= 810 && eMins <= 1020))) {
+            return Swal.fire('Lỗi', 'Vui lòng đặt trong Giờ hành chính:\nSáng (07:30-11:15)\nChiều (13:30-17:00)', 'error');
         }
-    });
 
-    if (isConflict) {
-        return Swal.fire('Trùng lịch!', `Khung giờ này đã có người đăng ký sử dụng máy <b>${machine}</b>. Vui lòng chọn khung giờ khác!`, 'error');
+        Swal.fire({ title: 'Đang kiểm tra...', didOpen: () => Swal.showLoading() });
+        const fullName = `${room} - ${machine}`;
+
+        const { data: existing } = await _supabase.from('bookings').select('start_time, end_time').eq('machine_name', fullName).eq('booking_date', date).in('status', ['pending', 'approved']);
+        let isConflict = false;
+        if(existing) {
+            existing.forEach(b => {
+                const dbStart = b.start_time.substring(0, 5); 
+                const dbEnd = b.end_time.substring(0, 5);
+                if (start < dbEnd && end > dbStart) isConflict = true;
+            });
+        }
+        if (isConflict) return Swal.fire('Trùng lịch', 'Giờ này đã có người đặt!', 'error');
+
+        const { data: user } = await _supabase.auth.getUser();
+        const { error } = await _supabase.from('bookings').insert([{
+            user_id: currentUserProfile.id,
+            full_name: currentUserProfile.full_name,
+            student_id: currentUserProfile.student_id,
+            email: user.user.email,
+            machine_name: fullName,
+            booking_date: date,
+            start_time: start,
+            end_time: end,
+            purpose: document.getElementById('book-purpose').value,
+            participants: document.getElementById('book-participants').value
+        }]);
+
+        if (error) Swal.fire('Lỗi', error.message, 'error');
+        else {
+            bookingModalInstance.hide();
+            Swal.fire('Thành công', 'Đã gửi yêu cầu đăng ký!', 'success');
+            loadHistoryView();
+        }
     }
 
-    // 3. GHI VÀO DATABASE NẾU MỌI THỨ HỢP LỆ
-    const { data: user } = await _supabase.auth.getUser();
-    
-    const { error: insertError } = await _supabase.from('bookings').insert([{
-        user_id: currentUserProfile.id,
-        full_name: currentUserProfile.full_name,
-        student_id: currentUserProfile.student_id,
-        email: user.user.email,
-        machine_name: fullMachineName,
-        booking_date: date,
-        start_time: start,
-        end_time: end,
-        purpose: purpose,
-        participants: participants
-    }]);
-
-    if (insertError) {
-        Swal.fire('Lỗi', insertError.message, 'error');
-    } else {
-        bookingModalInstance.hide();
-        Swal.fire('Thành công', 'Đã gửi yêu cầu đăng ký thành công! Vui lòng chờ duyệt.', 'success');
-        if (typeof loadHistoryView === "function") loadHistoryView(); // Cập nhật lại bảng nếu đang mở
-    }
-}
-
-    // Tải danh sách Lịch sử / Duyệt đơn
     async function loadHistoryView() {
         showView('history-view');
         const tbody = document.getElementById('history-list');
         tbody.innerHTML = '<tr><td colspan="5">Đang tải...</td></tr>';
         
-        // Admin/Manager xem hết, SV xem của mình
         let query = _supabase.from('bookings').select('*').order('created_at', { ascending: false });
-        
-        if (currentUserProfile.role === 'student') {
-            document.getElementById('history-title').innerHTML = '<i class="bi bi-clock-history"></i> Lịch sử của tôi';
-        } else {
-            document.getElementById('history-title').innerHTML = '<i class="bi bi-clipboard-check"></i> Quản lý Xét duyệt';
-        }
+        if (currentUserProfile.role === 'student') document.getElementById('history-title').innerHTML = 'Lịch sử của tôi';
+        else document.getElementById('history-title').innerHTML = 'Quản lý Xét duyệt';
 
         const { data, error } = await query;
         if (error) return;
@@ -826,96 +490,69 @@ async function viewRoomDetails(roomId, roomCode, roomName) {
         let html = '';
         data.forEach(b => {
             const statusColor = b.status === 'approved' ? 'bg-success' : (b.status === 'pending' ? 'bg-warning' : 'bg-danger');
-            const statusText = b.status === 'approved' ? 'Đã duyệt' : (b.status === 'pending' ? 'Chờ duyệt' : 'Từ chối');
-            
             let actionBtn = '';
-            // Nút dành cho Quản lý / Admin
             if (currentUserProfile.role !== 'student' && b.status === 'pending') {
-                actionBtn = `<button class="btn btn-sm btn-primary fw-bold" onclick="approveBooking('${b.id}', '${b.email}', '${b.machine_name}', '${b.qr_token}')">Duyệt & Gửi QR</button>`;
-            } 
-            // Nút dành cho SV xem QR
-            else if (currentUserProfile.role === 'student' && b.status === 'approved') {
-                actionBtn = `<button class="btn btn-sm btn-outline-success" onclick="viewMyQR('${b.qr_token}')"><i class="bi bi-qr-code"></i> Xem QR</button>`;
+                actionBtn = `<button class="btn btn-sm btn-primary" onclick="approveBooking('${b.id}', '${b.email}', '${b.machine_name}', '${b.qr_token}')">Duyệt & Gửi QR</button>`;
+            } else if (currentUserProfile.role === 'student' && b.status === 'approved') {
+                actionBtn = `<button class="btn btn-sm btn-outline-success" onclick="viewMyQR('${b.qr_token}')">Xem QR</button>`;
             }
 
             html += `
                 <tr>
-                    <td class="text-start ps-4"><b>${b.full_name || 'SV'}</b><br><small class="text-muted">${b.email || ''}</small></td>
+                    <td class="text-start ps-4"><b>${b.full_name}</b><br><small>${b.email}</small></td>
                     <td class="text-start"><b>${b.machine_name}</b><br><span class="badge bg-light text-dark border">${b.purpose}</span></td>
                     <td><span class="text-primary fw-bold">${b.booking_date}</span><br><small>${b.start_time.substring(0,5)} - ${b.end_time.substring(0,5)}</small></td>
-                    <td><span class="badge ${statusColor}">${statusText}</span></td>
+                    <td><span class="badge ${statusColor}">${b.status}</span></td>
                     <td>${actionBtn}</td>
                 </tr>
             `;
         });
-        tbody.innerHTML = html || '<tr><td colspan="5" class="text-muted p-4">Không có dữ liệu</td></tr>';
+        tbody.innerHTML = html || '<tr><td colspan="5">Không có dữ liệu</td></tr>';
     }
 
-    // Hàm Duyệt đơn & Gửi EmailJS
-    async function approveBooking(id, email, machineName, qrToken) {
-        Swal.fire({ title: 'Đang phê duyệt...', didOpen: () => Swal.showLoading() });
-        const { error } = await _supabase.from('bookings').update({ status: 'approved' }).eq('id', id);
-        if (error) return Swal.fire('Lỗi Database', error.message, 'error');
-
-        // Gửi mã QR qua EmailJS
-        const qrImageLink = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${qrToken}`;
-        emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, { to_email: email, machine: machineName, qr_link: qrImageLink })
-            .then(() => {
-                Swal.fire('Thành công!', 'Đã duyệt và gửi mã QR đến email sinh viên.', 'success');
-                loadHistoryView();
-            }).catch(() => {
-                Swal.fire('Cảnh báo', 'Duyệt thành công nhưng Email gửi bị lỗi.', 'warning');
-                loadHistoryView();
-            });
-    }
     async function showAvailableSchedule() {
-    showView('history-view');
-    document.getElementById('history-title').innerHTML = '<i class="bi bi-calendar-check text-success"></i> Xem lịch đã được đặt (Hôm nay)';
-    const tbody = document.getElementById('history-list');
-    tbody.innerHTML = '<tr><td colspan="5">Đang tải lịch...</td></tr>';
-    
-    const today = new Date().toISOString().split('T')[0];
+        showView('history-view');
+        document.getElementById('history-title').innerHTML = '<i class="bi bi-calendar-check"></i> Xem lịch đã được đặt (Hôm nay)';
+        const tbody = document.getElementById('history-list');
+        const today = new Date().toISOString().split('T')[0];
+        
+        const { data, error } = await _supabase.from('bookings').select('*').eq('booking_date', today).eq('status', 'approved').order('start_time');
+        if (error || !data.length) return tbody.innerHTML = '<tr><td colspan="5" class="text-success p-4 fw-bold">Trống lịch hoàn toàn hôm nay!</td></tr>';
 
-    // Lấy lịch ĐÃ DUYỆT của ngày hôm nay
-    const { data, error } = await _supabase
-        .from('bookings')
-        .select('*')
-        .eq('booking_date', today)
-        .eq('status', 'approved')
-        .order('start_time', { ascending: true });
-
-    if (error || !data.length) {
-        return tbody.innerHTML = '<tr><td colspan="5" class="text-success p-4 fw-bold">Hiện tại chưa có ai đặt máy trong ngày hôm nay. Tất cả đều trống!</td></tr>';
+        let html = '';
+        data.forEach(b => {
+            html += `
+                <tr class="bg-light">
+                    <td class="text-start ps-4 text-muted">Đã ẩn tên</td>
+                    <td class="text-start fw-bold text-danger">${b.machine_name}</td>
+                    <td><span class="badge bg-danger text-white"><i class="bi bi-clock"></i> ${b.start_time.substring(0,5)} - ${b.end_time.substring(0,5)}</span></td>
+                    <td><span class="badge bg-secondary">Đang bận</span></td>
+                    <td>--</td>
+                </tr>
+            `;
+        });
+        tbody.innerHTML = html;
     }
 
-    let html = '';
-    data.forEach(b => {
-        html += `
-            <tr class="bg-light">
-                <td class="text-start ps-4 text-muted"><i class="bi bi-person-fill border rounded-circle p-1"></i> Đã ẩn tên</td>
-                <td class="text-start fw-bold text-danger">${b.machine_name}</td>
-                <td><span class="badge bg-danger text-white px-3 py-2"><i class="bi bi-clock"></i> Bận: ${b.start_time.substring(0,5)} - ${b.end_time.substring(0,5)}</span></td>
-                <td><span class="badge bg-secondary">Đang sử dụng</span></td>
-                <td>--</td>
-            </tr>
-        `;
-    });
-    tbody.innerHTML = html;
-}
+    async function approveBooking(id, email, machineName, qrToken) {
+        Swal.fire({ title: 'Đang duyệt...', didOpen: () => Swal.showLoading() });
+        await _supabase.from('bookings').update({ status: 'approved' }).eq('id', id);
+        emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, { to_email: email, machine: machineName, qr_link: `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${qrToken}` })
+            .then(() => { Swal.fire('Thành công!', 'Đã duyệt & gửi QR.', 'success'); loadHistoryView(); })
+            .catch(() => { Swal.fire('Cảnh báo', 'Duyệt thành công nhưng lỗi gửi Mail.', 'warning'); loadHistoryView(); });
+    }
 
-    // Hàm Sinh viên tự xem mã QR của mình
     function viewMyQR(qrToken) {
-        const qrImageLink = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${qrToken}`;
-        Swal.fire({
-            title: 'Mã QR Mở Cửa',
-            text: 'Vui lòng đưa mã này vào máy quét tại phòng Lab',
-            imageUrl: qrImageLink,
-            imageWidth: 250,
-            imageHeight: 250,
-            confirmButtonText: 'Đóng'
-        });
+        Swal.fire({ title: 'Mã QR Mở Cửa', imageUrl: `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${qrToken}`, confirmButtonText: 'Đóng' });
+    }
+
+    // Biểu đồ nháp
+    let powerChart, roomChart;
+    function initFakeCharts() {
+        if(powerChart) powerChart.destroy();
+        const ctx = document.getElementById('powerChart').getContext('2d');
+        powerChart = new Chart(ctx, { type: 'line', data: { labels: ['08:00', '09:00'], datasets: [{ label: 'W', data: [100, 1200] }] } });
     }
 </script>
 </body>
 </html>
-
