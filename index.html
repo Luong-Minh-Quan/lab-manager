@@ -372,12 +372,8 @@
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label class="form-label fw-bold">Họ tên / MSSV</label>
-                        <input type="text" id="new-acc-name" class="form-control" placeholder="Nguyễn Văn A - 123...">
-                    </div>
-                    <div class="mb-3">
                         <label class="form-label fw-bold">Email đăng nhập</label>
-                        <input type="email" id="new-acc-email" class="form-control" placeholder="vi-du@student.edu.vn">
+                        <input type="email" id="new-acc-email" class="form-control" placeholder="MSSV@student.edu.vn">
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold">Mật khẩu tạm thời</label>
@@ -2059,25 +2055,26 @@
     }
 
     async function handleAdminCreateAccount() {
-        const full_name = document.getElementById('new-acc-name').value;
         const email = document.getElementById('new-acc-email').value;
         const password = document.getElementById('new-acc-password').value;
         const role = document.getElementById('new-acc-role').value;
 
-        if (!full_name || !email || !password) {
-            return Swal.fire('Lỗi', 'Vui lòng điền đầy đủ thông tin!', 'error');
+        if (!email || !password) {
+            return Swal.fire('Lỗi', 'Vui lòng điền đủ Email và Mật khẩu!', 'error');
         }
+
+        // TỰ ĐỘNG HÓA: Lấy phần mã số trước chữ @ làm Tên hiển thị
+        // Ví dụ: "123210070@student.edu.vn" -> Lấy ra "123210070"
+        const autoName = email.split('@')[0];
 
         Swal.fire({ title: 'Đang tạo tài khoản...', didOpen: () => Swal.showLoading() });
 
-        // Gửi lệnh tạo tài khoản lên Supabase Auth
-        // Lưu ý: Chúng ta gửi kèm metadata 'full_name' và 'role' 
         const { data, error } = await _supabase.auth.signUp({
             email: email,
             password: password,
             options: {
                 data: {
-                    full_name: full_name,
+                    full_name: autoName, // Đẩy thẳng cái MSSV tự động cắt được vào Database
                     role: role
                 }
             }
@@ -2088,11 +2085,16 @@
         } else {
             Swal.fire({
                 title: 'Thành công!',
-                text: 'Tài khoản đã được tạo. Lưu ý: Phiên đăng nhập của Admin có thể bị ảnh hưởng, hãy F5 lại nếu cần.',
+                text: `Đã tạo tài khoản cho: ${autoName}`,
                 icon: 'success'
             });
             addAccountModalInstance.hide();
-            loadAdminAccounts(); // Tải lại danh sách
+            
+            // Dọn dẹp form cho lần bấm sau
+            document.getElementById('new-acc-email').value = '';
+            document.getElementById('new-acc-password').value = '';
+            
+            loadAdminAccounts(); // Tải lại bảng để thấy kết quả
         }
     }
 </script>
