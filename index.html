@@ -1162,18 +1162,16 @@
     }
 
     async function submitBooking() {
-        // ĐOẠN CODE LƯU ĐƠN CHUẨN PHẢI CÓ CÁC TRƯỜNG NÀY:
-    const { data, error } = await _supabase.from('bookings').insert([{
-        user_id: currentUserProfile.id, // BẮT BUỘC PHẢI CÓ: Để sinh viên nhận diện đơn của mình
-        email: currentUserProfile.email,
-        full_name: currentUserProfile.full_name,
-        machine_name: 'Tên máy sinh viên chọn...',
-        booking_date: '...',
-        start_time: '...',
-        end_time: '...',
-        status: 'pending' // BẮT BUỘC PHẢI CÓ: Để Admin lọc ra các đơn CẦN DUYỆT
-    }]);
+        // 1. Lấy dữ liệu từ Form trên giao diện
+        const room = document.getElementById('book-room').value;
+        const machine = document.getElementById('modal-machine-name').innerText;
+        const machineFullName = `${room} - ${machine}`;
+        const date = document.getElementById('book-date').value;
+        const start = document.getElementById('book-start').value;
+        const end = document.getElementById('book-end').value;
+        const purpose = document.getElementById('book-purpose').value;
 
+        // 2. Kiểm tra dữ liệu đầu vào có bị trống không
         if (!date || !start || !end) return Swal.fire('Cảnh báo', 'Vui lòng chọn ngày và giờ!', 'warning');
         if (start >= end) return Swal.fire('Lỗi', 'Giờ kết thúc phải sau giờ bắt đầu!', 'error');
 
@@ -1188,12 +1186,11 @@
         }
 
         Swal.fire({ title: 'Đang kiểm tra lịch trống...', didOpen: () => Swal.showLoading() });
-        const fullName = `${room} - ${machine}`;
 
-        // Logic chống trùng lịch (Overlap Check)
+        // 3. Kiểm tra xem có ai đặt trùng lịch không
         const { data: existing } = await _supabase.from('bookings')
             .select('start_time, end_time')
-            .eq('machine_name', fullName)
+            .eq('machine_name', machineFullName)
             .eq('booking_date', date)
             .in('status', ['pending', 'approved']);
             
@@ -1206,27 +1203,22 @@
             });
         }
         if (isConflict) return Swal.fire('Trùng lịch!', 'Khung giờ này đã có người đặt thiết bị. Vui lòng chọn giờ khác!', 'error');
-    // Ghi vào Database (Lệnh insert chuẩn)
-    const { error:error2 } = await _supabase.from('bookings').insert([{
+
+        // 4. Ghi vào Database (Chuẩn tên cột mới)
+        const { error } = await _supabase.from('bookings').insert([{
             user_id: currentUserProfile.id,
+            email: currentUserProfile.email,
             full_name: currentUserProfile.full_name,
-            student_id: currentUserProfile.student_id, 
-            email: currentUserProfile.email, 
-            machine_name: fullName,
+            machine_name: machineFullName,
             booking_date: date,
             start_time: start,
             end_time: end,
-            purpose: document.getElementById('book-purpose').value,
-            participants: document.getElementById('book-participants').value
+            purpose: purpose
         }]);
 
-        if (error2) {
-            Swal.fire('Lỗi', 'Không thể lưu đăng ký: ' + error.message, 'error');
-            return;
-        }
-
-        if (error2) Swal.fire('Lỗi Database', error.message, 'error');
-        else {
+        if (error) {
+            Swal.fire('Lỗi Database', error.message, 'error');
+        } else {
             bookingModalInstance.hide();
             Swal.fire('Thành công', 'Đã gửi yêu cầu đăng ký thành công! Vui lòng chờ duyệt.', 'success');
             loadHistoryView();
