@@ -107,9 +107,9 @@
                     <ul class="dropdown-menu">
                         <li><a class="dropdown-item" href="#" onclick="showView('dm-ptn-view')">Đăng ký phòng/máy</a></li>
                         <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="#" onclick="loadHistoryView()">Lịch đã đăng ký</a></li>
                         <li><a class="dropdown-item" href="#" onclick="showAvailableSchedule()">Lịch trống</a></li>
-                        <li><a class="dropdown-item" href="#" onclick="loadHistoryView()">Lịch sử sử dụng</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="loadHistoryView('upcoming')">Lịch đã đăng ký</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="loadHistoryView('history')">Lịch sử sử dụng</a></li>
                     </ul>
                 </li>
 
@@ -1128,20 +1128,54 @@
     }
 
     // 5. TẢI LỊCH SỬ VÀ XÉT DUYỆT ĐƠN
-    async function loadHistoryView() {
-        showView('history-view');
-        const tbody = document.getElementById('history-list');
-        tbody.innerHTML = '<tr><td colspan="5">Đang tải dữ liệu...</td></tr>';
-        
-        let query = _supabase.from('bookings').select('*').order('created_at', { ascending: false });
-        if (currentUserProfile.role === 'student') {
-            document.getElementById('history-title').innerHTML = '<i class="bi bi-clock-history"></i> Lịch sử đăng ký của tôi';
-        } else {
-            document.getElementById('history-title').innerHTML = '<i class="bi bi-clipboard-check"></i> Quản lý & Xét duyệt Đơn';
+ // Thêm tham số viewType với mặc định là 'upcoming'
+ async function loadHistoryView(viewType = 'upcoming') {
+        showView('history-view'); 
+
+        // 1. Đổi tiêu đề màn hình cho sinh viên dễ phân biệt
+        const titleEl = document.querySelector('#history-view h3');
+        if (titleEl) {
+            if (viewType === 'upcoming') {
+                titleEl.innerHTML = '<i class="bi bi-calendar-check"></i> Lịch đã đăng ký (Sắp tới)';
+            } else {
+                titleEl.innerHTML = '<i class="bi bi-clock-history"></i> Lịch sử sử dụng (Đã qua)';
+            }
         }
 
-        const { data, error } = await query;
-        if (error) return;
+        const tbody = document.getElementById('history-list'); // Đảm bảo đúng ID thẻ tbody của sếp
+        tbody.innerHTML = '<tr><td colspan="5">Đang tải dữ liệu...</td></tr>';
+
+        // 2. Lấy TOÀN BỘ dữ liệu của sinh viên này
+        const { data, error } = await _supabase
+            .from('bookings')
+            .select('*')
+            .eq('user_id', currentUserProfile.id) // Hoặc .eq('email', currentUserProfile.email)
+            .order('booking_date', { ascending: false });
+
+        if (error || !data) return;
+
+        // 3. BỘ LỌC THỜI GIAN THÔNG MINH
+        const now = new Date();
+        const todayStr = now.toISOString().split('T')[0]; // Lấy ngày YYYY-MM-DD
+        const currentMins = now.getHours() * 60 + now.getMinutes(); // Quy đổi giờ hiện tại ra phút
+
+        const filteredData = data.filter(b => {
+            // Đổi giờ kết thúc của ca đăng ký ra phút
+            const endMins = parseInt(b.end_time.split(':')[0]) * 60 + parseInt(b.end_time.split(':')[1]);
+            
+            // Lịch được coi là "Đã qua" (Past) nếu: Ngày < Hôm nay, HOẶC Ngày = Hôm nay nhưng Giờ kết thúc < Giờ hiện tại
+            const isPast = b.booking_date < todayStr || (b.booking_date === todayStr && endMins < currentMins);
+
+            if (viewType === 'upcoming') {
+                return !isPast; // Lấy lịch Sắp tới (Tương lai + Đang diễn ra)
+            } else {
+                return isPast;  // Lấy lịch Đã qua (Quá khứ)
+            }
+        });
+
+        if (filteredData.length === 0) {
+            return tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-muted">Hiện không có dữ liệu cho mục này.</td></tr>`;
+        }
 
         let html = '';
         data.forEach(b => {
