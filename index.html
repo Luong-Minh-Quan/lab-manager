@@ -118,7 +118,7 @@
                 <li class="nav-item dropdown role-level-2 hidden">
                     <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown"><i class="bi bi-hdd-network"></i> Quản lý Vận hành</a>
                     <ul class="dropdown-menu">
-                        <li><a class="dropdown-item fw-bold text-primary" href="#"><i class="bi bi-plus-circle"></i> Thêm mới Phòng & Thiết bị</a></li>
+                        <li><a class="dropdown-item fw-bold text-primary" href="#" onclick="openAddResourceModal()"><i class="bi bi-plus-circle"></i> Thêm mới Phòng & Thiết bị</a></li>
                         <li><a class="dropdown-item" href="#"><i class="bi bi-clock-history"></i> Nhật ký Check-in / Check-out</a></li>
                         <li><a class="dropdown-item" href="#"><i class="bi bi-lightning-charge"></i> Thống kê điện năng theo ca</a></li>
                     </ul>
@@ -670,6 +670,45 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-primary w-100 fw-bold" onclick="submitGeneralFeedback('lab_condition')">Gửi báo cáo</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="addResourceModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-university text-white">
+                <h5 class="modal-title fw-bold"><i class="bi bi-plus-circle"></i> Thêm mới tài nguyên PTN</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-4">
+                    <label class="form-label fw-bold">Bạn muốn thêm mới:</label>
+                    <select id="add-type" class="form-select border-primary fw-bold text-primary" onchange="toggleAddFields()">
+                        <option value="room">Thêm một Phòng Thí Nghiệm mới</option>
+                        <option value="machine">Thêm một Máy móc/Thiết bị mới</option>
+                    </select>
+                </div>
+
+                <hr>
+
+                <div id="fields-room">
+                    <div class="mb-3"><label class="form-label">Mã phòng (VD: K101)</label><input type="text" id="new-room-code" class="form-control"></div>
+                    <div class="mb-3"><label class="form-label">Tên phòng</label><input type="text" id="new-room-name" class="form-control"></div>
+                    <div class="mb-3"><label class="form-label">Cán bộ quản lý</label><input type="text" id="new-room-manager" class="form-control"></div>
+                </div>
+
+                <div id="fields-machine" class="hidden">
+                    <div class="mb-3">
+                        <label class="form-label">Thuộc phòng thí nghiệm</label>
+                        <select id="new-machine-room-id" class="form-select"></select>
+                    </div>
+                    <div class="mb-3"><label class="form-label">Tên máy/thiết bị</label><input type="text" id="new-machine-name" class="form-control"></div>
+                    <div class="mb-3"><label class="form-label">Thông số kỹ thuật (Tùy chọn)</label><textarea id="new-machine-specs" class="form-control" rows="2"></textarea></div>
+                </div>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-primary fw-bold px-4" onclick="submitNewResource()">Xác nhận lưu</button>
             </div>
         </div>
     </div>
@@ -1522,6 +1561,56 @@
             `;
         });
         container.innerHTML = html;
+    }
+    let addResourceModalInstance = null;
+
+    // 1. Hàm mở Modal và chuẩn bị dữ liệu
+    async function openAddResourceModal() {
+        if (!addResourceModalInstance) {
+            addResourceModalInstance = new bootstrap.Modal(document.getElementById('addResourceModal'));
+        }
+        
+        // Tải danh sách phòng vào dropdown chọn phòng của máy
+        const { data: rooms } = await _supabase.from('rooms').select('id, room_code, room_name').eq('status', 'active');
+        const roomSelect = document.getElementById('new-machine-room-id');
+        roomSelect.innerHTML = rooms.map(r => `<option value="${r.id}">${r.room_code} - ${r.room_name}</option>`).join('');
+
+        addResourceModalInstance.show();
+    }
+
+    // 2. Hàm chuyển đổi giao diện nhập (Phòng <-> Máy)
+    function toggleAddFields() {
+        const type = document.getElementById('add-type').value;
+        document.getElementById('fields-room').classList.toggle('hidden', type !== 'room');
+        document.getElementById('fields-machine').classList.toggle('hidden', type !== 'machine');
+    }
+
+    // 3. Hàm gửi dữ liệu lên Supabase
+    async function submitNewResource() {
+        const type = document.getElementById('add-type').value;
+        Swal.fire({ title: 'Đang xử lý...', didOpen: () => Swal.showLoading() });
+
+        if (type === 'room') {
+            const { error } = await _supabase.from('rooms').insert([{
+                room_code: document.getElementById('new-room-code').value,
+                room_name: document.getElementById('new-room-name').value,
+                manager_name: document.getElementById('new-room-manager').value,
+                status: 'active'
+            }]);
+            if (error) return Swal.fire('Lỗi', error.message, 'error');
+        } else {
+            const { error } = await _supabase.from('machines').insert([{
+                room_id: document.getElementById('new-machine-room-id').value,
+                machine_name: document.getElementById('new-machine-name').value,
+                technical_specs: document.getElementById('new-machine-specs').value,
+                status: 'available'
+            }]);
+            if (error) return Swal.fire('Lỗi', error.message, 'error');
+        }
+
+        Swal.fire('Thành công', 'Đã thêm tài nguyên mới vào hệ thống!', 'success');
+        addResourceModalInstance.hide();
+        fetchRoomsData(); // Cập nhật lại danh mục phòng ngoài trang chính
     }
 </script>
 </body>
