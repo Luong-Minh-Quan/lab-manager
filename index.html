@@ -1954,7 +1954,7 @@
         // Lấy danh sách từ bảng profiles
         const { data, error } = await _supabase.from('profiles').select('*').order('created_at', { ascending: false });
 
-        if (error || !data) return tbody.innerHTML = '<tr><td colspan="5" class="text-danger">Lỗi tải dữ liệu</td></tr>';
+        if (error || !data) return tbody.innerHTML = `<tr><td colspan="5" class="text-danger">Lỗi Database: ${error.message}</td></tr>`;
 
         tbody.innerHTML = data.map(user => {
             // Định dạng màu sắc cho từng loại Role
