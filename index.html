@@ -40,16 +40,16 @@
             overflow: hidden;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
-        #heroCarousel.carousel-item {
+        #heroCarousel .carousel-item {
             height: 600px; 
         }
-        #heroCarousel.carousel-item::before {
+        #heroCarousel .carousel-item::before {
             /* Lớp kính râm màu xanh đen phủ lên ảnh để chữ nổi bật */
             content: ""; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
             background: linear-gradient(rgba(0,51,102, 0.6), rgba(0,51,102, 0.8));
             z-index: 1;
         }
-        #heroCarousel.carousel-item img {
+        #heroCarousel .carousel-item img {
             object-fit: cover; height: 100%; width: 100%;
         }
         #heroCarousel .carousel-caption {
