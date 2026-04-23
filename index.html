@@ -13,6 +13,7 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
 
     <style>
         body { background-color: #f0f2f5; font-family: 'Segoe UI', system-ui, sans-serif; }
@@ -144,6 +145,8 @@
                         <li><a class="dropdown-item" href="#" onclick="loadUsageStats()"><i class="bi bi-pie-chart"></i> Xem thống kê lượt sử dụng</a></li>
                         <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item text-success" href="#"><i class="bi bi-file-earmark-excel"></i> Xuất dữ liệu Excel / PDF</a></li>
+                        <li><a class="dropdown-item text-success" href="#" onclick="exportData('bookings')"><i class="bi bi-file-earmark-excel"></i> Xuất Excel Lịch sử sử dụng</a></li>
+                        <li><a class="dropdown-item text-success" href="#" onclick="exportData('feedbacks')"><i class="bi bi-file-earmark-excel"></i> Xuất Excel Hộp thư góp ý</a></li>
                     </ul>
                 </li>
 
@@ -1181,6 +1184,62 @@
                 <span class="fw-bold">${machineStats[name] * 2} giờ</span>
             </div>
         `).join('');
+    }
+    // HÀM XUẤT EXCEL TỔNG QUÁT
+    async function exportData(type) {
+        Swal.fire({ title: 'Đang khởi tạo dữ liệu...', didOpen: () => Swal.showLoading() });
+
+        let data = [];
+        let fileName = "";
+        let sheetName = "";
+
+        if (type === 'bookings') {
+            const { data: res } = await _supabase.from('bookings').select('*').order('created_at', {ascending: false});
+            // Định dạng lại dữ liệu để lên Excel đẹp hơn
+            data = res.map(item => ({
+                "Người đăng ký": item.full_name,
+                "Email": item.email,
+                "Thiết bị": item.machine_name,
+                "Ngày sử dụng": item.booking_date,
+                "Khung giờ": `${item.start_time.substring(0,5)} - ${item.end_time.substring(0,5)}`,
+                "Mục đích": item.purpose,
+                "Trạng thái": item.status === 'approved' ? 'Đã duyệt' : 'Chờ duyệt',
+                "Tình trạng máy": item.machine_condition || 'Chưa báo cáo'
+            }));
+            fileName = `Lich_Su_Su_Dung_PTN_${new Date().toLocaleDateString('vi-VN')}.xlsx`;
+            sheetName = "LichSuSuDung";
+        } 
+        else if (type === 'feedbacks') {
+            const { data: res } = await _supabase.from('feedbacks').select('*').order('created_at', {ascending: false});
+            data = res.map(item => ({
+                "Loại báo cáo": item.type === 'lab_condition' ? 'Cơ sở vật chất' : 'Vi phạm nội quy',
+                "Phòng": item.room_code,
+                "Nội dung": item.content,
+                "Đối tượng liên quan": item.target_info || 'Không có',
+                "Người gửi": item.user_name,
+                "Ngày gửi": new Date(item.created_at).toLocaleDateString('vi-VN'),
+                "Trạng thái": item.status === 'pending' ? 'Chờ xử lý' : 'Đã xong'
+            }));
+            fileName = `Bao_Cao_Gop_Y_Vi_Pham_${new Date().toLocaleDateString('vi-VN')}.xlsx`;
+            sheetName = "GopYViPham";
+        }
+
+        if (data.length === 0) {
+            return Swal.fire('Thông báo', 'Không có dữ liệu để xuất!', 'info');
+        }
+
+        // --- Xử lý tạo file Excel bằng SheetJS ---
+        const wb = XLSX.utils.book_new(); // Tạo workbook mới
+        const ws = XLSX.utils.json_to_sheet(data); // Chuyển JSON thành worksheet
+
+        // Chỉnh độ rộng các cột tự động cho dễ nhìn
+        const wscols = Object.keys(data[0]).map(() => ({ wch: 20 }));
+        ws['!cols'] = wscols;
+
+        XLSX.utils.book_append_sheet(wb, ws, sheetName); // Thêm sheet vào book
+        XLSX.writeFile(wb, fileName); // Xuất file và tải về
+
+        Swal.fire('Thành công', `Đã tải xuống file: ${fileName}`, 'success');
     }
 </script>
 </body>
