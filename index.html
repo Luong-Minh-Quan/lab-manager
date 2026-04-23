@@ -119,7 +119,7 @@
                     <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown"><i class="bi bi-hdd-network"></i> Quản lý Vận hành</a>
                     <ul class="dropdown-menu">
                         <li><a class="dropdown-item fw-bold text-primary" href="#" onclick="openAddResourceModal()"><i class="bi bi-plus-circle"></i> Thêm mới Phòng & Thiết bị</a></li>
-                        <li><a class="dropdown-item" href="#"><i class="bi bi-clock-history"></i> Nhật ký Check-in / Check-out</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="loadUsageLogs()"><i class="bi bi-clock-history"></i> Nhật ký Check-in / Check-out</a></li>
                         <li><a class="dropdown-item" href="#"><i class="bi bi-lightning-charge"></i> Thống kê điện năng theo ca</a></li>
                     </ul>
                 </li>
@@ -495,7 +495,40 @@
             </div>
         </div>
     </div>
-
+    <div id="usage-logs-view" class="view-section hidden">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h3 class="fw-bold text-university mb-0"><i class="bi bi-clock-history"></i> Nhật ký ra vào & Tiêu thụ điện</h3>
+            <div class="d-flex gap-2">
+                <select id="filter-log-room" class="form-select form-select-sm" style="width: 150px;" onchange="loadUsageLogs()">
+                    <option value="all">Tất cả phòng</option>
+                    <option value="K101">Phòng K101</option>
+                    <option value="C102">Phòng C102</option>
+                </select>
+                <button class="btn btn-sm btn-outline-primary" onclick="loadUsageLogs()"><i class="bi bi-arrow-clockwise"></i> Làm mới</button>
+            </div>
+        </div>
+    
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table align-middle table-hover text-center mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="text-start ps-4">Sinh viên</th>
+                                <th>Phòng / Máy</th>
+                                <th>Giờ vào thực tế</th>
+                                <th>Giờ ra thực tế</th>
+                                <th>Điện năng (kWh)</th>
+                                <th>Trạng thái</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usage-logs-list">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
     <div id="monitor-energy-view" class="view-section hidden">
         <h3 class="fw-bold mb-4 text-university"><i class="bi bi-lightning-charge-fill text-warning"></i> Giám sát Điện năng (Realtime)</h3>
         
@@ -1611,6 +1644,67 @@
         Swal.fire('Thành công', 'Đã thêm tài nguyên mới vào hệ thống!', 'success');
         addResourceModalInstance.hide();
         fetchRoomsData(); // Cập nhật lại danh mục phòng ngoài trang chính
+    }
+    // 1. Tải nhật ký sử dụng thực tế
+    async function loadUsageLogs() {
+        showView('usage-logs-view');
+        const roomFilter = document.getElementById('filter-log-room').value;
+        const tbody = document.getElementById('usage-logs-list');
+        tbody.innerHTML = '<tr><td colspan="6" class="p-4">Đang tải nhật ký...</td></tr>';
+
+        let query = _supabase.from('bookings').select('*').eq('status', 'approved');
+        if (roomFilter !== 'all') {
+            query = query.ilike('machine_name', `${roomFilter}%`);
+        }
+
+        const { data, error } = await query.order('actual_start', { ascending: false, nullsFirst: false });
+
+        if (error || !data) return;
+
+        tbody.innerHTML = data.map(b => {
+            const checkIn = b.actual_start ? new Date(b.actual_start).toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'}) : '--:--';
+            const checkOut = b.actual_end ? new Date(b.actual_end).toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'}) : '--:--';
+            
+            let statusBadge = '';
+            if (b.checkin_status === 'in_progress') statusBadge = '<span class="badge bg-success pulse">Đang ở trong PTN</span>';
+            else if (b.checkin_status === 'completed') statusBadge = '<span class="badge bg-secondary">Đã ra về</span>';
+            else statusBadge = '<span class="badge bg-light text-muted">Chưa vào</span>';
+
+            return `
+                <tr>
+                    <td class="text-start ps-4"><b>${b.full_name}</b></td>
+                    <td><small>${b.machine_name}</small></td>
+                    <td class="fw-bold text-primary">${checkIn}</td>
+                    <td class="fw-bold text-danger">${checkOut}</td>
+                    <td class="text-warning fw-bold">${b.energy_consumed || 0}</td>
+                    <td>${statusBadge}</td>
+                </tr>
+            `;
+        }).join('') || '<tr><td colspan="6" class="p-4 text-muted">Chưa có nhật ký ra vào nào.</td></tr>';
+    }
+
+    // 2. HÀM GIẢ LẬP QUÉT MÃ QR (Demo cho thầy cô)
+    // Sau này ESP32 sẽ gọi API tương tự như thế này để mở cửa
+    async function simulateQRScan(bookingId, action) {
+        Swal.fire({ title: `Đang xử lý ${action}...`, didOpen: () => Swal.showLoading() });
+        
+        const now = new Date().toISOString();
+        let updateData = {};
+
+        if (action === 'checkin') {
+            updateData = { actual_start: now, checkin_status: 'in_progress' };
+        } else {
+            // Khi check-out, ta lấy ngẫu nhiên số điện năng tiêu thụ từ 0.5 - 2.5 kWh để demo
+            const fakeEnergy = (Math.random() * 2 + 0.5).toFixed(2);
+            updateData = { actual_end: now, checkin_status: 'completed', energy_consumed: fakeEnergy };
+        }
+
+        const { error } = await _supabase.from('bookings').update(updateData).eq('id', bookingId);
+        
+        if (!error) {
+            Swal.fire('Thành công', `Đã ghi nhận ${action} thực tế!`, 'success');
+            loadHistoryView(); // Cập nhật lại nút bấm ở trang lịch sử
+        }
     }
 </script>
 </body>
