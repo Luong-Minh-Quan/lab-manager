@@ -962,7 +962,7 @@
 
         Swal.fire({ title: 'Đang xác thực...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
         
-        // Gọi Supabase đúng 1 lần duy nhất (Bỏ biến data đi vì ta chỉ cần check error)
+        // Tuyệt đối không dùng biến data ở đây nữa để tránh lỗi trùng lặp
         const { error } = await _supabase.auth.signInWithPassword({ 
             email: email, 
             password: password 
@@ -973,7 +973,7 @@
             console.error("Lỗi Supabase:", error);
         } else {
             Swal.close();
-            checkSession(); // Đăng nhập thành công thì load giao diện
+            checkSession(); 
         }
     }
 
