@@ -1160,7 +1160,6 @@
     }
 
     async function submitBooking() {
-        // 1. Lấy dữ liệu từ Form trên giao diện
         const room = document.getElementById('book-room').value;
         const machine = document.getElementById('modal-machine-name').innerText;
         const machineFullName = `${room} - ${machine}`;
@@ -1168,41 +1167,34 @@
         const start = document.getElementById('book-start').value;
         const end = document.getElementById('book-end').value;
         const purpose = document.getElementById('book-purpose').value;
+        const participants = document.getElementById('book-participants').value || 1;
 
-        // 2. Kiểm tra dữ liệu đầu vào có bị trống không
         if (!date || !start || !end) return Swal.fire('Cảnh báo', 'Vui lòng chọn ngày và giờ!', 'warning');
+        
+        // --- CHẶN THỜI GIAN QUÁ KHỨ ---
+        const now = new Date();
+        const [y, m, d] = date.split('-').map(Number);
+        const selectedDate = new Date(y, m - 1, d); // Ngày người dùng chọn
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()); // Ngày hiện tại
+
+        if (selectedDate < today) {
+            return Swal.fire('Lỗi', 'Không thể đăng ký lịch cho ngày đã qua!', 'error');
+        }
+
+        if (selectedDate.getTime() === today.getTime()) {
+            const currentMins = now.getHours() * 60 + now.getMinutes();
+            const startMins = parseInt(start.split(':')[0]) * 60 + parseInt(start.split(':')[1]);
+            if (startMins <= currentMins) {
+                return Swal.fire('Lỗi', 'Giờ bắt đầu phải sau giờ hiện tại!', 'error');
+            }
+        }
+        // ------------------------------
+
         if (start >= end) return Swal.fire('Lỗi', 'Giờ kết thúc phải sau giờ bắt đầu!', 'error');
 
-        // Logic chặn ngoài giờ hành chính
-        const dayOfWeek = new Date(date).getDay();
-        if (dayOfWeek === 0 || dayOfWeek === 6) return Swal.fire('Lỗi', 'Chỉ mở cửa từ Thứ 2 đến Thứ 6!', 'error');
+        Swal.fire({ title: 'Đang kiểm tra...', didOpen: () => Swal.showLoading() });
 
-        const sMins = parseInt(start.split(':')[0]) * 60 + parseInt(start.split(':')[1]);
-        const eMins = parseInt(end.split(':')[0]) * 60 + parseInt(end.split(':')[1]);
-        if (!((sMins >= 450 && eMins <= 675) || (sMins >= 810 && eMins <= 1020))) {
-            return Swal.fire('Lỗi', 'Vui lòng đặt trong Giờ hành chính:\nSáng (07:30 - 11:15)\nChiều (13:30 - 17:00)', 'error');
-        }
-
-        Swal.fire({ title: 'Đang kiểm tra lịch trống...', didOpen: () => Swal.showLoading() });
-
-        // 3. Kiểm tra xem có ai đặt trùng lịch không
-        const { data: existing } = await _supabase.from('bookings')
-            .select('start_time, end_time')
-            .eq('machine_name', machineFullName)
-            .eq('booking_date', date)
-            .in('status', ['pending', 'approved']);
-            
-        let isConflict = false;
-        if(existing) {
-            existing.forEach(b => {
-                const dbStart = b.start_time.substring(0, 5); 
-                const dbEnd = b.end_time.substring(0, 5);
-                if (start < dbEnd && end > dbStart) isConflict = true;
-            });
-        }
-        if (isConflict) return Swal.fire('Trùng lịch!', 'Khung giờ này đã có người đặt thiết bị. Vui lòng chọn giờ khác!', 'error');
-
-        // 4. Ghi vào Database (Chuẩn tên cột mới)
+        // Ghi vào Database (Đúng chuẩn Schema mới)
         const { error } = await _supabase.from('bookings').insert([{
             user_id: currentUserProfile.id,
             email: currentUserProfile.email,
@@ -1211,15 +1203,16 @@
             booking_date: date,
             start_time: start,
             end_time: end,
-            purpose: purpose
+            purpose: purpose,
+            participants: participants
         }]);
 
         if (error) {
             Swal.fire('Lỗi Database', error.message, 'error');
         } else {
             bookingModalInstance.hide();
-            Swal.fire('Thành công', 'Đã gửi yêu cầu đăng ký thành công! Vui lòng chờ duyệt.', 'success');
-            loadHistoryView();
+            Swal.fire('Thành công', 'Đã gửi yêu cầu đăng ký!', 'success');
+            loadHistoryView('upcoming');
         }
     }
 
