@@ -1224,73 +1224,79 @@
     }
 
     // 5. TẢI LỊCH SỬ VÀ XÉT DUYỆT ĐƠN
- // Thêm tham số viewType với mặc định là 'upcoming'
- async function loadHistoryView(viewType = 'upcoming') {
+    async function loadHistoryView(viewType = 'upcoming') {
         showView('history-view'); 
 
-        // 1. Đổi tiêu đề màn hình cho sinh viên dễ phân biệt
+        // 1. Đổi tiêu đề màn hình cho sinh viên và Admin dễ phân biệt
         const titleEl = document.querySelector('#history-view h3');
         if (titleEl) {
-            if (viewType === 'upcoming') {
+            if (currentUserProfile.role !== 'student') {
+                titleEl.innerHTML = '<i class="bi bi-card-checklist"></i> Duyệt đơn đăng ký';
+            } else if (viewType === 'upcoming') {
                 titleEl.innerHTML = '<i class="bi bi-calendar-check"></i> Lịch đã đăng ký';
             } else {
                 titleEl.innerHTML = '<i class="bi bi-clock-history"></i> Lịch sử sử dụng';
             }
         }
 
-        const tbody = document.getElementById('history-list'); // Đảm bảo đúng ID thẻ tbody của sếp
+        const tbody = document.getElementById('history-list');
         tbody.innerHTML = '<tr><td colspan="5">Đang tải dữ liệu...</td></tr>';
 
-        // 2. Lấy TOÀN BỘ dữ liệu của sinh viên này
-        // Admin chỉ lấy những đơn có chữ 'pending'
-        const { data, error } = await _supabase
-            .from('bookings')
-            .select('*')
-            .eq('status', 'pending') 
-            .order('booking_date', { ascending: true });
+        // 2. TRUY VẤN THÔNG MINH THEO VAI TRÒ (Fix lỗi mất lịch sử)
+        let query = _supabase.from('bookings').select('*');
 
-        if (error || !data) return;
+        if (currentUserProfile.role === 'student') {
+            // Sinh viên: Lấy tất cả đơn của chính mình
+            query = query.eq('user_id', currentUserProfile.id);
+        } else {
+            // Quản lý/Admin: Mục duyệt đơn sẽ lấy tất cả đơn đang chờ duyệt của mọi người
+            query = query.eq('status', 'pending');
+        }
 
-        // 3. BỘ LỌC THỜI GIAN THÔNG MINH (ĐÃ SỬA LỖI MÚI GIỜ)
+        // Lấy dữ liệu từ Database
+        const { data, error } = await query.order('booking_date', { ascending: true });
+
+        if (error || !data) {
+            return tbody.innerHTML = `<tr><td colspan="5" class="text-danger p-4">Lỗi: ${error?.message}</td></tr>`;
+        }
+
+        // 3. BỘ LỌC THỜI GIAN
         const now = new Date();
-        
-        // Lấy ngày chuẩn theo giờ máy tính (Local Time) để tránh lệch ngày lúc nửa đêm
         const year = now.getFullYear();
         const month = String(now.getMonth() + 1).padStart(2, '0');
         const day = String(now.getDate()).padStart(2, '0');
         const todayStr = `${year}-${month}-${day}`; 
 
-        const currentMins = now.getHours() * 60 + now.getMinutes(); // Quy đổi giờ hiện tại ra phút
+        const currentMins = now.getHours() * 60 + now.getMinutes();
 
         const filteredData = data.filter(b => {
-            // Đổi giờ kết thúc của ca đăng ký ra phút
             const endMins = parseInt(b.end_time.split(':')[0]) * 60 + parseInt(b.end_time.split(':')[1]);
-            
-            // Lịch được coi là "Đã qua" (Past) nếu: Ngày < Hôm nay, HOẶC Ngày = Hôm nay nhưng Giờ kết thúc < Giờ hiện tại
             const isPast = b.booking_date < todayStr || (b.booking_date === todayStr && endMins < currentMins);
 
-            if (viewType === 'upcoming') {
-                return !isPast; // Lấy lịch Sắp tới (Tương lai + Đang diễn ra)
-            } else {
-                return isPast;  // Lấy lịch Đã qua (Quá khứ)
-            }
+            // Admin duyệt đơn thì hiển thị hết, không cần lọc quá khứ/tương lai
+            if (currentUserProfile.role !== 'student') return true; 
+
+            // Sinh viên thì lọc theo tab
+            if (viewType === 'upcoming') return !isPast; 
+            else return isPast;  
         });
 
         if (filteredData.length === 0) {
             return tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-muted">Hiện không có dữ liệu cho mục này.</td></tr>`;
         }
 
+        // 4. ĐỔ DỮ LIỆU RA BẢNG HTML
         let html = '';
         filteredData.forEach(b => {
             const statusColor = b.status === 'approved' ? 'bg-success' : (b.status === 'pending' ? 'bg-warning' : 'bg-danger');
             let actionBtn = '';
             
+            // Lưu ý: Dùng b.id thay cho b.qr_token để làm mã bảo mật QR
             if (currentUserProfile.role !== 'student' && b.status === 'pending') {
-                actionBtn = `<button class="btn btn-sm btn-primary fw-bold" onclick="approveBooking('${b.id}', '${b.email}', '${b.machine_name}', '${b.qr_token}')">Duyệt & Gửi QR</button>`;
+                actionBtn = `<button class="btn btn-sm btn-primary fw-bold" onclick="approveBooking('${b.id}', '${b.email}', '${b.machine_name}', '${b.id}')">Duyệt & Gửi QR</button>`;
             } else if (currentUserProfile.role === 'student' && b.status === 'approved') {
-                actionBtn = `<button class="btn btn-sm btn-outline-success mb-1 w-100" onclick="viewMyQR('${b.qr_token}')"><i class="bi bi-qr-code"></i> Xem QR</button><br>`;
+                actionBtn = `<button class="btn btn-sm btn-outline-success mb-1 w-100" onclick="viewMyQR('${b.id}')"><i class="bi bi-qr-code"></i> Xem QR</button><br>`;
                 
-                // Nếu chưa báo cáo thì hiện nút Báo cáo, nếu báo rồi thì hiện chữ Đã báo cáo
                 if (!b.machine_condition) {
                     actionBtn += `<button class="btn btn-sm btn-warning w-100 fw-bold" onclick="openReportModal('${b.id}', '${b.machine_name}')"><i class="bi bi-tools"></i> Khai báo</button>`;
                 } else {
@@ -1312,8 +1318,7 @@
             `;
         });
 
-       
-        tbody.innerHTML = html || '<tr><td colspan="5" class="text-muted p-4">Không có dữ liệu</td></tr>';
+        tbody.innerHTML = html;
     }
 
     // 6. XEM LỊCH TRỐNG
