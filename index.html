@@ -103,16 +103,24 @@
                     </ul>
                 </li>
 
-                <li class="nav-item dropdown">
+                <li class="nav-item dropdown role-only-student hidden">
                     <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">Đăng ký sử dụng</a>
                     <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="#" onclick="showView('dm-ptn-view')">Đăng ký phòng thí nghiệm</a></li>
-                        <li><a class="dropdown-item" href="#">Đăng ký thiết bị</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="showView('dm-ptn-view')">Đăng ký phòng/máy</a></li>
                         <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item" href="#" onclick="loadHistoryView()">Lịch đã đăng ký</a></li>
                         <li><a class="dropdown-item" href="#" onclick="showAvailableSchedule()">Lịch trống</a></li>
                         <li><a class="dropdown-item" href="#" onclick="loadHistoryView()">Mã QR của tôi</a></li>
                         <li><a class="dropdown-item" href="#" onclick="loadHistoryView()">Lịch sử sử dụng</a></li>
+                    </ul>
+                </li>
+
+                <li class="nav-item dropdown role-level-2 hidden">
+                    <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown"><i class="bi bi-hdd-network"></i> Quản lý Vận hành</a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item fw-bold text-primary" href="#"><i class="bi bi-plus-circle"></i> Thêm mới Phòng & Thiết bị</a></li>
+                        <li><a class="dropdown-item" href="#"><i class="bi bi-clock-history"></i> Nhật ký Check-in / Check-out</a></li>
+                        <li><a class="dropdown-item" href="#"><i class="bi bi-lightning-charge"></i> Thống kê điện năng theo ca</a></li>
                     </ul>
                 </li>
 
