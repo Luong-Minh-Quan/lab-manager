@@ -1195,14 +1195,12 @@
             });
         }
         if (isConflict) return Swal.fire('Trùng lịch!', 'Khung giờ này đã có người đặt thiết bị. Vui lòng chọn giờ khác!', 'error');
-
-        // Ghi vào Database
-        const { data: user } = await _supabase.auth.getUser();
-        const { error } = await _supabase.from('bookings').insert([{
+    // Ghi vào Database (Lệnh insert chuẩn)
+    const { error } = await _supabase.from('bookings').insert([{
             user_id: currentUserProfile.id,
             full_name: currentUserProfile.full_name,
-            student_id: currentUserProfile.student_id,
-            email: user.user.email,
+            student_id: currentUserProfile.student_id, 
+            email: currentUserProfile.email, 
             machine_name: fullName,
             booking_date: date,
             start_time: start,
@@ -1210,6 +1208,11 @@
             purpose: document.getElementById('book-purpose').value,
             participants: document.getElementById('book-participants').value
         }]);
+
+        if (error) {
+            Swal.fire('Lỗi', 'Không thể lưu đăng ký: ' + error.message, 'error');
+            return;
+        }
 
         if (error) Swal.fire('Lỗi Database', error.message, 'error');
         else {
