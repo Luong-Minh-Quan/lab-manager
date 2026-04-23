@@ -155,6 +155,7 @@
                         <li><a class="dropdown-item" href="#">Quản lý tài khoản</a></li>
                         <li><a class="dropdown-item" href="#">Phân quyền</a></li>
                         <li><a class="dropdown-item" href="#" onclick="loadHistoryView()">Duyệt đăng ký</a></li>
+                        <li><a class="dropdown-item fw-bold text-primary" href="#" onclick="loadAdminNotices()"><i class="bi bi-megaphone"></i> Quản lý Thông báo</a></li>
                         <li><a class="dropdown-item" href="#">Cấu hình hệ thống</a></li>
                         <li><a class="dropdown-item" href="#">Kết nối thiết bị KC868</a></li>
                         <li><a class="dropdown-item" href="#">Cấu hình ESP32 / RFID / QR</a></li>
@@ -218,6 +219,49 @@
                                 <tr><th>Phòng</th><th>Vấn đề</th><th>Thời gian</th><th>Trạng thái</th></tr>
                             </thead>
                             <tbody id="stats-lab-list"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="admin-notice-view" class="view-section hidden">
+        <h3 class="fw-bold mb-4 text-primary"><i class="bi bi-megaphone"></i> Quản lý Thông báo Trang chủ</h3>
+        
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-university text-white fw-bold">Đăng Thông Báo Mới</div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Tiêu đề</label>
+                            <input type="text" id="notice-title" class="form-control" placeholder="VD: Lịch nghỉ lễ...">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Mức độ</label>
+                            <select id="notice-type" class="form-select">
+                                <option value="info">Bình thường (Chữ xanh đen)</option>
+                                <option value="danger">Quan trọng (Chữ đỏ)</option>
+                                <option value="warning">Lưu ý (Chữ vàng)</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Nội dung chi tiết</label>
+                            <textarea id="notice-content" class="form-control" rows="3" placeholder="Gõ nội dung vào đây..."></textarea>
+                        </div>
+                        <button class="btn btn-primary w-100 fw-bold" onclick="submitNotice()">Đăng Lên Trang Chủ</button>
+                    </div>
+                </div>
+            </div>
+    
+            <div class="col-md-8">
+                <div class="card shadow-sm border-0">
+                    <div class="card-body p-0">
+                        <table class="table align-middle table-hover text-center mb-0">
+                            <thead class="table-light">
+                                <tr><th>Thời gian</th><th class="text-start">Tiêu đề & Nội dung</th><th>Thao tác</th></tr>
+                            </thead>
+                            <tbody id="admin-notice-list"></tbody>
                         </table>
                     </div>
                 </div>
@@ -327,16 +371,11 @@
             <div class="col-md-7 mb-4">
                 <div class="card shadow-sm border-0 h-100">
                     <div class="card-header bg-white fw-bold py-3 text-university"><i class="bi bi-megaphone-fill me-2 text-danger"></i> Thông báo mới nhất</div>
-                    <div class="card-body p-0">
-                        <div class="list-group list-group-flush">
-                            <a href="#" class="list-group-item list-group-item-action p-3">
-                                <div class="d-flex w-100 justify-content-between"><h6 class="mb-1 fw-bold text-dark">Lịch bảo trì máy CNC - PTN K101</h6><small class="text-muted">3 giờ trước</small></div>
-                                <p class="mb-1 small text-muted">Toàn bộ máy tiện CNC tại K101 sẽ tạm ngưng để bảo trì định kỳ vào sáng Thứ 7 tuần này.</p>
-                            </a>
-                            <a href="#" class="list-group-item list-group-item-action p-3 bg-light">
-                                <div class="d-flex w-100 justify-content-between"><h6 class="mb-1 fw-bold text-danger">Cập nhật nội quy khai báo trả máy</h6><small class="text-muted">Hôm qua</small></div>
-                                <p class="mb-1 small text-muted">Bắt buộc khai báo tình trạng thiết bị trên Web/App sau khi quét mã QR kết thúc ca thực hành.</p>
-                            </a>
+                    <div class="card-body p-0" style="height: 120px; overflow: hidden; position: relative;">
+                        <div id="noticeCarousel" class="carousel slide carousel-fade h-100" data-bs-ride="carousel" data-bs-interval="3500">
+                            <div class="carousel-inner h-100" id="home-notice-list">
+                                <div class="p-4 text-center text-muted">Đang tải thông báo...</div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -772,6 +811,7 @@
         loadTodayDashboard();
         loadLatestWarnings();
         loadDashboardStats();
+        loadHomeNotices();
     }
     // Hàm tải 5 con số thống kê tổng quan trên cùng
     async function loadDashboardStats() {
@@ -1380,6 +1420,96 @@
                     <span class="fw-bold text-dark">${b.machine_name}</span><br>
                     <span class="text-danger"><i class="bi bi-x-circle"></i> ${b.condition_note || 'Báo cáo có hư hỏng'}</span> 
                     <small class="text-muted ms-1">(Lúc ${timeStr})</small>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    }
+    // ==============================================
+    // QUẢN LÝ THÔNG BÁO (ADMIN & TRANG CHỦ)
+    // ==============================================
+
+    // 1. Hàm Admin gửi thông báo lên Supabase
+    async function submitNotice() {
+        const title = document.getElementById('notice-title').value;
+        const type = document.getElementById('notice-type').value;
+        const content = document.getElementById('notice-content').value;
+
+        if (!title || !content) return Swal.fire('Lỗi', 'Vui lòng nhập đủ Tiêu đề và Nội dung!', 'warning');
+
+        Swal.fire({ title: 'Đang đăng...', didOpen: () => Swal.showLoading() });
+
+        const { error } = await _supabase.from('announcements').insert([{ title, type, content }]);
+
+        if (error) {
+            Swal.fire('Lỗi', error.message, 'error');
+        } else {
+            Swal.fire('Thành công', 'Đã đăng thông báo lên trang chủ!', 'success');
+            document.getElementById('notice-title').value = '';
+            document.getElementById('notice-content').value = '';
+            loadAdminNotices(); // Tải lại bảng của admin
+            loadHomeNotices();  // Cập nhật luôn ngoài trang chủ
+        }
+    }
+
+    // 2. Hàm tải danh sách cho Admin quản lý (kèm nút Xóa)
+    async function loadAdminNotices() {
+        showView('admin-notice-view');
+        const { data, error } = await _supabase.from('announcements').select('*').order('created_at', { ascending: false });
+        
+        const tbody = document.getElementById('admin-notice-list');
+        if (error || !data.length) return tbody.innerHTML = '<tr><td colspan="3" class="p-4 text-muted">Chưa có thông báo nào.</td></tr>';
+
+        tbody.innerHTML = data.map(n => `
+            <tr>
+                <td><small class="text-muted">${new Date(n.created_at).toLocaleDateString('vi-VN')}</small></td>
+                <td class="text-start">
+                    <b class="text-${n.type}">${n.title}</b><br>
+                    <small>${n.content}</small>
+                </td>
+                <td><button class="btn btn-sm btn-outline-danger" onclick="deleteNotice('${n.id}')"><i class="bi bi-trash"></i></button></td>
+            </tr>
+        `).join('');
+    }
+
+    // 3. Hàm Admin xóa thông báo
+    async function deleteNotice(id) {
+        if(confirm('Bạn có chắc muốn xóa thông báo này?')) {
+            await _supabase.from('announcements').delete().eq('id', id);
+            loadAdminNotices();
+            loadHomeNotices();
+        }
+    }
+
+    // 4. Hàm hiển thị "Vòng xoay" ngoài Trang chủ
+    async function loadHomeNotices() {
+        const { data, error } = await _supabase.from('announcements').select('*').order('created_at', { ascending: false }).limit(5);
+        const container = document.getElementById('home-notice-list');
+        
+        if (error || !data || data.length === 0) {
+            return container.innerHTML = '<div class="p-4 text-center text-muted">Hiện chưa có thông báo mới.</div>';
+        }
+
+        let html = '';
+        data.forEach((n, index) => {
+            // Mục đầu tiên phải có class 'active' thì Carousel mới bắt đầu chạy
+            const activeClass = index === 0 ? 'active' : '';
+            
+            // Tính toán thời gian (vd: Vừa xong, 2 giờ trước...)
+            const dateObj = new Date(n.created_at);
+            const timeStr = dateObj.toLocaleDateString('vi-VN');
+
+            html += `
+                <div class="carousel-item ${activeClass} h-100">
+                    <div class="p-3">
+                        <div class="d-flex w-100 justify-content-between mb-1">
+                            <h6 class="mb-0 fw-bold text-${n.type}">${n.title}</h6>
+                            <small class="text-muted">${timeStr}</small>
+                        </div>
+                        <p class="mb-0 small text-muted text-truncate" style="white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
+                            ${n.content}
+                        </p>
+                    </div>
                 </div>
             `;
         });
