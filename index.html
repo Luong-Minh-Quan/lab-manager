@@ -544,7 +544,7 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-primary w-100 fw-bold" onclick="submitGeneralFeedback()">Gửi báo cáo</button>
+                <button type="button" class="btn btn-primary w-100 fw-bold" onclick="submitGeneralFeedback('lab_condition')">Gửi báo cáo</button>
             </div>
         </div>
     </div>
@@ -572,7 +572,7 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-danger w-100 fw-bold" onclick="submitGeneralFeedback()">Gửi báo cáo vi phạm</button>
+                <button type="button" class="btn btn-danger w-100 fw-bold" onclick="submitGeneralFeedback('violation')">Gửi báo cáo vi phạm</button>
             </div>
         </div>
     </div>
@@ -1004,27 +1004,56 @@
     }
 
     // Hàm giả lập Gửi báo cáo thành công
-    function submitGeneralFeedback() {
-        Swal.fire({
-            title: 'Đang gửi báo cáo...',
-            didOpen: () => Swal.showLoading()
-        });
+    // Hàm gửi báo cáo thật lên Supabase
+    async function submitGeneralFeedback(type) {
+        let room = "";
+        let content = "";
+        let target = "";
+        let modalId = "";
 
-        // Giả lập hệ thống xử lý mất 1 giây
-        setTimeout(() => {
-            // Đóng tất cả các form nếu đang mở
-            let m1 = bootstrap.Modal.getInstance(document.getElementById('labConditionModal'));
-            if(m1) m1.hide();
-            let m2 = bootstrap.Modal.getInstance(document.getElementById('studentUsageModal'));
-            if(m2) m2.hide();
+        // 1. Phân loại dữ liệu dựa trên Type (Loại báo cáo)
+        if (type === 'lab_condition') {
+            room = document.getElementById('feedback-room').value;
+            content = document.getElementById('feedback-content').value;
+            modalId = 'labConditionModal';
+        } else if (type === 'violation') {
+            room = document.getElementById('violation-room').value;
+            content = document.getElementById('violation-content').value;
+            target = document.getElementById('violation-student').value;
+            modalId = 'studentUsageModal';
+        }
 
-            // Báo thành công
-            Swal.fire(
-                'Thành công!',
-                'Cảm ơn bạn đã gửi báo cáo. Ban quản lý sẽ tiếp nhận và xử lý.',
-                'success'
-            );
-        }, 1000);
+        // 2. Kiểm tra dữ liệu trống
+        if (!content.trim()) return Swal.fire('Thông báo', 'Vui lòng nhập nội dung báo cáo!', 'warning');
+
+        Swal.fire({ title: 'Đang gửi báo cáo...', didOpen: () => Swal.showLoading() });
+
+        // 3. Gửi lên Supabase
+        const { error } = await _supabase.from('feedbacks').insert([{
+            user_id: currentUserProfile.id,
+            user_name: currentUserProfile.full_name,
+            type: type,
+            room_code: room,
+            content: content,
+            target_info: target
+        }]);
+
+        if (error) {
+            Swal.fire('Lỗi', error.message, 'error');
+        } else {
+            // Đóng Modal và xóa dữ liệu cũ trong Form
+            const modalInstance = bootstrap.Modal.getInstance(document.getElementById(modalId));
+            modalInstance.hide();
+            
+            // Xóa trắng ô nhập liệu để lần sau dùng tiếp
+            if(type === 'lab_condition') document.getElementById('feedback-content').value = "";
+            else {
+                document.getElementById('violation-content').value = "";
+                document.getElementById('violation-student').value = "";
+            }
+
+            Swal.fire('Thành công', 'Báo cáo của bạn đã được gửi đến Ban quản lý.', 'success');
+        }
     }
 </script>
 </body>
