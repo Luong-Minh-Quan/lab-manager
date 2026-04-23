@@ -140,8 +140,8 @@
                     <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">Xem Báo cáo & Thống kê</a>
                     <ul class="dropdown-menu">
                         <li><a class="dropdown-item fw-bold text-danger" href="#" onclick="loadMaintenanceReports()"><i class="bi bi-wrench-adjustable"></i> Quản lý bảo trì & Hư hỏng</a></li>
-                        <li><a class="dropdown-item" href="#"><i class="bi bi-graph-up"></i> Xem thống kê tình trạng PTN</a></li>
-                        <li><a class="dropdown-item" href="#"><i class="bi bi-pie-chart"></i> Xem thống kê lượt sử dụng</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="loadLabStats()"><i class="bi bi-graph-up"></i> Xem thống kê tình trạng PTN</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="loadUsageStats()"><i class="bi bi-pie-chart"></i> Xem thống kê lượt sử dụng</a></li>
                         <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item text-success" href="#"><i class="bi bi-file-earmark-excel"></i> Xuất dữ liệu Excel / PDF</a></li>
                     </ul>
@@ -195,6 +195,57 @@
                     <a href="#" class="text-decoration-none small text-danger" onclick="handleForgotPassword()">Quên mật khẩu?</a>
                 </div>
                 <button class="btn btn-primary w-100 py-2 fw-bold" onclick="handleLogin()">Đăng Nhập</button>
+            </div>
+        </div>
+    </div>
+    <div id="stats-lab-view" class="view-section hidden">
+        <h3 class="fw-bold mb-4 text-university"><i class="bi bi-graph-up"></i> Thống kê tình trạng cơ sở vật chất</h3>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="card shadow-sm border-0 p-3">
+                    <h6 class="fw-bold text-muted">Tỉ lệ phản hồi theo phòng</h6>
+                    <canvas id="chartLabFeedback"></canvas>
+                </div>
+            </div>
+            <div class="col-md-8">
+                <div class="card shadow-sm border-0 p-3 h-100">
+                    <h6 class="fw-bold text-muted">Danh sách vấn đề tồn đọng</h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm align-middle mt-2">
+                            <thead>
+                                <tr><th>Phòng</th><th>Vấn đề</th><th>Thời gian</th><th>Trạng thái</th></tr>
+                            </thead>
+                            <tbody id="stats-lab-list"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="stats-usage-view" class="view-section hidden">
+        <h3 class="fw-bold mb-4 text-university"><i class="bi bi-pie-chart"></i> Thống kê hiệu suất sử dụng máy</h3>
+        <div class="row g-4">
+            <div class="col-md-12">
+                <div class="card shadow-sm border-0 p-3">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="fw-bold text-muted mb-0">Tần suất sử dụng các loại máy</h6>
+                        <button class="btn btn-sm btn-outline-success" onclick="exportToCSV()"><i class="bi bi-file-earmark-excel"></i> Xuất dữ liệu</button>
+                    </div>
+                    <canvas id="chartMachineUsage" style="max-height: 300px;"></canvas>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card shadow-sm border-0 p-3">
+                    <h6 class="fw-bold text-muted">Phân bổ theo Mục đích</h6>
+                    <canvas id="chartPurpose"></canvas>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card shadow-sm border-0 p-3">
+                    <h6 class="fw-bold text-muted">Số giờ hoạt động tích lũy (Giờ)</h6>
+                    <div id="usage-summary-list" class="mt-2"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -1054,6 +1105,82 @@
 
             Swal.fire('Thành công', 'Báo cáo của bạn đã được gửi đến Ban quản lý.', 'success');
         }
+    }
+    // 1. BIẾN LƯU TRỮ BIỂU ĐỒ (Để tránh bị lỗi khi vẽ đè lên nhau)
+    let labChartObj = null, usageChartObj = null, purposeChartObj = null;
+
+    // 2. HÀM THỐNG KÊ TÌNH TRẠNG PTN
+    async function loadLabStats() {
+        showView('stats-lab-view');
+        const { data, error } = await _supabase.from('feedbacks').select('*').eq('type', 'lab_condition');
+        if (error || !data) return;
+
+        // Đếm số phản hồi theo từng phòng
+        const stats = {};
+        data.forEach(f => { stats[f.room_code] = (stats[f.room_code] || 0) + 1; });
+
+        // Vẽ biểu đồ tròn
+        if(labChartObj) labChartObj.destroy();
+        labChartObj = new Chart(document.getElementById('chartLabFeedback'), {
+            type: 'pie',
+            data: {
+                labels: Object.keys(stats),
+                datasets: [{ data: Object.values(stats), backgroundColor: ['#003366', '#cc0000', '#ffc107', '#198754'] }]
+            }
+        });
+
+        // Đổ danh sách vấn đề
+        document.getElementById('stats-lab-list').innerHTML = data.slice(0, 5).map(f => `
+            <tr>
+                <td><b>${f.room_code}</b></td>
+                <td><small>${f.content}</small></td>
+                <td><small>${new Date(f.created_at).toLocaleDateString('vi-VN')}</small></td>
+                <td><span class="badge ${f.status==='pending'?'bg-warning':'bg-success'}">${f.status}</span></td>
+            </tr>
+        `).join('');
+    }
+
+    // 3. HÀM THỐNG KÊ LƯỢT SỬ DỤNG
+    async function loadUsageStats() {
+        showView('stats-usage-view');
+        const { data, error } = await _supabase.from('bookings').select('*').eq('status', 'approved');
+        if (error || !data) return;
+
+        const machineStats = {};
+        const purposeStats = { "Thực hành": 0, "Nghiên cứu": 0, "Giảng dạy": 0 };
+
+        data.forEach(b => {
+            machineStats[b.machine_name] = (machineStats[b.machine_name] || 0) + 1;
+            purposeStats[b.purpose] = (purposeStats[b.purpose] || 0) + 1;
+        });
+
+        // Vẽ biểu đồ Cột cho Máy
+        if(usageChartObj) usageChartObj.destroy();
+        usageChartObj = new Chart(document.getElementById('chartMachineUsage'), {
+            type: 'bar',
+            data: {
+                labels: Object.keys(machineStats),
+                datasets: [{ label: 'Số lượt mượn', data: Object.values(machineStats), backgroundColor: '#003366' }]
+            }
+        });
+
+        // Vẽ biểu đồ Tròn cho Mục đích
+        if(purposeChartObj) purposeChartObj.destroy();
+        purposeChartObj = new Chart(document.getElementById('chartPurpose'), {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(purposeStats),
+                datasets: [{ data: Object.values(purposeStats), backgroundColor: ['#0d6efd', '#fd7e14', '#6f42c1'] }]
+            }
+        });
+
+        // Hiển thị tóm tắt giờ hoạt động (giả lập dựa trên số lượt)
+        document.getElementById('usage-summary-list').innerHTML = Object.keys(machineStats).map(name => `
+            <div class="d-flex justify-content-between mb-2">
+                <small>${name}</small>
+                <span class="fw-bold">${machineStats[name] * 2} giờ</span>
+            </div>
+        `).join('');
     }
 </script>
 </body>
