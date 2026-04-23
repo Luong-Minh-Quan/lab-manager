@@ -1151,11 +1151,17 @@
     }
 
     async function submitBooking() {
-        const room = document.getElementById('book-room').value;
-        const machine = document.getElementById('modal-machine-name').innerText;
-        const date = document.getElementById('book-date').value;
-        const start = document.getElementById('book-start').value;
-        const end = document.getElementById('book-end').value;
+        // ĐOẠN CODE LƯU ĐƠN CHUẨN PHẢI CÓ CÁC TRƯỜNG NÀY:
+    const { data, error } = await _supabase.from('bookings').insert([{
+        user_id: currentUserProfile.id, // BẮT BUỘC PHẢI CÓ: Để sinh viên nhận diện đơn của mình
+        email: currentUserProfile.email,
+        full_name: currentUserProfile.full_name,
+        machine_name: 'Tên máy sinh viên chọn...',
+        booking_date: '...',
+        start_time: '...',
+        end_time: '...',
+        status: 'pending' // BẮT BUỘC PHẢI CÓ: Để Admin lọc ra các đơn CẦN DUYỆT
+    }]);
 
         if (!date || !start || !end) return Swal.fire('Cảnh báo', 'Vui lòng chọn ngày và giờ!', 'warning');
         if (start >= end) return Swal.fire('Lỗi', 'Giờ kết thúc phải sau giờ bắt đầu!', 'error');
@@ -1232,11 +1238,12 @@
         tbody.innerHTML = '<tr><td colspan="5">Đang tải dữ liệu...</td></tr>';
 
         // 2. Lấy TOÀN BỘ dữ liệu của sinh viên này
+        // Admin chỉ lấy những đơn có chữ 'pending'
         const { data, error } = await _supabase
             .from('bookings')
             .select('*')
-            .eq('user_id', currentUserProfile.id) // Hoặc .eq('email', currentUserProfile.email)
-            .order('booking_date', { ascending: false });
+            .eq('status', 'pending') 
+            .order('booking_date', { ascending: true });
 
         if (error || !data) return;
 
