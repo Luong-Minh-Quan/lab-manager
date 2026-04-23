@@ -1154,9 +1154,15 @@
 
         if (error || !data) return;
 
-        // 3. BỘ LỌC THỜI GIAN THÔNG MINH
+        // 3. BỘ LỌC THỜI GIAN THÔNG MINH (ĐÃ SỬA LỖI MÚI GIỜ)
         const now = new Date();
-        const todayStr = now.toISOString().split('T')[0]; // Lấy ngày YYYY-MM-DD
+        
+        // Lấy ngày chuẩn theo giờ máy tính (Local Time) để tránh lệch ngày lúc nửa đêm
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const todayStr = `${year}-${month}-${day}`; 
+
         const currentMins = now.getHours() * 60 + now.getMinutes(); // Quy đổi giờ hiện tại ra phút
 
         const filteredData = data.filter(b => {
