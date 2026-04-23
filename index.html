@@ -95,7 +95,6 @@
                     <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">Danh mục</a>
                     <ul class="dropdown-menu">
                         <li><a class="dropdown-item" href="#" onclick="showView('dm-ptn-view')"><i class="bi bi-building"></i> Danh mục phòng thí nghiệm</a></li>
-                        <li><a class="dropdown-item" href="#"><i class="bi bi-cpu"></i> Danh mục thiết bị</a></li>
                         <li><a class="dropdown-item" href="#"><i class="bi bi-person-badge"></i> Danh mục cán bộ quản lý</a></li>
                         <li><a class="dropdown-item" href="#"><i class="bi bi-diagram-3"></i> Danh mục khoa / bộ môn</a></li>
                         <li><a class="dropdown-item" href="#"><i class="bi bi-calendar-check"></i> Danh mục lịch bảo trì</a></li>
@@ -501,8 +500,6 @@
             <div class="d-flex gap-2">
                 <select id="filter-log-room" class="form-select form-select-sm" style="width: 150px;" onchange="loadUsageLogs()">
                     <option value="all">Tất cả phòng</option>
-                    <option value="K101">Phòng K101</option>
-                    <option value="C102">Phòng C102</option>
                 </select>
                 <button class="btn btn-sm btn-outline-primary" onclick="loadUsageLogs()"><i class="bi bi-arrow-clockwise"></i> Làm mới</button>
             </div>
@@ -892,6 +889,7 @@
         loadLatestWarnings();
         loadDashboardStats();
         loadHomeNotices();
+        refreshRoomFilters();
     }
     // Hàm tải 5 con số thống kê tổng quan trên cùng
     async function loadDashboardStats() {
@@ -1643,7 +1641,8 @@
 
         Swal.fire('Thành công', 'Đã thêm tài nguyên mới vào hệ thống!', 'success');
         addResourceModalInstance.hide();
-        fetchRoomsData(); // Cập nhật lại danh mục phòng ngoài trang chính
+        fetchRoomsData();
+        refreshRoomFilters(); // Cập nhật lại danh mục phòng ngoài trang chính
     }
     // 1. Tải nhật ký sử dụng thực tế
     async function loadUsageLogs() {
@@ -1705,6 +1704,28 @@
             Swal.fire('Thành công', `Đã ghi nhận ${action} thực tế!`, 'success');
             loadHistoryView(); // Cập nhật lại nút bấm ở trang lịch sử
         }
+    }
+    // Hàm tự động cập nhật danh sách phòng vào các bộ lọc Dropdown
+    async function refreshRoomFilters() {
+        const { data: rooms, error } = await _supabase
+            .from('rooms')
+            .select('room_code, room_name')
+            .eq('status', 'active');
+
+        if (error || !rooms) return;
+
+        const filterSelect = document.getElementById('filter-log-room');
+        
+        // Giữ lại option đầu tiên (Tất cả phòng), xóa các cái cũ
+        filterSelect.innerHTML = '<option value="all">Tất cả phòng</option>';
+
+        // Đổ dữ liệu mới từ Database vào
+        rooms.forEach(r => {
+            const option = document.createElement('option');
+            option.value = r.room_code;
+            option.textContent = `Phòng ${r.room_code}`;
+            filterSelect.appendChild(option);
+        });
     }
 </script>
 </body>
