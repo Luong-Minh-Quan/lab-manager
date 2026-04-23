@@ -955,6 +955,7 @@
     async function handleLogin() {
         const email = document.getElementById('login-email').value;
         const password = document.getElementById('login-password').value;
+        console.log("Dữ liệu chuẩn bị gửi đi: ", email, password);
         if (!email || !password) return Swal.fire('Thông báo', 'Vui lòng nhập đủ Email và Mật khẩu!', 'warning');
 
         Swal.fire({ title: 'Đang xác thực...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
