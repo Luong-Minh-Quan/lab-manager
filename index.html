@@ -363,7 +363,41 @@
             </div>
         </div>
     </div>
-      
+    <div class="modal fade" id="addAccountModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title fw-bold">Tạo tài khoản mới</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Họ tên / MSSV</label>
+                        <input type="text" id="new-acc-name" class="form-control" placeholder="Nguyễn Văn A - 123...">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Email đăng nhập</label>
+                        <input type="email" id="new-acc-email" class="form-control" placeholder="vi-du@student.edu.vn">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Mật khẩu tạm thời</label>
+                        <input type="password" id="new-acc-password" class="form-control" placeholder="Ít nhất 6 ký tự">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Vai trò cấp cho tài khoản</label>
+                        <select id="new-acc-role" class="form-select border-success">
+                            <option value="student">Sinh viên</option>
+                            <option value="manager">Quản lý PTN</option>
+                            <option value="admin">Quản trị viên</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-success fw-bold px-4 w-100" onclick="handleAdminCreateAccount()">Tạo tài khoản ngay</button>
+                </div>
+            </div>
+        </div>
+    </div>   
     <div class="modal fade" id="editAccountModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content border-0 shadow">
