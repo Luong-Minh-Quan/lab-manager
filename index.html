@@ -528,7 +528,11 @@
     // 1. CẤU HÌNH API
     const SUPABASE_URL = 'https://hhjulrrtmnywrbhtzlqv.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_tC-IcNRCd_myv8YaTMeaKg_IbS4XWeI';
-    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+    auth: {
+        persistSession: false // Không lưu lại phiên đăng nhập vào bộ nhớ cứng
+    }
+});
     
     emailjs.init("f3eTdbEP6l_mNLeQX"); 
     const EMAILJS_SERVICE_ID = "service_43o5xsl"; 
