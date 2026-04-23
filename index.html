@@ -955,27 +955,25 @@
     async function handleLogin() {
         const email = document.getElementById('login-email').value;
         const password = document.getElementById('login-password').value;
-        if (!email || !password) return Swal.fire('Thông báo', 'Vui lòng nhập đủ Email và Mật khẩu!', 'warning');
+        
+        if (!email || !password) {
+            return Swal.fire('Thông báo', 'Vui lòng nhập đủ Email và Mật khẩu!', 'warning');
+        }
 
         Swal.fire({ title: 'Đang xác thực...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-        const { data, error } = await _supabase.auth.signInWithPassword({ email, password });
-
-        if (error) {
-            Swal.fire('Lỗi', 'Sai tài khoản hoặc mật khẩu!', 'error');
-        } else {
-            Swal.close();
-            checkSession();
-        }
-        const { data, error } = await _supabase.auth.signInWithPassword({
-            email: email,
-            password: password
+        
+        // Gọi Supabase đúng 1 lần duy nhất (Bỏ biến data đi vì ta chỉ cần check error)
+        const { error } = await _supabase.auth.signInWithPassword({ 
+            email: email, 
+            password: password 
         });
 
         if (error) {
-            // IN THẲNG LỜI KHAI CỦA SUPABASE RA MÀN HÌNH
-            alert("Supabase báo lỗi: " + error.message);
-            console.error("Chi tiết lỗi:", error);
-            return;
+            Swal.fire('Lỗi đăng nhập', 'Sai tài khoản hoặc mật khẩu! Chi tiết: ' + error.message, 'error');
+            console.error("Lỗi Supabase:", error);
+        } else {
+            Swal.close();
+            checkSession(); // Đăng nhập thành công thì load giao diện
         }
     }
 
