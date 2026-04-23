@@ -1952,7 +1952,7 @@
         tbody.innerHTML = '<tr><td colspan="5">Đang tải dữ liệu...</td></tr>';
 
         // Lấy danh sách từ bảng profiles
-        const { data, error } = await _supabase.from('profiles').select('*').order('created_at', { ascending: false });
+        const { data, error } = await _supabase.from('profiles').select('*');
 
         if (error || !data) return tbody.innerHTML = `<tr><td colspan="5" class="text-danger">Lỗi Database: ${error.message}</td></tr>`;
 
