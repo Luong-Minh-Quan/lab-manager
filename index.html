@@ -131,8 +131,8 @@
                     <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">Báo cáo & Phản hồi</a>
                     <ul class="dropdown-menu">
                         <li><a class="dropdown-item fw-bold text-danger" href="#" onclick="loadHistoryView()"><i class="bi bi-tools"></i> Báo cáo hư hỏng máy</a></li>
-                        <li><a class="dropdown-item" href="#" onclick="Swal.fire('Tính năng', 'Form báo cáo tình trạng PTN đang được xây dựng', 'info')"><i class="bi bi-chat-left-dots"></i> Báo cáo tình trạng PTN</a></li>
-                        <li><a class="dropdown-item" href="#" onclick="Swal.fire('Tính năng', 'Form báo cáo sinh viên sử dụng đang được xây dựng', 'info')"><i class="bi bi-person-exclamation"></i> Báo cáo sinh viên sử dụng</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="openFeedbackModal('labConditionModal')"><i class="bi bi-chat-left-dots"></i> Báo cáo tình trạng PTN</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="openFeedbackModal('studentUsageModal')"><i class="bi bi-person-exclamation"></i> Báo cáo sinh viên sử dụng</a></li>
                     </ul>
                 </li>
 
@@ -519,6 +519,60 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-warning fw-bold px-4" onclick="submitReport()">Xác nhận Khai báo</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="labConditionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-university text-white">
+                <h5 class="modal-title fw-bold"><i class="bi bi-chat-left-dots"></i> Báo cáo tình trạng PTN</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Chọn Phòng Thí Nghiệm</label>
+                    <select id="feedback-room" class="form-select">
+                        <option value="K101">K101 - PTN Cơ Khí Chế Tạo 1</option>
+                        <option value="C102">C102 - PTN Tự Động Hóa</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Nội dung báo cáo</label>
+                    <textarea id="feedback-content" class="form-control" rows="4" placeholder="Ví dụ: Bóng đèn số 3 bị cháy, điều hòa rỉ nước, vệ sinh chưa sạch..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary w-100 fw-bold" onclick="submitGeneralFeedback()">Gửi báo cáo</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="studentUsageModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title fw-bold"><i class="bi bi-person-exclamation"></i> Báo cáo vi phạm nội quy</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Sinh viên vi phạm (Nếu biết)</label>
+                    <input type="text" id="violation-student" class="form-control" placeholder="Tên hoặc MSSV (Có thể để trống)">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Phòng xảy ra vi phạm</label>
+                    <input type="text" id="violation-room" class="form-control" placeholder="VD: K101">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Chi tiết vi phạm</label>
+                    <textarea id="violation-content" class="form-control" rows="3" placeholder="Ví dụ: Mang đồ ăn vào phòng, xả rác bừa bãi..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger w-100 fw-bold" onclick="submitGeneralFeedback()">Gửi báo cáo vi phạm</button>
             </div>
         </div>
     </div>
@@ -938,6 +992,39 @@
         
         const ctx2 = document.getElementById('roomChart').getContext('2d');
         roomChart = new Chart(ctx2, { type: 'doughnut', data: { labels: ['K101', 'C102', 'Khác'], datasets: [{ data: [124.5, 45.2, 30.0], backgroundColor: ['#003366', '#009933', '#e0e0e0'] }] } });
+    }
+    // Hàm mở Modal Báo cáo chung
+    function openFeedbackModal(modalId) {
+        let modalEl = document.getElementById(modalId);
+        let modalInstance = bootstrap.Modal.getInstance(modalEl);
+        if (!modalInstance) {
+            modalInstance = new bootstrap.Modal(modalEl);
+        }
+        modalInstance.show();
+    }
+
+    // Hàm giả lập Gửi báo cáo thành công
+    function submitGeneralFeedback() {
+        Swal.fire({
+            title: 'Đang gửi báo cáo...',
+            didOpen: () => Swal.showLoading()
+        });
+
+        // Giả lập hệ thống xử lý mất 1 giây
+        setTimeout(() => {
+            // Đóng tất cả các form nếu đang mở
+            let m1 = bootstrap.Modal.getInstance(document.getElementById('labConditionModal'));
+            if(m1) m1.hide();
+            let m2 = bootstrap.Modal.getInstance(document.getElementById('studentUsageModal'));
+            if(m2) m2.hide();
+
+            // Báo thành công
+            Swal.fire(
+                'Thành công!',
+                'Cảm ơn bạn đã gửi báo cáo. Ban quản lý sẽ tiếp nhận và xử lý.',
+                'success'
+            );
+        }, 1000);
     }
 </script>
 </body>
