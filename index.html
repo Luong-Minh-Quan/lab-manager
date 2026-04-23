@@ -1136,9 +1136,9 @@
         const titleEl = document.querySelector('#history-view h3');
         if (titleEl) {
             if (viewType === 'upcoming') {
-                titleEl.innerHTML = '<i class="bi bi-calendar-check"></i> Lịch đã đăng ký (Sắp tới)';
+                titleEl.innerHTML = '<i class="bi bi-calendar-check"></i> Lịch đã đăng ký';
             } else {
-                titleEl.innerHTML = '<i class="bi bi-clock-history"></i> Lịch sử sử dụng (Đã qua)';
+                titleEl.innerHTML = '<i class="bi bi-clock-history"></i> Lịch sử sử dụng';
             }
         }
 
@@ -1178,7 +1178,7 @@
         }
 
         let html = '';
-        data.forEach(b => {
+        filteredData.forEach(b => {
             const statusColor = b.status === 'approved' ? 'bg-success' : (b.status === 'pending' ? 'bg-warning' : 'bg-danger');
             let actionBtn = '';
             
@@ -1209,7 +1209,7 @@
             `;
         });
 
-        document.getElementById('history-list').innerHTML = html; // Lưu ý thay 'history-list' bằng đúng ID thẻ <tbody> của sếp
+       
         tbody.innerHTML = html || '<tr><td colspan="5" class="text-muted p-4">Không có dữ liệu</td></tr>';
     }
 
