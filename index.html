@@ -335,7 +335,58 @@
             </div>
         </div>
     </div>
+    <div id="admin-accounts-view" class="view-section hidden">
+        <h3 class="fw-bold text-primary mb-4"><i class="bi bi-people-fill"></i> Quản lý Tài khoản & Phân quyền</h3>
+        
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table align-middle table-hover text-center mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="text-start ps-4">Người dùng</th>
+                                <th>Email</th>
+                                <th>Vai trò (Role)</th>
+                                <th>Ngày tham gia</th>
+                                <th>Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-accounts-list">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
     
+    <div class="modal fade" id="editAccountModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title fw-bold">Cấp Quyền Hệ Thống</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="edit-acc-id">
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Tên / MSSV</label>
+                        <input type="text" id="edit-acc-name" class="form-control fw-bold" readonly>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Vai trò</label>
+                        <select id="edit-acc-role" class="form-select border-primary">
+                            <option value="student">Sinh viên (Student)</option>
+                            <option value="manager">Quản lý PTN (Manager)</option>
+                            <option value="admin">Quản trị viên (Admin)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary fw-bold px-4 w-100" onclick="saveAccountRole()">Lưu thay đổi phân quyền</button>
+                </div>
+            </div>
+        </div>
+    </div>
     <div id="stats-usage-view" class="view-section hidden">
         <h3 class="fw-bold mb-4 text-university"><i class="bi bi-pie-chart"></i> Thống kê hiệu suất sử dụng máy</h3>
         <div class="row g-4">
@@ -1891,6 +1942,73 @@
                 <td class="text-danger fw-bold">+ ${b.energy_consumed}</td>
             </tr>
         `).join('') || '<tr><td colspan="5" class="p-4 text-muted">Không có dữ liệu tiêu thụ điện trong khoảng thời gian này.</td></tr>';
+    }
+    let editAccountModalInstance = null;
+
+    // 1. Tải danh sách tài khoản
+    async function loadAdminAccounts() {
+        showView('admin-accounts-view');
+        const tbody = document.getElementById('admin-accounts-list');
+        tbody.innerHTML = '<tr><td colspan="5">Đang tải dữ liệu...</td></tr>';
+
+        // Lấy danh sách từ bảng profiles
+        const { data, error } = await _supabase.from('profiles').select('*').order('created_at', { ascending: false });
+
+        if (error || !data) return tbody.innerHTML = '<tr><td colspan="5" class="text-danger">Lỗi tải dữ liệu</td></tr>';
+
+        tbody.innerHTML = data.map(user => {
+            // Định dạng màu sắc cho từng loại Role
+            let roleBadge = '';
+            if (user.role === 'admin') roleBadge = '<span class="badge bg-danger">Admin</span>';
+            else if (user.role === 'manager') roleBadge = '<span class="badge bg-primary">Quản lý PTN</span>';
+            else roleBadge = '<span class="badge bg-secondary">Sinh viên</span>';
+
+            const joinDate = user.created_at ? new Date(user.created_at).toLocaleDateString('vi-VN') : 'N/A';
+
+            return `
+                <tr>
+                    <td class="text-start ps-4 fw-bold">${user.full_name || 'Chưa cập nhật'}</td>
+                    <td>${user.email || 'N/A'}</td>
+                    <td>${roleBadge}</td>
+                    <td>${joinDate}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary fw-bold" onclick="openEditAccountModal('${user.id}', '${user.full_name}', '${user.role}')">
+                            <i class="bi bi-shield-check"></i> Cấp quyền
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    // 2. Mở Modal chỉnh sửa phân quyền
+    function openEditAccountModal(id, name, role) {
+        document.getElementById('edit-acc-id').value = id;
+        document.getElementById('edit-acc-name').value = name;
+        document.getElementById('edit-acc-role').value = role || 'student';
+
+        if (!editAccountModalInstance) {
+            editAccountModalInstance = new bootstrap.Modal(document.getElementById('editAccountModal'));
+        }
+        editAccountModalInstance.show();
+    }
+
+    // 3. Lưu phân quyền mới vào Database
+    async function saveAccountRole() {
+        const id = document.getElementById('edit-acc-id').value;
+        const newRole = document.getElementById('edit-acc-role').value;
+
+        Swal.fire({ title: 'Đang lưu...', didOpen: () => Swal.showLoading() });
+
+        const { error } = await _supabase.from('profiles').update({ role: newRole }).eq('id', id);
+
+        if (error) {
+            Swal.fire('Lỗi', error.message, 'error');
+        } else {
+            Swal.fire('Thành công', 'Đã phân quyền thành công!', 'success');
+            editAccountModalInstance.hide();
+            loadAdminAccounts(); // Tải lại bảng để thấy sự thay đổi màu sắc
+        }
     }
 </script>
 </body>
