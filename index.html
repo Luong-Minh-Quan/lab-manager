@@ -1145,57 +1145,36 @@
 
         let html = '';
         data.forEach(b => {
-            // 1. LOGIC TẠO NÚT QUÉT MÃ QR (Chỉ hiện khi đơn đã được duyệt)
-            let actionButtons = '--';
+            const statusColor = b.status === 'approved' ? 'bg-success' : (b.status === 'pending' ? 'bg-warning' : 'bg-danger');
+            let actionBtn = '';
             
-            if (b.status === 'approved') {
-                if (!b.checkin_status || b.checkin_status === 'not_started') {
-                    // Chưa vào -> Hiện nút Quét Vào
-                    actionButtons = `
-                        <button class="btn btn-sm btn-outline-success fw-bold mb-1" onclick="simulateQRScan('${b.id}', 'checkin')">
-                            <i class="bi bi-qr-code-scan"></i> Quét Vào
-                        </button>
-                    `;
-                } else if (b.checkin_status === 'in_progress') {
-                    // Đang ở trong PTN -> Hiện nút Quét Ra
-                    actionButtons = `
-                        <button class="btn btn-sm btn-outline-danger fw-bold mb-1" onclick="simulateQRScan('${b.id}', 'checkout')">
-                            <i class="bi bi-box-arrow-right"></i> Quét Ra
-                        </button>
-                    `;
-                } else if (b.checkin_status === 'completed') {
-                    // Đã xong
-                    actionButtons = `<span class="badge bg-light text-success border border-success"><i class="bi bi-check2-all"></i> Đã hoàn thành</span>`;
+            if (currentUserProfile.role !== 'student' && b.status === 'pending') {
+                actionBtn = `<button class="btn btn-sm btn-primary fw-bold" onclick="approveBooking('${b.id}', '${b.email}', '${b.machine_name}', '${b.qr_token}')">Duyệt & Gửi QR</button>`;
+            } else if (currentUserProfile.role === 'student' && b.status === 'approved') {
+                actionBtn = `<button class="btn btn-sm btn-outline-success mb-1 w-100" onclick="viewMyQR('${b.qr_token}')"><i class="bi bi-qr-code"></i> Xem QR</button><br>`;
+                
+                // Nếu chưa báo cáo thì hiện nút Báo cáo, nếu báo rồi thì hiện chữ Đã báo cáo
+                if (!b.machine_condition) {
+                    actionBtn += `<button class="btn btn-sm btn-warning w-100 fw-bold" onclick="openReportModal('${b.id}', '${b.machine_name}')"><i class="bi bi-tools"></i> Khai báo</button>`;
+                } else {
+                    const conditionColor = b.machine_condition === 'Tốt' ? 'text-success' : 'text-danger';
+                    actionBtn += `<span class="small fw-bold ${conditionColor}"> Đã báo: ${b.machine_condition}</span>`;
                 }
+            } else {
+                actionBtn = `<span class="text-muted small">--</span>`;
             }
 
-            // (Vẫn giữ lại nút Khai báo hư hỏng nếu sếp đã làm ở các bước trước)
-            const reportBtn = `<br><button class="btn btn-sm btn-warning text-dark fw-bold mt-1" onclick="openFeedbackModal('labConditionModal')"><i class="bi bi-exclamation-triangle"></i> Báo lỗi</button>`;
-
-            // 2. ĐỔ DỮ LIỆU VÀO TỪNG DÒNG CỦA BẢNG
             html += `
                 <tr>
-                    <td class="text-start ps-4">
-                        <b>${b.full_name}</b><br>
-                        <small class="text-muted">${b.email}</small>
-                    </td>
-                    <td>
-                        <b>${b.machine_name}</b><br>
-                        <span class="badge bg-light text-dark border">${b.purpose}</span>
-                    </td>
-                    <td>
-                        <span class="text-primary fw-bold">${new Date(b.booking_date).toLocaleDateString('vi-VN')}</span><br>
-                        <small>${b.start_time.substring(0,5)} - ${b.end_time.substring(0,5)}</small>
-                    </td>
-                    <td><span class="badge bg-success">Đã duyệt</span></td>
-                    
-                    <td>
-                        ${actionButtons}
-                        ${b.status === 'approved' ? reportBtn : ''}
-                    </td>
+                    <td class="text-start ps-4"><b>${b.full_name}</b><br><small class="text-muted">${b.email}</small></td>
+                    <td class="text-start"><b>${b.machine_name}</b><br><span class="badge bg-light text-dark border">${b.purpose}</span></td>
+                    <td><span class="text-primary fw-bold">${b.booking_date}</span><br><small>${b.start_time.substring(0,5)} - ${b.end_time.substring(0,5)}</small></td>
+                    <td><span class="badge ${statusColor}">${b.status === 'approved' ? 'Đã duyệt' : (b.status === 'pending' ? 'Chờ duyệt' : 'Từ chối')}</span></td>
+                    <td>${actionBtn}</td>
                 </tr>
             `;
         });
+
         document.getElementById('history-list').innerHTML = html; // Lưu ý thay 'history-list' bằng đúng ID thẻ <tbody> của sếp
         tbody.innerHTML = html || '<tr><td colspan="5" class="text-muted p-4">Không có dữ liệu</td></tr>';
     }
