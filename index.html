@@ -1059,12 +1059,26 @@
             const { count: countMachines } = await _supabase.from('machines').select('*', { count: 'exact', head: true }).eq('status', 'available');
             document.getElementById('stat-machines').innerText = countMachines || 0;
 
-            // 3. Tính tổng Sinh viên thực hành hôm nay (Cộng gộp cột participants)
-            const { data: bookingsToday } = await _supabase.from('bookings').select('participants').eq('booking_date', today).eq('status', 'approved');
+            // 3. Tính tổng Sinh viên ĐANG thực hành tại thời điểm hiện tại (Real-time theo ca đăng ký)
+            const { data: bookingsToday } = await _supabase.from('bookings')
+                .select('participants, start_time, end_time')
+                .eq('booking_date', today)
+                .eq('status', 'approved');
+            
             let totalStudents = 0;
+            const now = new Date();
+            const currentMins = now.getHours() * 60 + now.getMinutes(); // Lấy giờ hiện tại quy ra phút
+
             if (bookingsToday) {
                 bookingsToday.forEach(b => { 
-                    totalStudents += parseInt(b.participants || 1); // Nếu rỗng mặc định là 1 người
+                    // Quy đổi giờ của ca đăng ký ra phút
+                    const startMins = parseInt(b.start_time.split(':')[0]) * 60 + parseInt(b.start_time.split(':')[1]);
+                    const endMins = parseInt(b.end_time.split(':')[0]) * 60 + parseInt(b.end_time.split(':')[1]);
+                    
+                    // CHỈ CỘNG DỒN NẾU: Giờ hiện tại nằm kẹp giữa Giờ bắt đầu và Giờ kết thúc
+                    if (currentMins >= startMins && currentMins <= endMins) {
+                        totalStudents += parseInt(b.participants || 1); 
+                    }
                 });
             }
             document.getElementById('stat-students').innerText = totalStudents;
