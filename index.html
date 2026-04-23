@@ -609,6 +609,9 @@
 
         // Cập nhật tên hiển thị
         const roleText = profile.role === 'admin' ? 'Ban Quản Lý' : (profile.role === 'manager' ? 'Quản lý PTN' : 'Sinh viên');
+        document.getElementById('user-info-display').innerHTML = `<i class="bi bi-person-circle"></i> ${profile.full_name} (${roleText})`;
+        
+        // Cập nhật nút Đăng xuất
         document.getElementById('btn-auth').innerText = 'Đăng xuất';
         document.getElementById('btn-auth').setAttribute('onclick', 'handleLogout()');
         
