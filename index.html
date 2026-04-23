@@ -144,7 +144,6 @@
                         <li><a class="dropdown-item" href="#" onclick="loadLabStats()"><i class="bi bi-graph-up"></i> Xem thống kê tình trạng PTN</a></li>
                         <li><a class="dropdown-item" href="#" onclick="loadUsageStats()"><i class="bi bi-pie-chart"></i> Xem thống kê lượt sử dụng</a></li>
                         <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item text-success" href="#"><i class="bi bi-file-earmark-excel"></i> Xuất dữ liệu Excel / PDF</a></li>
                         <li><a class="dropdown-item text-success" href="#" onclick="exportData('bookings')"><i class="bi bi-file-earmark-excel"></i> Xuất Excel Lịch sử sử dụng</a></li>
                         <li><a class="dropdown-item text-success" href="#" onclick="exportData('feedbacks')"><i class="bi bi-file-earmark-excel"></i> Xuất Excel Hộp thư góp ý</a></li>
                     </ul>
@@ -320,17 +319,17 @@
             <div class="col-md-5 mb-4">
                 <div class="card shadow-sm border-0 mb-3">
                     <div class="card-header bg-white fw-bold py-3"><i class="bi bi-calendar-event me-2"></i> Lịch PTN hôm nay</div>
-                    <div class="card-body p-3">
-                        <div class="d-flex justify-content-between align-items-center mb-2 border-bottom pb-2">
-                            <div><div class="fw-bold">K101 - Thực hành Tiện CNC</div><small class="text-muted">GV: Nguyễn Văn A</small></div>
-                            <span class="badge bg-success">Đang diễn ra</span>
-                        </div>
+                    <div class="card-body p-3" id="dashboard-today-schedule">
+                        <div class="text-center text-muted small">Đang tải lịch...</div>
                     </div>
                 </div>
+                
                 <div class="card shadow-sm border-0 border-start border-4 border-danger">
                     <div class="card-body py-2 px-3">
                         <div class="d-flex align-items-center text-danger fw-bold small"><i class="bi bi-exclamation-triangle-fill me-2"></i> CẢNH BÁO LỖI MỚI NHẤT</div>
-                        <div class="small mt-1 text-muted">Máy in 3D (Phòng K101) - Kẹt nhựa đùn (Báo lúc 08:15)</div>
+                        <div class="small mt-1 text-muted" id="dashboard-latest-warning">
+                             Đang kiểm tra hệ thống...
+                        </div>
                     </div>
                 </div>
             </div>
@@ -743,6 +742,13 @@
 
         showView('home-view');
         fetchRoomsData();
+        showView('home-view'); // Vào trang chủ
+        fetchRoomsData();      // Tải danh sách phòng từ Database
+        
+        // GỌI THÊM 2 HÀM NÀY ĐỂ CẬP NHẬT TRANG CHỦ
+        loadTodayDashboard();
+        loadLatestWarnings();
+    }
     }
 
     // 3. TẢI DỮ LIỆU PHÒNG & THIẾT BỊ TỪ SUPABASE
@@ -1240,6 +1246,84 @@
         XLSX.writeFile(wb, fileName); // Xuất file và tải về
 
         Swal.fire('Thành công', `Đã tải xuống file: ${fileName}`, 'success');
+    }
+    // 1. Hàm tải Lịch PTN hôm nay lên Dashboard
+    async function loadTodayDashboard() {
+        const today = new Date().toISOString().split('T')[0];
+        
+        const { data, error } = await _supabase
+            .from('bookings')
+            .select('machine_name, full_name, start_time, end_time')
+            .eq('booking_date', today)
+            .eq('status', 'approved') // Chỉ lấy lịch đã duyệt
+            .order('start_time', { ascending: true });
+
+        const container = document.getElementById('dashboard-today-schedule');
+        
+        if (error || !data || data.length === 0) {
+            container.innerHTML = '<div class="text-center text-success small py-2"><i class="bi bi-calendar-x"></i> Hôm nay không có ca thực hành nào.</div>';
+            return;
+        }
+
+        let html = '';
+        data.forEach(b => {
+            // Thuật toán kiểm tra xem ca thực hành đang diễn ra hay sắp tới
+            const now = new Date();
+            const currentMins = now.getHours() * 60 + now.getMinutes();
+            const startMins = parseInt(b.start_time.split(':')[0]) * 60 + parseInt(b.start_time.split(':')[1]);
+            const endMins = parseInt(b.end_time.split(':')[0]) * 60 + parseInt(b.end_time.split(':')[1]);
+            
+            let badge = '';
+            if (currentMins >= startMins && currentMins <= endMins) {
+                badge = '<span class="badge bg-success">Đang diễn ra</span>';
+            } else if (currentMins < startMins) {
+                badge = `<span class="badge bg-warning text-dark">Sắp tới (${b.start_time.substring(0,5)})</span>`;
+            } else {
+                badge = '<span class="badge bg-secondary">Đã xong</span>';
+            }
+
+            html += `
+                <div class="d-flex justify-content-between align-items-center mb-2 border-bottom pb-2">
+                    <div>
+                        <div class="fw-bold text-primary">${b.machine_name.split('-')[0]} - ${b.machine_name.split('-')[1] || b.machine_name}</div>
+                        <small class="text-muted">Người ĐK: ${b.full_name}</small>
+                    </div>
+                    ${badge}
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    }
+
+    // 2. Hàm tải Cảnh báo lỗi mới nhất lên Dashboard
+    async function loadLatestWarnings() {
+        const { data, error } = await _supabase
+            .from('bookings')
+            .select('machine_name, condition_note, created_at')
+            .eq('machine_condition', 'Hư hỏng')
+            // Chỉ lấy những lỗi chưa được admin bấm "Đã xử lý" (nếu sếp đã làm hàm đó)
+            .order('created_at', { ascending: false })
+            .limit(2); // Chỉ hiển thị 2 lỗi mới nhất cho gọn
+
+        const container = document.getElementById('dashboard-latest-warning');
+        
+        if (error || !data || data.length === 0) {
+            container.innerHTML = '<span class="text-success fw-bold"><i class="bi bi-check-circle-fill"></i> Hệ thống đang hoạt động hoàn hảo.</span>';
+            return;
+        }
+
+        let html = '';
+        data.forEach(b => {
+            const timeStr = new Date(b.created_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+            html += `
+                <div class="mb-2 pb-1 border-bottom">
+                    <span class="fw-bold text-dark">${b.machine_name}</span><br>
+                    <span class="text-danger"><i class="bi bi-x-circle"></i> ${b.condition_note || 'Báo cáo có hư hỏng'}</span> 
+                    <small class="text-muted ms-1">(Lúc ${timeStr})</small>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
     }
 </script>
 </body>
