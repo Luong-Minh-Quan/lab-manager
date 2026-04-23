@@ -1196,7 +1196,7 @@
         }
         if (isConflict) return Swal.fire('Trùng lịch!', 'Khung giờ này đã có người đặt thiết bị. Vui lòng chọn giờ khác!', 'error');
     // Ghi vào Database (Lệnh insert chuẩn)
-    const { error2 } = await _supabase.from('bookings').insert([{
+    const { error:error2 } = await _supabase.from('bookings').insert([{
             user_id: currentUserProfile.id,
             full_name: currentUserProfile.full_name,
             student_id: currentUserProfile.student_id, 
