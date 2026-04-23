@@ -291,11 +291,36 @@
         </div>
 
         <div class="row g-3 mb-4">
-            <div class="col-md-4 col-lg-2"><div class="card stat-card h-100 shadow-sm"><div class="card-body"><h6 class="text-muted mb-2">PTN đang dùng</h6><h3 class="fw-bold text-university">8</h3><i class="bi bi-building stat-icon text-university"></i></div></div></div>
-            <div class="col-md-4 col-lg-2"><div class="card stat-card h-100 shadow-sm"><div class="card-body"><h6 class="text-muted mb-2">Thiết bị hoạt động</h6><h3 class="fw-bold text-success">32</h3><i class="bi bi-cpu stat-icon text-success"></i></div></div></div>
-            <div class="col-md-4 col-lg-3"><div class="card stat-card h-100 shadow-sm"><div class="card-body"><h6 class="text-muted mb-2">Sinh viên đang TH</h6><h3 class="fw-bold text-info">114</h3><i class="bi bi-people stat-icon text-info"></i></div></div></div>
-            <div class="col-md-6 col-lg-3"><div class="card stat-card h-100 shadow-sm"><div class="card-body"><h6 class="text-muted mb-2">Điện năng hôm nay</h6><h3 class="fw-bold text-warning">86.5 <small class="fs-6">kWh</small></h3><i class="bi bi-lightning-charge stat-icon text-warning"></i></div></div></div>
-            <div class="col-md-6 col-lg-2"><div class="card stat-card h-100 shadow-sm border-danger"><div class="card-body"><h6 class="text-muted mb-2">Lỗi thiết bị</h6><h3 class="fw-bold text-danger">2</h3><i class="bi bi-exclamation-triangle stat-icon text-danger"></i></div></div></div>
+            <div class="col-md-4 col-lg-2">
+                <div class="card stat-card h-100 shadow-sm">
+                    <div class="card-body"><h6 class="text-muted mb-2">PTN hoạt động</h6>
+                    <h3 class="fw-bold text-university" id="stat-rooms">...</h3><i class="bi bi-building stat-icon text-university"></i></div>
+                </div>
+            </div>
+            <div class="col-md-4 col-lg-2">
+                <div class="card stat-card h-100 shadow-sm">
+                    <div class="card-body"><h6 class="text-muted mb-2">Thiết bị sẵn sàng</h6>
+                    <h3 class="fw-bold text-success" id="stat-machines">...</h3><i class="bi bi-cpu stat-icon text-success"></i></div>
+                </div>
+            </div>
+            <div class="col-md-4 col-lg-3">
+                <div class="card stat-card h-100 shadow-sm">
+                    <div class="card-body"><h6 class="text-muted mb-2">SV đang thực hành</h6>
+                    <h3 class="fw-bold text-info" id="stat-students">...</h3><i class="bi bi-people stat-icon text-info"></i></div>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3">
+                <div class="card stat-card h-100 shadow-sm">
+                    <div class="card-body"><h6 class="text-muted mb-2">Điện năng hôm nay</h6>
+                    <h3 class="fw-bold text-warning" id="stat-energy">... <small class="fs-6">kWh</small></h3><i class="bi bi-lightning-charge stat-icon text-warning"></i></div>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-2">
+                <div class="card stat-card h-100 shadow-sm border-danger">
+                    <div class="card-body"><h6 class="text-muted mb-2">Lỗi thiết bị</h6>
+                    <h3 class="fw-bold text-danger" id="stat-errors">...</h3><i class="bi bi-exclamation-triangle stat-icon text-danger"></i></div>
+                </div>
+            </div>
         </div>
 
         <div class="row">
@@ -743,11 +768,48 @@
         showView('home-view');
         fetchRoomsData();
                
-        // GỌI THÊM 2 HÀM NÀY ĐỂ CẬP NHẬT TRANG CHỦ
+        // GỌI HÀM ĐỂ CẬP NHẬT TRANG CHỦ
         loadTodayDashboard();
         loadLatestWarnings();
+        loadDashboardStats();
     }
-    
+    // Hàm tải 5 con số thống kê tổng quan trên cùng
+    async function loadDashboardStats() {
+        const today = new Date().toISOString().split('T')[0];
+
+        try {
+            // 1. Đếm PTN đang hoạt động
+            const { count: countRooms } = await _supabase.from('rooms').select('*', { count: 'exact', head: true }).eq('status', 'active');
+            document.getElementById('stat-rooms').innerText = countRooms || 0;
+
+            // 2. Đếm Thiết bị sẵn sàng
+            const { count: countMachines } = await _supabase.from('machines').select('*', { count: 'exact', head: true }).eq('status', 'available');
+            document.getElementById('stat-machines').innerText = countMachines || 0;
+
+            // 3. Tính tổng Sinh viên thực hành hôm nay (Cộng gộp cột participants)
+            const { data: bookingsToday } = await _supabase.from('bookings').select('participants').eq('booking_date', today).eq('status', 'approved');
+            let totalStudents = 0;
+            if (bookingsToday) {
+                bookingsToday.forEach(b => { 
+                    totalStudents += parseInt(b.participants || 1); // Nếu rỗng mặc định là 1 người
+                });
+            }
+            document.getElementById('stat-students').innerText = totalStudents;
+
+            // 4. Đếm số Thiết bị đang báo lỗi / bảo trì
+            const { count: countErrors } = await _supabase.from('machines').select('*', { count: 'exact', head: true }).eq('status', 'maintenance');
+            document.getElementById('stat-errors').innerText = countErrors || 0;
+
+            // 5. Điện năng hôm nay (Mô phỏng)
+            // LƯU Ý: Vì chưa có phần cứng thiết bị đo điện năng đẩy lên DB, ta làm thuật toán mô phỏng tăng dần theo thời gian trong ngày
+            const currentHour = new Date().getHours();
+            const fakeEnergy = (currentHour * 5.5 + Math.random() * 2).toFixed(1);
+            document.getElementById('stat-energy').innerHTML = `${fakeEnergy} <small class="fs-6">kWh</small>`;
+
+        } catch (err) {
+            console.error("Lỗi khi tải thống kê:", err);
+        }
+    }
 
     // 3. TẢI DỮ LIỆU PHÒNG & THIẾT BỊ TỪ SUPABASE
     async function fetchRoomsData() {
