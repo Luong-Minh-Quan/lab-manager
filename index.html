@@ -217,15 +217,46 @@
             </div>
             <div class="col-md-8">
                 <div class="card shadow-sm border-0 p-3 h-100">
-                    <h6 class="fw-bold text-muted">Danh sách vấn đề tồn đọng</h6>
+                    <h6 class="fw-bold text-muted">Danh sách vấn đề tồn đọng (Chưa xử lý)</h6>
                     <div class="table-responsive">
-                        <table class="table table-sm align-middle mt-2">
+                        <table class="table table-sm align-middle mt-2 text-center">
                             <thead>
-                                <tr><th>Phòng</th><th>Vấn đề</th><th>Thời gian</th><th>Trạng thái</th></tr>
+                                <tr class="table-light">
+                                    <th>Phòng</th>
+                                    <th class="text-start">Vấn đề</th>
+                                    <th>Thời gian</th>
+                                    <th>Trạng thái</th>
+                                    <th>Thao tác</th>
+                                </tr>
                             </thead>
                             <tbody id="stats-lab-list"></tbody>
                         </table>
                     </div>
+                </div>
+            </div>
+        </div>
+    
+        <div class="mt-5 pt-4 border-top">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold text-success"><i class="bi bi-archive-fill"></i> Nhật ký xử lý phản hồi (Đã hoàn thành)</h5>
+                <button class="btn btn-sm btn-success fw-bold" onclick="exportFeedbackHistoryExcel()">
+                    <i class="bi bi-file-earmark-excel"></i> Xuất Excel Lịch sử
+                </button>
+            </div>
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-0">
+                    <table class="table table-sm align-middle text-center mb-0">
+                        <thead class="table-light">
+                            <tr class="small">
+                                <th>Phòng</th>
+                                <th class="text-start">Nội dung</th>
+                                <th>Người báo</th>
+                                <th>Ngày xong</th>
+                                <th>Trạng thái</th>
+                            </tr>
+                        </thead>
+                        <tbody id="feedback-history-list" class="small"></tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -1551,16 +1582,17 @@
     let labChartObj = null, usageChartObj = null, purposeChartObj = null;
 
     // 2. HÀM THỐNG KÊ TÌNH TRẠNG PTN
+    // 1. Tải danh sách phản hồi chưa xử lý và Lịch sử đã xử lý
     async function loadLabStats() {
         showView('stats-lab-view');
-        const { data, error } = await _supabase.from('feedbacks').select('*').eq('type', 'lab_condition');
+        
+        // Lấy các phản hồi chưa xử lý (status = 'pending')
+        const { data, error } = await _supabase.from('feedbacks').select('*').eq('status', 'pending');
         if (error || !data) return;
 
-        // Đếm số phản hồi theo từng phòng
+        // Vẽ biểu đồ tròn (Giữ nguyên logic cũ của sếp)
         const stats = {};
         data.forEach(f => { stats[f.room_code] = (stats[f.room_code] || 0) + 1; });
-
-        // Vẽ biểu đồ tròn
         if(labChartObj) labChartObj.destroy();
         labChartObj = new Chart(document.getElementById('chartLabFeedback'), {
             type: 'pie',
@@ -1570,15 +1602,76 @@
             }
         });
 
-        // Đổ danh sách vấn đề
-        document.getElementById('stats-lab-list').innerHTML = data.slice(0, 5).map(f => `
+        // Đổ vào bảng Tồn đọng kèm nút Tick
+        document.getElementById('stats-lab-list').innerHTML = data.map(f => `
             <tr>
                 <td><b>${f.room_code}</b></td>
-                <td><small>${f.content}</small></td>
+                <td class="text-start"><small>${f.content}</small></td>
                 <td><small>${new Date(f.created_at).toLocaleDateString('vi-VN')}</small></td>
-                <td><span class="badge ${f.status==='pending'?'bg-warning':'bg-success'}">${f.status}</span></td>
+                <td><span class="badge bg-warning">pending</span></td>
+                <td>
+                    <button class="btn btn-sm btn-outline-success" onclick="resolveFeedback('${f.id}')" title="Đánh dấu đã xử lý">
+                        <i class="bi bi-check-lg"></i>
+                    </button>
+                </td>
             </tr>
-        `).join('');
+        `).join('') || '<tr><td colspan="5" class="p-3 text-muted">Không có vấn đề tồn đọng.</td></tr>';
+
+        // Gọi thêm hàm tải lịch sử bên dưới
+        loadFeedbackHistory();
+    }
+
+    // 2. Hàm xử lý: Di chuyển phản hồi sang bảng History
+    async function resolveFeedback(feedbackId) {
+        Swal.fire({ title: 'Đang lưu trữ...', didOpen: () => Swal.showLoading() });
+
+        // Lấy thông tin phản hồi hiện tại
+        const { data: item } = await _supabase.from('feedbacks').select('*').eq('id', feedbackId).single();
+
+        if (item) {
+            // Lưu vào bảng feedback_history
+            await _supabase.from('feedback_history').insert([{
+                room_code: item.room_code,
+                content: item.content,
+                user_name: item.user_name,
+                type: item.type,
+                reported_at: item.created_at,
+                status: 'Đã hoàn tất'
+            }]);
+
+            // Cập nhật trạng thái trong bảng gốc để nó biến mất khỏi bảng "Tồn đọng"
+            await _supabase.from('feedbacks').update({ status: 'resolved' }).eq('id', feedbackId);
+        }
+
+        Swal.fire('Thành công', 'Đã xử lý và lưu vào lịch sử!', 'success');
+        loadLabStats(); // Tải lại cả 2 bảng
+    }
+
+    // 3. Hàm tải bảng Lịch sử Phản hồi
+    async function loadFeedbackHistory() {
+        const { data, error } = await _supabase.from('feedback_history').select('*').order('resolved_at', { ascending: false });
+        if (error || !data) return;
+
+        document.getElementById('feedback-history-list').innerHTML = data.map(h => `
+            <tr>
+                <td><b>${h.room_code}</b></td>
+                <td class="text-start"><small>${h.content}</small></td>
+                <td>${h.user_name || '...'}</td>
+                <td>${new Date(h.resolved_at).toLocaleDateString('vi-VN')}</td>
+                <td><span class="badge bg-success-subtle text-success border border-success">DONE</span></td>
+            </tr>
+        `).join('') || '<tr><td colspan="5" class="p-3 text-muted">Chưa có lịch sử xử lý.</td></tr>';
+    }
+
+    // 4. Hàm Xuất Excel cho riêng phần Phản hồi này
+    function exportFeedbackHistoryExcel() {
+        const tbody = document.getElementById('feedback-history-list');
+        if (tbody.rows.length === 0 || tbody.rows[0].cells.length < 5) {
+            return Swal.fire('Thông báo', 'Không có dữ liệu lịch sử để xuất!', 'info');
+        }
+
+        const wb = XLSX.utils.table_to_book(document.getElementById('stats-lab-view').querySelector('table:last-of-type'));
+        XLSX.writeFile(wb, `Lich_Su_Phan_Hoi_CSVC_${new Date().getFullYear()}.xlsx`);
     }
 
     // 3. HÀM THỐNG KÊ LƯỢT SỬ DỤNG
