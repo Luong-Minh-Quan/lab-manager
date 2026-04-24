@@ -2124,6 +2124,84 @@
             loadAdminAccounts(); // Tải lại bảng để thấy kết quả
         }
     }
+    // ==============================================================
+    // TÍNH NĂNG: QUẢN LÝ BẢO TRÌ & XỬ LÝ HƯ HỎNG
+    // ==============================================================
+
+    // 1. Tải danh sách các máy đang bị báo lỗi vào bảng
+    async function loadMaintenanceReports() {
+        showView('maintenance-view');
+        const tbody = document.getElementById('maintenance-list');
+        tbody.innerHTML = '<tr><td colspan="5" class="p-4">Đang tải dữ liệu...</td></tr>';
+
+        // Chỉ lấy các đơn đang bị đánh dấu "Hư hỏng"
+        const { data, error } = await _supabase
+            .from('bookings')
+            .select('id, machine_name, full_name, created_at, condition_note, machine_condition')
+            .eq('machine_condition', 'Hư hỏng')
+            .order('created_at', { ascending: false });
+
+        if (error || !data || data.length === 0) {
+            return tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-success fw-bold"><i class="bi bi-check-circle"></i> Tuyệt vời! Hiện không có thiết bị nào báo lỗi.</td></tr>';
+        }
+
+        let html = '';
+        data.forEach(b => {
+            // Cắt bỏ mã phòng (VD: K101 - Máy CNC -> lấy chữ Máy CNC) để khớp với bảng machines
+            const exactMachineName = b.machine_name.substring(b.machine_name.indexOf(' - ') + 3) || b.machine_name; 
+
+            html += `
+                <tr>
+                    <td class="text-start ps-4 fw-bold text-danger">${b.machine_name}</td>
+                    <td>${new Date(b.created_at).toLocaleDateString('vi-VN')}</td>
+                    <td>${b.full_name}</td>
+                    <td class="text-start"><small>${b.condition_note || 'Không có ghi chú'}</small></td>
+                    <td>
+                        <button class="btn btn-sm btn-warning fw-bold mb-1 w-100" onclick="setMachineMaintenance('${exactMachineName}')">
+                            <i class="bi bi-tools"></i> Đưa vào Bảo trì
+                        </button>
+                        <button class="btn btn-sm btn-success fw-bold w-100" onclick="resolveMachineRepair('${b.id}', '${exactMachineName}')">
+                            <i class="bi bi-check-circle"></i> Đã sửa xong
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+        tbody.innerHTML = html;
+    }
+
+    // 2. Nút "Đưa vào Bảo trì": Chuyển trạng thái máy thành 'maintenance'
+    async function setMachineMaintenance(machineName) {
+        Swal.fire({ title: 'Đang khóa thiết bị...', didOpen: () => Swal.showLoading() });
+        
+        // Cập nhật bảng machines sang trạng thái maintenance
+        const { error } = await _supabase.from('machines').update({ status: 'maintenance' }).eq('machine_name', machineName);
+        
+        if (error) return Swal.fire('Lỗi', error.message, 'error');
+        
+        Swal.fire('Thành công', 'Máy đã chuyển sang chế độ Bảo trì. Sinh viên sẽ không thể đặt lịch!', 'success');
+        
+        // Tự động làm mới các số liệu trên Trang chủ ngầm bên dưới
+        loadDashboardStats(); 
+    }
+
+    // 3. Nút "Đã sửa xong": Mở khóa máy và Xóa cảnh báo
+    async function resolveMachineRepair(bookingId, machineName) {
+        Swal.fire({ title: 'Đang cập nhật...', didOpen: () => Swal.showLoading() });
+        
+        // 1. Mở khóa máy trong bảng machines (Sẵn sàng)
+        await _supabase.from('machines').update({ status: 'available' }).eq('machine_name', machineName);
+        
+        // 2. Đổi trạng thái lỗi trong bookings thành "Đã sửa" (Để nó biến mất khỏi danh sách báo lỗi)
+        await _supabase.from('bookings').update({ machine_condition: 'Đã sửa' }).eq('id', bookingId);
+        
+        Swal.fire('Hoàn tất', 'Thiết bị đã được sửa chữa và sẵn sàng hoạt động!', 'success');
+        
+        // Tự động tải lại mọi thứ để đồng bộ
+        loadMaintenanceReports(); 
+        loadDashboardStats(); 
+        loadLatestWarnings(); 
+    }
 </script>
 </body>
 </html>
