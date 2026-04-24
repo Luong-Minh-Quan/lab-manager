@@ -97,7 +97,7 @@
                         <li><a class="dropdown-item" href="#" onclick="showView('dm-ptn-view')"><i class="bi bi-building"></i> Danh mục phòng thí nghiệm</a></li>
                         <li><a class="dropdown-item" href="#"><i class="bi bi-person-badge"></i> Danh mục cán bộ quản lý</a></li>
                         <li><a class="dropdown-item" href="#"><i class="bi bi-diagram-3"></i> Danh mục khoa / bộ môn</a></li>
-                        <li><a class="dropdown-item" href="#"><i class="bi bi-calendar-check"></i> Danh mục lịch bảo trì</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="loadMaintenanceSchedule()"><i class="bi bi-calendar-check"></i> Danh mục lịch bảo trì</a></li>
                         <li><a class="dropdown-item" href="#"><i class="bi bi-box-seam"></i> Danh mục vật tư tiêu hao</a></li>
                     </ul>
                 </li>
@@ -801,7 +801,28 @@
             </div>
         </div>
     </div>
-   
+    <div id="maintenance-schedule-view" class="view-section hidden">
+        <h3 class="fw-bold mb-4 text-university"><i class="bi bi-tools"></i> Kế hoạch bảo trì thiết bị</h3>
+        <p class="text-muted">Danh sách các thiết bị đang bị khóa (bảo trì). Vui lòng lên lịch sửa chữa để thông báo đến sinh viên.</p>
+        
+        <div class="card shadow-sm border-0 border-top border-4 border-warning">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table align-middle table-hover text-center mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="text-start ps-4">Thiết bị đang bảo trì</th>
+                                <th>Ngày dự kiến sửa</th>
+                                <th>Giờ dự kiến</th>
+                                <th>Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="maintenance-schedule-list"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
     <div id="dm-ptn-view" class="view-section hidden">
         <h3 class="fw-bold mb-4 text-university"><i class="bi bi-building"></i> Danh mục Phòng Thí Nghiệm</h3>
         <div class="card shadow-sm border-0">
@@ -2620,6 +2641,63 @@
         // Tải xuống
         XLSX.writeFile(wb, fileName);
         Swal.fire('Thành công', `Đã tải xuống file: <b>${fileName}</b>`, 'success');
+    }
+    // 1. Hàm tải danh sách các máy đang bảo trì
+    async function loadMaintenanceSchedule() {
+        showView('maintenance-schedule-view');
+        const tbody = document.getElementById('maintenance-schedule-list');
+        tbody.innerHTML = '<tr><td colspan="4" class="p-4">Đang tải dữ liệu...</td></tr>';
+
+        // Chỉ lấy những máy có status là 'maintenance'
+        const { data, error } = await _supabase.from('machines').select('*').eq('status', 'maintenance');
+
+        if (error || !data || data.length === 0) {
+            return tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-muted"><i class="bi bi-check-circle text-success"></i> Hiện không có thiết bị nào đang cần bảo trì.</td></tr>';
+        }
+
+        tbody.innerHTML = data.map(m => `
+            <tr>
+                <td class="text-start ps-4 fw-bold text-danger">${m.machine_name}</td>
+                <td><input type="date" id="m-date-${m.id}" class="form-control form-control-sm mx-auto" style="width: 150px;" value="${m.maintenance_date || ''}"></td>
+                <td><input type="time" id="m-time-${m.id}" class="form-control form-control-sm mx-auto" style="width: 120px;" value="${m.maintenance_time || ''}"></td>
+                <td>
+                    <button class="btn btn-sm btn-primary fw-bold" onclick="saveMaintenanceSchedule('${m.id}', '${m.machine_name}')">
+                        <i class="bi bi-send-check"></i> Lưu & Đăng Thông báo
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    // 2. Hàm Lưu lịch và Tự động tạo Thông báo
+    async function saveMaintenanceSchedule(machineId, machineName) {
+        const date = document.getElementById(`m-date-${machineId}`).value;
+        const time = document.getElementById(`m-time-${machineId}`).value;
+
+        if (!date || !time) {
+            return Swal.fire('Cảnh báo', 'Vui lòng chọn đầy đủ Ngày và Giờ dự kiến bảo trì!', 'warning');
+        }
+
+        Swal.fire({ title: 'Đang xử lý...', didOpen: () => Swal.showLoading() });
+
+        // A. Lưu ngày giờ vào bảng machines
+        await _supabase.from('machines').update({ maintenance_date: date, maintenance_time: time }).eq('id', machineId);
+
+        // B. Tự động soạn và đẩy thông báo lên bảng announcements (Trang chủ)
+        const formattedDate = new Date(date).toLocaleDateString('vi-VN');
+        const titleText = `[LỊCH BẢO TRÌ] ${machineName}`;
+        const contentText = `Hệ thống thông báo: Thiết bị "${machineName}" sẽ được bộ phận kỹ thuật tiến hành bảo trì/sửa chữa vào lúc ${time} ngày ${formattedDate}. Trong thời gian này, thiết bị sẽ tạm khóa đặt lịch.`;
+
+        await _supabase.from('announcements').insert([{
+            title: titleText,
+            type: 'warning', // Màu vàng cảnh báo
+            content: contentText
+        }]);
+
+        Swal.fire('Thành công', 'Đã lưu lịch và hệ thống đã tự động đăng thông báo lên Trang chủ!', 'success');
+        
+        loadMaintenanceSchedule(); // Load lại bảng này
+        loadHomeNotices(); // Ra lệnh cho trang chủ cập nhật thông báo ngầm
     }
 </script>
 </body>
