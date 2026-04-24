@@ -707,6 +707,39 @@
             </div>
         </div>
     </div>
+    <div id="schedule-grid-view" class="view-section hidden">
+        <h3 class="fw-bold mb-4 text-university"><i class="bi bi-calendar-range"></i> Tra cứu Lịch trống trực quan</h3>
+        
+        <div class="row mb-3 align-items-end">
+            <div class="col-md-3">
+                <label class="fw-bold mb-1">Chọn Phòng:</label>
+                <select id="grid-room-select" class="form-select border-primary" onchange="loadScheduleGrid()">
+                    </select>
+            </div>
+            <div class="col-md-3">
+                <label class="fw-bold mb-1">Ngày tra cứu:</label>
+                <input type="date" id="grid-date" class="form-control border-primary" onchange="loadScheduleGrid()">
+            </div>
+            <div class="col-md-6 text-md-end mt-3 mt-md-0">
+                <div class="d-inline-flex gap-3 small fw-bold bg-white px-3 py-2 rounded shadow-sm border">
+                    <div><span style="display:inline-block; width:16px; height:16px; background:#fff; border:1px solid #ccc; vertical-align:sub; margin-right:5px;"></span> Trống</div>
+                    <div><span style="display:inline-block; width:16px; height:16px; background:#ff4d4d; border:1px solid #cc0000; vertical-align:sub; margin-right:5px;"></span> Đã đặt</div>
+                    <div><span style="display:inline-block; width:16px; height:16px; background:#6c757d; vertical-align:sub; margin-right:5px;"></span> Bảo trì</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm border-0 border-top border-4 border-success">
+            <div class="card-body p-0" style="overflow-x: auto;">
+                <table class="table table-bordered text-center mb-0" style="min-width: 1000px; table-layout: fixed;">
+                    <thead class="table-light" id="grid-header">
+                        </thead>
+                    <tbody id="grid-body">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
     <div id="maintenance-view" class="view-section hidden">
         <h3 class="fw-bold mb-4 text-danger"><i class="bi bi-tools"></i> Báo cáo & Xử lý Hư hỏng</h3>
         <div class="card shadow-sm border-0 border-top border-4 border-danger">
@@ -1490,29 +1523,107 @@
     }
 
     // 6. XEM LỊCH TRỐNG
+    // 1. Hàm khởi tạo màn hình Lịch Trống
     async function showAvailableSchedule() {
-        showView('history-view');
-        document.getElementById('history-title').innerHTML = '<i class="bi bi-calendar-check text-success"></i> Xem lịch bận (Hôm nay)';
-        const tbody = document.getElementById('history-list');
-        const today = new Date().toISOString().split('T')[0];
+        showView('schedule-grid-view');
         
-        const { data, error } = await _supabase.from('bookings').select('*').eq('booking_date', today).eq('status', 'approved').order('start_time');
+        // Đặt ngày mặc định là hôm nay
+        document.getElementById('grid-date').value = new Date().toISOString().split('T')[0];
         
-        if (error || !data.length) return tbody.innerHTML = '<tr><td colspan=\"5\" class=\"text-success p-4 fw-bold\">Hiện tại chưa có ai đặt máy trong ngày hôm nay. Tất cả đều trống!</td></tr>';
+        // Tự động tải danh sách phòng vào Dropdown
+        const { data: rooms } = await _supabase.from('rooms').select('room_code, room_name').eq('status', 'active');
+        const roomSelect = document.getElementById('grid-room-select');
+        roomSelect.innerHTML = rooms.map(r => `<option value="${r.room_code}">${r.room_code} - ${r.room_name}</option>`).join('');
+        
+        // Gọi hàm vẽ lưới
+        loadScheduleGrid();
+    }
 
-        let html = '';
-        data.forEach(b => {
-            html += `
-                <tr class="bg-light">
-                    <td class="text-start ps-4 text-muted"><i class="bi bi-person-fill border rounded-circle p-1"></i> Đã ẩn tên (Bảo mật)</td>
-                    <td class="text-start fw-bold text-danger">${b.machine_name}</td>
-                    <td><span class="badge bg-danger text-white px-3 py-2"><i class="bi bi-clock"></i> Bận: ${b.start_time.substring(0,5)} - ${b.end_time.substring(0,5)}</span></td>
-                    <td><span class="badge bg-secondary">Đang sử dụng</span></td>
-                    <td>--</td>
-                </tr>
-            `;
+    // 2. Hàm xử lý logic: Vẽ bảng và tô màu ô
+    async function loadScheduleGrid() {
+        const roomCode = document.getElementById('grid-room-select').value;
+        const date = document.getElementById('grid-date').value;
+        const tbody = document.getElementById('grid-body');
+        const thead = document.getElementById('grid-header');
+        
+        if (!roomCode || !date) return;
+        tbody.innerHTML = '<tr><td colspan="100%" class="p-4 text-muted">Đang phân tích dữ liệu...</td></tr>';
+
+        // Khai báo các khung giờ (Mỗi ô 30 phút, sáng 7h30-11h30, chiều 13h30-17h30)
+        const timeSlots = [
+            "07:30", "08:00", "08:30", "09:00", "09:30", "10:00", "10:30", "11:00",
+            "13:30", "14:00", "14:30", "15:00", "15:30", "16:00", "16:30", "17:00"
+        ];
+
+        // --- VẼ ĐẦU BẢNG (Giờ) ---
+        let headerHtml = '<tr><th style="width: 200px; position: sticky; left: 0; background: #f8f9fa; z-index: 2; border-right: 2px solid #dee2e6;">Thiết bị \\ Giờ</th>';
+        timeSlots.forEach(t => headerHtml += `<th style="width: 50px; font-size: 0.85rem; color: #003366;">${t}</th>`);
+        headerHtml += '</tr>';
+        thead.innerHTML = headerHtml;
+
+        // --- LẤY DỮ LIỆU TỪ DATABASE ---
+        // 1. Lấy ID của phòng
+        const { data: roomInfo } = await _supabase.from('rooms').select('id').eq('room_code', roomCode).single();
+        if (!roomInfo) return tbody.innerHTML = '<tr><td colspan="100%">Không tìm thấy phòng</td></tr>';
+        
+        // 2. Lấy danh sách máy thuộc phòng này
+        const { data: machines } = await _supabase.from('machines').select('*').eq('room_id', roomInfo.id);
+        
+        // 3. Lấy tất cả lịch đã được đặt trong ngày hôm đó (cả duyệt và chờ duyệt để tránh trùng)
+        const { data: bookings } = await _supabase.from('bookings')
+            .select('machine_name, start_time, end_time')
+            .ilike('machine_name', `${roomCode}%`) // Chỉ lấy đơn của phòng này
+            .eq('booking_date', date)
+            .in('status', ['approved', 'pending']); 
+
+        // --- VẼ THÂN BẢNG & TÔ MÀU ---
+        let bodyHtml = '';
+        machines.forEach(m => {
+            // Cột đầu tiên (Tên máy) được dính chặt (sticky) để khi cuộn ngang không bị mất
+            bodyHtml += `<tr>
+                <td style="position: sticky; left: 0; background: white; z-index: 1; text-align: left; padding-left: 15px; font-weight: bold; border-right: 2px solid #dee2e6; box-shadow: 2px 0 5px rgba(0,0,0,0.05);">
+                    <div class="text-truncate" style="max-width: 180px;" title="${m.machine_name}">${m.machine_name}</div>
+                </td>`;
+            
+            // Duyệt qua từng khung giờ 30 phút
+            timeSlots.forEach((slot) => {
+                if (m.status === 'maintenance') {
+                    bodyHtml += `<td style="background-color: #6c757d; border-color: #5c636a;"></td>`; // Màu Xám (Bảo trì)
+                    return;
+                }
+
+                // Đổi giờ ra phút để dễ so sánh (vd: 07:30 -> 7*60 + 30 = 450)
+                const slotStart = parseInt(slot.split(':')[0]) * 60 + parseInt(slot.split(':')[1]);
+                const slotEnd = slotStart + 30; // 1 ô tương đương 30 phút
+
+                let isBooked = false;
+                
+                // Kiểm tra xem có đơn đăng ký nào đè lên ô 30 phút này không
+                if (bookings) {
+                    bookings.forEach(b => {
+                        if (b.machine_name.includes(m.machine_name)) {
+                            const bStart = parseInt(b.start_time.split(':')[0]) * 60 + parseInt(b.start_time.split(':')[1]);
+                            const bEnd = parseInt(b.end_time.split(':')[0]) * 60 + parseInt(b.end_time.split(':')[1]);
+                            
+                            // Thuật toán kiểm tra giao nhau: Slot bắt đầu TRƯỚC KHI Lịch kết thúc VÀ Slot kết thúc SAU KHI Lịch bắt đầu
+                            if (slotStart < bEnd && slotEnd > bStart) {
+                                isBooked = true;
+                            }
+                        }
+                    });
+                }
+
+                // Tô màu theo trạng thái
+                if (isBooked) {
+                    bodyHtml += `<td style="background-color: #ff4d4d; border-color: #e60000;"></td>`; // Đỏ (Đã đặt)
+                } else {
+                    bodyHtml += `<td style="background-color: #ffffff; cursor: crosshair;" title="Trống lúc ${slot}"></td>`; // Trắng (Trống)
+                }
+            });
+            bodyHtml += '</tr>';
         });
-        tbody.innerHTML = html;
+        
+        tbody.innerHTML = bodyHtml || '<tr><td colspan="100%" class="p-4">Phòng này hiện chưa có thiết bị.</td></tr>';
     }
 
     // 7. DUYỆT ĐƠN VÀ GỬI EMAIL (EmailJS)
