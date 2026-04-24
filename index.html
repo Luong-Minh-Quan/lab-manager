@@ -2195,11 +2195,11 @@
             
             setTimeout(() => {
                 el.innerHTML = `
-                    <div class="d-flex justify-content-between align-items-center mb-1">
-                        <strong class="${titleColorClass} text-truncate" style="max-width: 70%;">${item.title}</strong>
-                        <span class="small text-muted">${dateStr}</span>
+                    <div class="d-flex justify-content-between align-items-center mb-0">
+                        <strong class="${titleColorClass} text-truncate" style="max-width: 75%; font-size: 0.85rem;">${item.title}</strong>
+                        <span class="text-muted" style="font-size: 0.7rem;">${dateStr}</span>
                     </div>
-                    <div class="small text-muted text-truncate" title="${item.content}">${item.content}</div>
+                    <div class="text-muted text-truncate" style="font-size: 0.8rem;" title="${item.content}">${item.content}</div>
                 `;
                 el.style.opacity = '1';
             }, 400); // 400ms là thời gian đợi nó mờ hẳn rồi mới đổi chữ
