@@ -616,6 +616,45 @@
                             </tbody>
                     </table>
                 </div>
+                <div class="mt-5 pt-4 border-top">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h4 class="fw-bold text-university mb-0"><i class="bi bi-journal-check"></i> Nhật ký & Thống kê bảo trì hệ thống</h4>
+                        
+                        <div class="d-flex gap-2">
+                            <select id="filter-maint-month" class="form-select form-select-sm" style="width: 140px;" onchange="loadMaintenanceHistory()">
+                                <option value="all">Tất cả tháng</option>
+                                <option value="01">Tháng 1</option><option value="02">Tháng 2</option><option value="03">Tháng 3</option>
+                                <option value="04">Tháng 4</option><option value="05">Tháng 5</option><option value="06">Tháng 6</option>
+                                <option value="07">Tháng 7</option><option value="08">Tháng 8</option><option value="09">Tháng 9</option>
+                                <option value="10">Tháng 10</option><option value="11">Tháng 11</option><option value="12">Tháng 12</option>
+                            </select>
+                            <button class="btn btn-sm btn-success fw-bold" onclick="exportMaintenanceExcel()">
+                                <i class="bi bi-file-earmark-excel"></i> Xuất Excel
+                            </button>
+                        </div>
+                    </div>
+            
+                    <div class="card shadow-sm border-0 border-top border-4 border-success">
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover table-sm align-middle text-center mb-0" id="table-maint-history">
+                                    <thead class="table-light">
+                                        <tr class="small text-uppercase">
+                                            <th class="ps-4 text-start">Thiết bị</th>
+                                            <th>Người báo</th>
+                                            <th>Ngày báo</th>
+                                            <th>Ngày xong</th>
+                                            <th class="text-start">Mô tả xử lý</th>
+                                            <th>Trạng thái</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="maintenance-history-list" class="small">
+                                        </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -2186,21 +2225,59 @@
     }
 
     // 3. Nút "Đã sửa xong": Mở khóa máy và Xóa cảnh báo
-    async function resolveMachineRepair(bookingId, machineName) {
-        Swal.fire({ title: 'Đang cập nhật...', didOpen: () => Swal.showLoading() });
+   // CẬP NHẬT: Vừa sửa máy vừa lưu vào Nhật ký lịch sử
+   async function resolveMachineRepair(bookingId, machineName) {
+        Swal.fire({ title: 'Đang lưu nhật ký...', didOpen: () => Swal.showLoading() });
         
-        // 1. Mở khóa máy trong bảng machines (Sẵn sàng)
+        // 1. Lấy thông tin lỗi hiện tại từ bảng bookings để lưu trữ
+        const { data: currentError } = await _supabase.from('bookings').select('*').eq('id', bookingId).single();
+
+        if (currentError) {
+            // 2. Chèn vào bảng maintenance_history
+            await _supabase.from('maintenance_history').insert([{
+                machine_name: currentError.machine_name,
+                full_name: currentError.full_name,
+                condition_note: currentError.condition_note,
+                reported_at: currentError.created_at,
+                resolved_at: new Date().toISOString(),
+                status: 'Đã hoàn thành'
+            }]);
+        }
+        
+        // 3. Mở khóa máy và cập nhật bookings như cũ
         await _supabase.from('machines').update({ status: 'available' }).eq('machine_name', machineName);
-        
-        // 2. Đổi trạng thái lỗi trong bookings thành "Đã sửa" (Để nó biến mất khỏi danh sách báo lỗi)
         await _supabase.from('bookings').update({ machine_condition: 'Đã sửa' }).eq('id', bookingId);
         
-        Swal.fire('Hoàn tất', 'Thiết bị đã được sửa chữa và sẵn sàng hoạt động!', 'success');
+        Swal.fire('Thành công', 'Đã sửa thiết bị và lưu vào nhật ký hệ thống!', 'success');
         
-        // Tự động tải lại mọi thứ để đồng bộ
-        loadMaintenanceReports(); 
+        loadMaintenanceReports(); // Load danh sách đang lỗi
+        loadMaintenanceHistory(); // Load bảng Excel lịch sử bên dưới
         loadDashboardStats(); 
-        loadLatestWarnings(); 
+    }
+
+    // Hàm tải dữ liệu bảng Excel bảo trì
+    async function loadMaintenanceHistory() {
+        const monthFilter = document.getElementById('filter-maint-month').value;
+        const tbody = document.getElementById('maintenance-history-list');
+        
+        let query = _supabase.from('maintenance_history').select('*');
+        const { data, error } = await query.order('resolved_at', { ascending: false });
+
+        if (error || !data) return;
+
+        // Bộ lọc theo tháng
+        const filtered = monthFilter === 'all' ? data : data.filter(d => new Date(d.resolved_at).getMonth() + 1 == monthFilter);
+
+        tbody.innerHTML = filtered.map(h => `
+            <tr>
+                <td class="text-start ps-4 fw-bold text-dark">${h.machine_name}</td>
+                <td>${h.full_name}</td>
+                <td class="text-muted">${new Date(h.reported_at).toLocaleDateString('vi-VN')}</td>
+                <td class="text-success fw-bold">${new Date(h.resolved_at).toLocaleDateString('vi-VN')}</td>
+                <td class="text-start"><small>${h.condition_note}</small></td>
+                <td><span class="badge bg-success-subtle text-success border border-success">FIXED</span></td>
+            </tr>
+        `).join('') || '<tr><td colspan="6" class="p-4 text-muted">Chưa có lịch sử bảo trì trong tháng này.</td></tr>';
     }
 </script>
 </body>
