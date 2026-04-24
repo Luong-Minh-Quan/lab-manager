@@ -2643,30 +2643,53 @@
         Swal.fire('Thành công', `Đã tải xuống file: <b>${fileName}</b>`, 'success');
     }
     // 1. Hàm tải danh sách các máy đang bảo trì
+    // 1. Hàm tải danh sách các máy đang bảo trì (ĐÃ THÊM PHÂN QUYỀN)
     async function loadMaintenanceSchedule() {
         showView('maintenance-schedule-view');
         const tbody = document.getElementById('maintenance-schedule-list');
         tbody.innerHTML = '<tr><td colspan="4" class="p-4">Đang tải dữ liệu...</td></tr>';
 
-        // Chỉ lấy những máy có status là 'maintenance'
+        // Lấy danh sách máy đang bảo trì
         const { data, error } = await _supabase.from('machines').select('*').eq('status', 'maintenance');
 
         if (error || !data || data.length === 0) {
             return tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-muted"><i class="bi bi-check-circle text-success"></i> Hiện không có thiết bị nào đang cần bảo trì.</td></tr>';
         }
 
-        tbody.innerHTML = data.map(m => `
-            <tr>
-                <td class="text-start ps-4 fw-bold text-danger">${m.machine_name}</td>
-                <td><input type="date" id="m-date-${m.id}" class="form-control form-control-sm mx-auto" style="width: 150px;" value="${m.maintenance_date || ''}"></td>
-                <td><input type="time" id="m-time-${m.id}" class="form-control form-control-sm mx-auto" style="width: 120px;" value="${m.maintenance_time || ''}"></td>
-                <td>
-                    <button class="btn btn-sm btn-primary fw-bold" onclick="saveMaintenanceSchedule('${m.id}', '${m.machine_name}')">
-                        <i class="bi bi-send-check"></i> Lưu & Đăng Thông báo
-                    </button>
-                </td>
-            </tr>
-        `).join('');
+        // Vẽ bảng dựa trên Vai trò (Role)
+        let html = '';
+        data.forEach(m => {
+            if (currentUserProfile.role === 'student') {
+                // DÀNH CHO SINH VIÊN: Chỉ hiển thị dạng text, không cho sửa
+                const dateText = m.maintenance_date ? new Date(m.maintenance_date).toLocaleDateString('vi-VN') : '<span class="text-muted small">Chưa xếp lịch</span>';
+                const timeText = m.maintenance_time || '<span class="text-muted small">--:--</span>';
+                
+                html += `
+                    <tr>
+                        <td class="text-start ps-4 fw-bold text-danger">${m.machine_name}</td>
+                        <td class="text-primary fw-bold">${dateText}</td>
+                        <td class="text-primary fw-bold">${timeText}</td>
+                        <td><span class="badge bg-secondary"><i class="bi bi-lock"></i> Đang khóa</span></td>
+                    </tr>
+                `;
+            } else {
+                // DÀNH CHO QUẢN LÝ / ADMIN: Hiện ô Input và nút Lưu
+                html += `
+                    <tr>
+                        <td class="text-start ps-4 fw-bold text-danger">${m.machine_name}</td>
+                        <td><input type="date" id="m-date-${m.id}" class="form-control form-control-sm mx-auto" style="width: 150px;" value="${m.maintenance_date || ''}"></td>
+                        <td><input type="time" id="m-time-${m.id}" class="form-control form-control-sm mx-auto" style="width: 120px;" value="${m.maintenance_time || ''}"></td>
+                        <td>
+                            <button class="btn btn-sm btn-primary fw-bold" onclick="saveMaintenanceSchedule('${m.id}', '${m.machine_name}')">
+                                <i class="bi bi-send-check"></i> Lưu & Đăng
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }
+        });
+
+        tbody.innerHTML = html;
     }
 
     // 2. Hàm Lưu lịch và Tự động tạo Thông báo
