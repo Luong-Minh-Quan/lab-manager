@@ -171,7 +171,7 @@
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">Hỗ trợ</a>
                     <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="#">Hướng dẫn sử dụng</a></li>
+                        <li><a class="dropdown-item fw-bold text-primary" href="#" onclick="showView('user-guide-view')"><i class="bi bi-book"></i> Hướng dẫn sử dụng</a></li>
                         <li><a class="dropdown-item" href="#">Video hướng dẫn</a></li>
                         <li><a class="dropdown-item" href="#">Liên hệ kỹ thuật</a></li>
                         <li><a class="dropdown-item" href="#">Gửi phản ánh lỗi</a></li>
@@ -486,7 +486,79 @@
             </div>
         </div>
     </div>
+    <div id="user-guide-view" class="view-section hidden">
+        <h3 class="fw-bold mb-4 text-university"><i class="bi bi-book-half"></i> Sổ tay Hướng dẫn sử dụng Hệ thống</h3>
+        
+        <div class="row g-4">
+            <div class="col-md-6">
+                <div class="card shadow-sm border-0 border-top border-4 border-success h-100">
+                    <div class="card-body">
+                        <h5 class="fw-bold text-success mb-3"><i class="bi bi-mortarboard-fill"></i> Dành cho Sinh Viên</h5>
+                        
+                        <div class="accordion" id="guideStudent">
+                            <div class="accordion-item">
+                                <h2 class="accordion-header"><button class="accordion-button collapsed fw-bold" data-bs-toggle="collapse" data-bs-target="#st1">1. Đăng ký lịch thực hành thế nào?</button></h2>
+                                <div id="st1" class="accordion-collapse collapse" data-bs-parent="#guideStudent">
+                                    <div class="accordion-body small text-muted">
+                                        - Bước 1: Vào menu <b>Danh mục</b> > Danh mục phòng thí nghiệm.<br>
+                                        - Bước 2: Bấm biểu tượng <b>kính lúp</b> ở phòng muốn thực hành.<br>
+                                        - Bước 3: Chọn máy đang "Sẵn sàng" và bấm <b>Đặt lịch</b>.<br>
+                                        - Bước 4: Điền ngày giờ (Trong giờ hành chính) và Gửi.
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="accordion-item">
+                                <h2 class="accordion-header"><button class="accordion-button collapsed fw-bold" data-bs-toggle="collapse" data-bs-target="#st2">2. Lấy mã QR mở cửa ở đâu?</button></h2>
+                                <div id="st2" class="accordion-collapse collapse" data-bs-parent="#guideStudent">
+                                    <div class="accordion-body small text-muted">
+                                        Sau khi Admin duyệt đơn, bạn vào mục <b>Lịch đã đăng ký</b>. Nút "Xem QR" màu xanh sẽ hiện ra. Bạn đưa mã này vào máy quét tại phòng Lab để mở cửa và bắt đầu tính giờ.
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="accordion-item">
+                                <h2 class="accordion-header"><button class="accordion-button collapsed fw-bold" data-bs-toggle="collapse" data-bs-target="#st3">3. Khai báo sự cố máy móc</button></h2>
+                                <div id="st3" class="accordion-collapse collapse" data-bs-parent="#guideStudent">
+                                    <div class="accordion-body small text-muted">
+                                        Khi sử dụng xong, vào mục <b>Lịch đã đăng ký</b> > bấm <b>Khai báo</b>. Nếu máy có lỗi, chọn "Hư hỏng" và ghi rõ chi tiết để kỹ thuật viên nắm thông tin.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
+            <div class="col-md-6">
+                <div class="card shadow-sm border-0 border-top border-4 border-primary h-100">
+                    <div class="card-body">
+                        <h5 class="fw-bold text-primary mb-3"><i class="bi bi-shield-lock-fill"></i> Dành cho Ban Quản Lý & Admin</h5>
+                        
+                        <div class="accordion" id="guideAdmin">
+                            <div class="accordion-item">
+                                <h2 class="accordion-header"><button class="accordion-button collapsed fw-bold" data-bs-toggle="collapse" data-bs-target="#ad1">1. Quy trình duyệt đơn đăng ký</button></h2>
+                                <div id="ad1" class="accordion-collapse collapse" data-bs-parent="#guideAdmin">
+                                    <div class="accordion-body small text-muted">
+                                        - Vào menu <b>Duyệt Đăng Ký</b>.<br>
+                                        - Kiểm tra thông tin, nếu hợp lệ bấm <b>Duyệt & Gửi QR</b>. Hệ thống sẽ tự động tạo mã QR bảo mật và gửi thông báo cho sinh viên.
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="accordion-item">
+                                <h2 class="accordion-header"><button class="accordion-button collapsed fw-bold" data-bs-toggle="collapse" data-bs-target="#ad2">2. Xử lý thiết bị hư hỏng</button></h2>
+                                <div id="ad2" class="accordion-collapse collapse" data-bs-parent="#guideAdmin">
+                                    <div class="accordion-body small text-muted">
+                                        - Khi sinh viên báo lỗi, thông tin sẽ hiện ở Trang chủ và mục <b>Quản lý bảo trì</b>.<br>
+                                        - Bấm <b>Đưa vào bảo trì</b> để khóa máy (Sinh viên sẽ không đặt lịch được nữa).<br>
+                                        - Sau khi sửa xong, bấm <b>Đã sửa xong</b> để mở khóa máy và lưu vào Nhật ký.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
     <div id="home-view" class="view-section hidden">
         <div id="heroCarousel" class="carousel slide carousel-fade" data-bs-ride="carousel" data-bs-interval="3500">
             <div class="carousel-inner">
