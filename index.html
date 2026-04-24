@@ -2279,6 +2279,56 @@
             </tr>
         `).join('') || '<tr><td colspan="6" class="p-4 text-muted">Chưa có lịch sử bảo trì trong tháng này.</td></tr>';
     }
+    // ==============================================
+    // HÀM XUẤT EXCEL CHO LỊCH SỬ BẢO TRÌ
+    // ==============================================
+    async function exportMaintenanceExcel() {
+        Swal.fire({ title: 'Đang tạo file Excel...', didOpen: () => Swal.showLoading() });
+
+        // 1. Lấy bộ lọc tháng hiện tại để xuất đúng dữ liệu đang xem
+        const monthFilter = document.getElementById('filter-maint-month').value;
+        
+        // 2. Lấy dữ liệu từ Database
+        const { data, error } = await _supabase.from('maintenance_history').select('*').order('resolved_at', { ascending: false });
+        
+        if (error || !data) {
+            return Swal.fire('Lỗi', 'Không thể lấy dữ liệu: ' + error.message, 'error');
+        }
+
+        // Lọc theo tháng y hệt như trên giao diện
+        const filtered = monthFilter === 'all' ? data : data.filter(d => new Date(d.resolved_at).getMonth() + 1 == monthFilter);
+
+        if (filtered.length === 0) {
+            return Swal.fire('Thông báo', 'Tháng này không có dữ liệu để xuất!', 'info');
+        }
+
+        // 3. Định dạng lại dữ liệu cho đẹp trước khi đưa vào Excel
+        const excelData = filtered.map(item => ({
+            "Tên thiết bị / Máy": item.machine_name,
+            "Người báo lỗi": item.full_name || 'Khuyết danh',
+            "Ngày báo cáo": new Date(item.reported_at).toLocaleDateString('vi-VN'),
+            "Ngày sửa xong": new Date(item.resolved_at).toLocaleDateString('vi-VN'),
+            "Chi tiết hư hỏng": item.condition_note || 'Không có ghi chú',
+            "Trạng thái": "Đã sửa xong (FIXED)"
+        }));
+
+        // 4. Tạo file Excel bằng SheetJS
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.json_to_sheet(excelData);
+
+        // Chỉnh độ rộng các cột tự động cho dễ đọc (đơn vị: ký tự)
+        ws['!cols'] = [ {wch: 25}, {wch: 20}, {wch: 15}, {wch: 15}, {wch: 40}, {wch: 20} ];
+
+        XLSX.utils.book_append_sheet(wb, ws, "LichSuBaoTri");
+        
+        // Đặt tên file có chứa tháng và năm
+        const monthText = monthFilter === 'all' ? 'Tat_Ca' : `Thang_${monthFilter}`;
+        const fileName = `Nhat_Ky_Bao_Tri_May_Moc_${monthText}_${new Date().getFullYear()}.xlsx`;
+        
+        // Tải xuống
+        XLSX.writeFile(wb, fileName);
+        Swal.fire('Thành công', `Đã tải xuống file: <b>${fileName}</b>`, 'success');
+    }
 </script>
 </body>
 </html>
