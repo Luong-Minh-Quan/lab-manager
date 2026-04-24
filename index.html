@@ -631,15 +631,27 @@
         </div>
 
         <div class="row">
-            <div class="col-md-7 mb-4">
-                <div class="card shadow-sm border-0 h-100">
-                    <div class="card-header bg-white fw-bold py-3 text-university"><i class="bi bi-megaphone-fill me-2 text-danger"></i> Thông báo mới nhất</div>
-                    <div class="card-body p-0" style="height: 120px; overflow: hidden; position: relative;">
-                        <div id="noticeCarousel" class="carousel slide carousel-fade h-100" data-bs-ride="carousel" data-bs-interval="3500">
-                            <div class="carousel-inner h-100" id="home-notice-list">
-                                <div class="p-4 text-center text-muted">Đang tải thông báo...</div>
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-white fw-bold text-university py-3">
+                    <i class="bi bi-megaphone-fill text-danger"></i> Thông báo mới nhất
+                </div>
+                <div class="card-body p-0 d-flex flex-column">
+                    <div class="p-3 border-bottom flex-fill position-relative" style="background-color: #fff5f5;">
+                        <span class="badge bg-danger mb-2"><i class="bi bi-exclamation-octagon"></i> Quan trọng</span>
+                        <div id="ticker-danger" style="transition: opacity 0.4s ease-in-out; min-height: 48px;">
                             </div>
-                        </div>
+                    </div>
+                    
+                    <div class="p-3 border-bottom flex-fill position-relative" style="background-color: #fffdf5;">
+                        <span class="badge bg-warning text-dark mb-2"><i class="bi bi-exclamation-triangle"></i> Lưu ý</span>
+                        <div id="ticker-warning" style="transition: opacity 0.4s ease-in-out; min-height: 48px;">
+                            </div>
+                    </div>
+                    
+                    <div class="p-3 flex-fill position-relative" style="background-color: #f0f8ff;">
+                        <span class="badge bg-info text-dark mb-2"><i class="bi bi-info-circle"></i> Thông báo</span>
+                        <div id="ticker-info" style="transition: opacity 0.4s ease-in-out; min-height: 48px;">
+                            </div>
                     </div>
                 </div>
             </div>
@@ -2127,39 +2139,81 @@
     }
 
     // 4. Hàm hiển thị "Vòng xoay" ngoài Trang chủ
+    // KHAI BÁO BIẾN DÀNH CHO BẢNG TIN NHẢY CHỮ
+    let noticeTickerInterval;
+    let noticeData = { danger: [], warning: [], info: [] };
+    let noticeIndex = { danger: 0, warning: 0, info: 0 };
+
+    // 1. Hàm tải dữ liệu và phân loại
     async function loadHomeNotices() {
-        const { data, error } = await _supabase.from('announcements').select('*').order('created_at', { ascending: false }).limit(5);
-        const container = document.getElementById('home-notice-list');
-        
-        if (error || !data || data.length === 0) {
-            return container.innerHTML = '<div class="p-4 text-center text-muted">Hiện chưa có thông báo mới.</div>';
+        // Dọn dẹp bộ đếm cũ (nếu sếp F5 liên tục) để tránh bị lag
+        if (noticeTickerInterval) clearInterval(noticeTickerInterval);
+
+        const { data, error } = await _supabase.from('announcements').select('*').order('created_at', { ascending: false });
+        if (error || !data) return;
+
+        // Phân loại thông báo vào 3 mảng dựa trên type
+        noticeData.danger = data.filter(d => d.type === 'danger' || d.type === 'Quan trọng');
+        noticeData.warning = data.filter(d => d.type === 'warning' || d.type === 'Lưu ý');
+        noticeData.info = data.filter(d => d.type === 'info' || d.type === 'Bình thường' || (!['danger', 'warning', 'Quan trọng', 'Lưu ý'].includes(d.type)));
+
+        // Trả index về 0
+        noticeIndex = { danger: 0, warning: 0, info: 0 };
+
+        // Chạy lần đầu tiên ngay lập tức
+        updateTickerUI();
+
+        // CÀI ĐẶT ĐỒNG HỒ NHẢY SỐ (3000ms = 3 giây)
+        noticeTickerInterval = setInterval(() => {
+            // Tăng biến đếm. Nếu chạy đến cuối mảng thì vòng lại từ 0
+            if (noticeData.danger.length > 1) noticeIndex.danger = (noticeIndex.danger + 1) % noticeData.danger.length;
+            if (noticeData.warning.length > 1) noticeIndex.warning = (noticeIndex.warning + 1) % noticeData.warning.length;
+            if (noticeData.info.length > 1) noticeIndex.info = (noticeIndex.info + 1) % noticeData.info.length;
+
+            // Gọi hàm cập nhật giao diện
+            updateTickerUI();
+        }, 3000);
+    }
+
+    // 2. Hàm vẽ nội dung và làm hiệu ứng mờ - tỏ
+    function updateTickerUI() {
+        const renderBox = (type, elId, titleColorClass) => {
+            const el = document.getElementById(elId);
+            if (!el) return;
+            
+            const list = noticeData[type];
+            const idx = noticeIndex[type];
+
+            // Nếu không có thông báo nào ở mục này
+            if (list.length === 0) {
+                el.innerHTML = '<div class="text-muted small fst-italic">Chưa có thông báo.</div>';
+                return;
+            }
+
+            const item = list[idx];
+            const dateStr = new Date(item.created_at).toLocaleDateString('vi-VN');
+            
+            // Xử lý hiệu ứng: Làm mờ đi -> Đổi chữ -> Hiện rõ lên
+            el.style.opacity = '0';
+            
+            setTimeout(() => {
+                el.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <strong class="${titleColorClass} text-truncate" style="max-width: 70%;">${item.title}</strong>
+                        <span class="small text-muted">${dateStr}</span>
+                    </div>
+                    <div class="small text-muted text-truncate" title="${item.content}">${item.content}</div>
+                `;
+                el.style.opacity = '1';
+            }, 400); // 400ms là thời gian đợi nó mờ hẳn rồi mới đổi chữ
         }
 
-        let html = '';
-        data.forEach((n, index) => {
-            // Mục đầu tiên phải có class 'active' thì Carousel mới bắt đầu chạy
-            const activeClass = index === 0 ? 'active' : '';
-            
-            // Tính toán thời gian (vd: Vừa xong, 2 giờ trước...)
-            const dateObj = new Date(n.created_at);
-            const timeStr = dateObj.toLocaleDateString('vi-VN');
-
-            html += `
-                <div class="carousel-item ${activeClass} h-100">
-                    <div class="p-3">
-                        <div class="d-flex w-100 justify-content-between mb-1">
-                            <h6 class="mb-0 fw-bold text-${n.type}">${n.title}</h6>
-                            <small class="text-muted">${timeStr}</small>
-                        </div>
-                        <p class="mb-0 small text-muted text-truncate" style="white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
-                            ${n.content}
-                        </p>
-                    </div>
-                </div>
-            `;
-        });
-        container.innerHTML = html;
+        // Kích hoạt vẽ cho cả 3 mục
+        renderBox('danger', 'ticker-danger', 'text-danger');
+        renderBox('warning', 'ticker-warning', 'text-warning-emphasis fw-bold');
+        renderBox('info', 'ticker-info', 'text-primary');
     }
+    
     let addResourceModalInstance = null;
 
     // 1. Hàm mở Modal và chuẩn bị dữ liệu
