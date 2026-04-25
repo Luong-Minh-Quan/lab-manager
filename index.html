@@ -173,8 +173,7 @@
                     <ul class="dropdown-menu">
                         <li><a class="dropdown-item fw-bold text-primary" href="#" onclick="showView('user-guide-view')"><i class="bi bi-book"></i> Hướng dẫn sử dụng</a></li>
                         <li><a class="dropdown-item" href="#">Video hướng dẫn</a></li>
-                        <li><a class="dropdown-item" href="#">Liên hệ kỹ thuật</a></li>
-                        <li><a class="dropdown-item" href="#">Gửi phản ánh lỗi</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="showView('contact-support-view')"><i class="bi bi-headset"></i> Liên hệ & Báo lỗi Web</a></li>
                         <li><a class="dropdown-item" href="#">FAQ</a></li>
                     </ul>
                 </li>
@@ -304,6 +303,70 @@
                             </thead>
                             <tbody id="admin-notice-list"></tbody>
                         </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="contact-support-view" class="view-section hidden">
+        <h3 class="fw-bold mb-4 text-university"><i class="bi bi-life-preserver"></i> Trung tâm Hỗ trợ Kỹ thuật & Hệ thống</h3>
+        
+        <div class="row g-4">
+            <div class="col-md-5">
+                <div class="card shadow-sm border-0 border-top border-4 border-primary h-100">
+                    <div class="card-body">
+                        <h5 class="fw-bold text-primary mb-3">Thông tin liên hệ khẩn cấp</h5>
+                        <p class="text-muted small mb-4">Nếu bạn gặp sự cố không thể truy cập hệ thống hoặc các vấn đề nghiêm trọng về tài khoản, vui lòng liên hệ trực tiếp với Ban quản trị Web.</p>
+                        
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item px-0 d-flex align-items-center">
+                                <i class="bi bi-telephone-fill text-success fs-4 me-3"></i>
+                                <div>
+                                    <div class="fw-bold">Hotline Kỹ thuật</div>
+                                    <div class="text-muted">092.799.0909 (Zalo 24/7)</div>
+                                </div>
+                            </li>
+                            <li class="list-group-item px-0 d-flex align-items-center">
+                                <i class="bi bi-envelope-at-fill text-danger fs-4 me-3"></i>
+                                <div>
+                                    <div class="fw-bold">Email Quản trị viên</div>
+                                    <div class="text-muted">admin.support@dut.udn.vn</div>
+                                </div>
+                            </li>
+                            <li class="list-group-item px-0 d-flex align-items-center">
+                                <i class="bi bi-geo-alt-fill text-warning fs-4 me-3"></i>
+                                <div>
+                                    <div class="fw-bold">Văn phòng hỗ trợ</div>
+                                    <div class="text-muted">Phòng IT - Tầng 2 Tòa nhà Trung tâm</div>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-7">
+                <div class="card shadow-sm border-0 border-top border-4 border-danger h-100">
+                    <div class="card-body">
+                        <h5 class="fw-bold text-danger mb-3">Gửi báo cáo lỗi Website / Phần mềm</h5>
+                        <p class="text-muted small mb-4">Sử dụng biểu mẫu này để báo cáo các lỗi về giao diện, tính năng hoặc đề xuất cải tiến hệ thống (Không dùng để báo lỗi máy móc phòng Lab).</p>
+                        
+                        <form id="bug-report-form" onsubmit="event.preventDefault(); submitWebBugReport();">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small">Khu vực gặp lỗi</label>
+                                <select class="form-select" id="bug-category">
+                                    <option value="Đăng nhập/Tài khoản">Đăng nhập / Tài khoản</option>
+                                    <option value="Đặt lịch/Duyệt lịch">Đặt lịch / Duyệt lịch</option>
+                                    <option value="Giao diện hiển thị">Lỗi giao diện hiển thị sai</option>
+                                    <option value="Tính năng khác">Tính năng khác / Góp ý cải tiến</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small">Mô tả chi tiết sự cố</label>
+                                <textarea class="form-control" id="bug-description" rows="4" placeholder="Vui lòng mô tả rõ thao tác bạn đã làm và lỗi bạn gặp phải..." required></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-danger fw-bold w-100"><i class="bi bi-send-fill"></i> Gửi Báo Cáo Lỗi</button>
+                        </form>
                     </div>
                 </div>
             </div>
@@ -2973,6 +3036,27 @@
         
         loadMaintenanceSchedule(); // Load lại bảng này
         loadHomeNotices(); // Ra lệnh cho trang chủ cập nhật thông báo ngầm
+    }
+    // Hàm xử lý gửi báo cáo lỗi Website
+    function submitWebBugReport() {
+        const category = document.getElementById('bug-category').value;
+        const desc = document.getElementById('bug-description').value;
+
+        if (!desc.trim()) {
+            return Swal.fire('Lỗi', 'Vui lòng nhập mô tả chi tiết sự cố!', 'error');
+        }
+
+        Swal.fire({ title: 'Đang gửi báo cáo...', didOpen: () => Swal.showLoading() });
+
+        // Giả lập thời gian gửi dữ liệu 1 giây
+        setTimeout(() => {
+            document.getElementById('bug-report-form').reset(); // Xóa trắng form
+            Swal.fire(
+                'Đã tiếp nhận!', 
+                `Cảm ơn bạn đã báo lỗi phần <b>${category}</b>. Đội ngũ IT sẽ kiểm tra và khắc phục sớm nhất.`, 
+                'success'
+            );
+        }, 1000);
     }
 </script>
 </body>
