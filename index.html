@@ -174,7 +174,7 @@
                         <li><a class="dropdown-item fw-bold text-primary" href="#" onclick="showView('user-guide-view')"><i class="bi bi-book"></i> Hướng dẫn sử dụng</a></li>
                         <li><a class="dropdown-item" href="#">Video hướng dẫn</a></li>
                         <li><a class="dropdown-item" href="#" onclick="showView('contact-support-view')"><i class="bi bi-headset"></i> Liên hệ & Báo lỗi Web</a></li>
-                        <li><a class="dropdown-item" href="#">FAQ</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="showView('faq-view')"><i class="bi bi-question-circle"></i> Câu hỏi thường gặp (FAQ)</a></li>
                     </ul>
                 </li>
             </ul>
@@ -261,6 +261,89 @@
                         </thead>
                         <tbody id="feedback-history-list" class="small"></tbody>
                     </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="faq-view" class="view-section hidden">
+        <h3 class="fw-bold mb-4 text-university text-center"><i class="bi bi-patch-question-fill text-primary"></i> Câu hỏi thường gặp (FAQ)</h3>
+        <p class="text-center text-muted mb-5">Tổng hợp các giải đáp nhanh cho những vấn đề phổ biến nhất khi sử dụng hệ thống.</p>
+        
+        <div class="row justify-content-center">
+            <div class="col-md-10">
+                <div class="accordion shadow-sm border-0" id="accordionFAQ">
+                    
+                    <div class="accordion-item border-0 border-bottom">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button fw-bold text-dark bg-white" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
+                                1. Tôi quên mật khẩu hoặc tài khoản báo chưa xác nhận Email thì phải làm sao?
+                            </button>
+                        </h2>
+                        <div id="faq1" class="accordion-collapse collapse show" data-bs-parent="#accordionFAQ">
+                            <div class="accordion-body text-muted small">
+                                Hệ thống hiện tại đăng nhập trực tiếp bằng MSSV và Mật khẩu do Ban quản trị cấp, không yêu cầu xác nhận qua Email. Nếu bạn quên mật khẩu hoặc không đăng nhập được, vui lòng vào mục <b>Hỗ trợ > Liên hệ & Báo lỗi Web</b> để lấy thông tin gọi Hotline hoặc gửi yêu cầu reset mật khẩu.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion-item border-0 border-bottom">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed fw-bold text-dark bg-white" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
+                                2. Tại sao tôi không thấy nút "Đặt lịch" ở một số thiết bị?
+                            </button>
+                        </h2>
+                        <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#accordionFAQ">
+                            <div class="accordion-body text-muted small">
+                                Nếu nút Đặt lịch bị ẩn hoặc chuyển sang màu xám với dòng chữ "Bảo trì", điều đó có nghĩa là thiết bị đang gặp sự cố và đã được Admin khóa lại để sửa chữa. Bạn có thể theo dõi tiến độ sửa chữa trên bảng <b>Thông báo mới nhất</b> ở Trang chủ.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion-item border-0 border-bottom">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed fw-bold text-dark bg-white" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">
+                                3. Quét mã QR tại cửa phòng Lab báo "Mã không hợp lệ"?
+                            </button>
+                        </h2>
+                        <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#accordionFAQ">
+                            <div class="accordion-body text-muted small">
+                                Lỗi này thường xảy ra do 2 nguyên nhân: <br>
+                                - <b>Chưa tới giờ:</b> Mã QR của bạn chỉ có tác dụng mở cửa đúng trong khung giờ ca thực hành bạn đã đăng ký.<br>
+                                - <b>Đơn chưa được duyệt:</b> Bạn chỉ được cấp mã QR khi đơn đăng ký đã được Quản lý PTN bấm "Duyệt". Vui lòng kiểm tra lại trạng thái đơn trong mục Lịch sử.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion-item border-0 border-bottom">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed fw-bold text-dark bg-white" type="button" data-bs-toggle="collapse" data-bs-target="#faq4">
+                                4. Làm thế nào để báo cáo khi máy móc bị bốc khói, hư hỏng trong lúc thực hành?
+                            </button>
+                        </h2>
+                        <div id="faq4" class="accordion-collapse collapse" data-bs-parent="#accordionFAQ">
+                            <div class="accordion-body text-muted small">
+                                Tuyệt đối KHÔNG dùng chức năng "Báo lỗi Web". Hãy làm theo các bước sau:<br>
+                                1. Ngắt nguồn điện thiết bị ngay lập tức.<br>
+                                2. Đăng nhập hệ thống, vào <b>Lịch đã đăng ký</b>.<br>
+                                3. Tìm đến ca thực hành hiện tại, bấm nút <b>Khai báo (màu vàng)</b>.<br>
+                                4. Chọn mức độ "Hư hỏng", ghi rõ tình trạng (ví dụ: bốc khói, rò điện) để hệ thống gửi cảnh báo khẩn cấp đến Quản lý PTN.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion-item border-0">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed fw-bold text-dark bg-white" type="button" data-bs-toggle="collapse" data-bs-target="#faq5">
+                                5. Sinh viên có được phép đăng ký làm việc ngoài giờ hành chính không?
+                            </button>
+                        </h2>
+                        <div id="faq5" class="accordion-collapse collapse" data-bs-parent="#accordionFAQ">
+                            <div class="accordion-body text-muted small">
+                                Mặc định hệ thống chỉ hỗ trợ đặt lịch trong khung giờ hành chính để đảm bảo an toàn và luôn có sự giám sát của cán bộ. Nếu có nhu cầu làm đồ án/nghiên cứu khoa học ngoài giờ, bạn cần xin giấy phép từ Khoa và liên hệ trực tiếp với Cán bộ quản lý PTN đó để được cấp quyền ưu tiên.
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
             </div>
         </div>
