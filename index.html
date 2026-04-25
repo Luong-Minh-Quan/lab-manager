@@ -632,27 +632,27 @@
 
         <div class="row">
             <div class="col-md-7 mb-6">
-            <div class="card shadow-sm border-1 mb-3">
-                <div class="card-header bg-white fw-bold text-university py-2">
-                    <i class="bi bi-megaphone-fill text-danger"></i> Thông báo mới nhất
-                </div>
-                <div class="card-body p-0 d-flex flex-column">
-                    <div class="px-3 py-2 border-bottom position-relative" style="background-color: #fff5f5;">
-                        <span class="badge bg-danger mb-1" style="font-size: 0.7rem;"><i class="bi bi-exclamation-octagon"></i> Quan trọng</span>
-                        <div id="ticker-danger" style="transition: opacity 0.4s ease-in-out; min-height: 38px;"></div>
+                <div class="card shadow-sm border-1 mb-3">
+                    <div class="card-header bg-white fw-bold text-university py-2">
+                     <i class="bi bi-megaphone-fill text-danger"></i> Thông báo mới nhất
                     </div>
+                    <div class="card-body p-0 d-flex flex-column">
+                        <div class="px-3 py-2 border-bottom position-relative" style="background-color: #fff5f5;">
+                            <span class="badge bg-danger mb-1" style="font-size: 0.7rem;"><i class="bi bi-exclamation-octagon"></i> Quan trọng</span>
+                            <div id="ticker-danger" style="transition: opacity 0.4s ease-in-out; min-height: 38px;"></div>
+                        </div>
                     
-                    <div class="px-3 py-2 border-bottom position-relative" style="background-color: #fffdf5;">
-                        <span class="badge bg-warning text-dark mb-1" style="font-size: 0.7rem;"><i class="bi bi-exclamation-triangle"></i> Lưu ý</span>
-                        <div id="ticker-warning" style="transition: opacity 0.4s ease-in-out; min-height: 38px;"></div>
-                    </div>
+                        <div class="px-3 py-2 border-bottom position-relative" style="background-color: #fffdf5;">
+                            <span class="badge bg-warning text-dark mb-1" style="font-size: 0.7rem;"><i class="bi bi-exclamation-triangle"></i> Lưu ý</span>
+                            <div id="ticker-warning" style="transition: opacity 0.4s ease-in-out; min-height: 38px;"></div>
+                        </div>
                     
-                    <div class="px-3 py-2 position-relative" style="background-color: #f0f8ff;">
-                        <span class="badge bg-info text-dark mb-1" style="font-size: 0.7rem;"><i class="bi bi-info-circle"></i> Thông báo</span>
-                        <div id="ticker-info" style="transition: opacity 0.4s ease-in-out; min-height: 38px;"></div>
+                        <div class="px-3 py-2 position-relative" style="background-color: #f0f8ff;">
+                            <span class="badge bg-info text-dark mb-1" style="font-size: 0.7rem;"><i class="bi bi-info-circle"></i> Thông báo</span>
+                            <div id="ticker-info" style="transition: opacity 0.4s ease-in-out; min-height: 38px;"></div>
+                        </div>
                     </div>
-                </div>
-            </div>    
+                </div>    
             </div>
             <div class="col-md-5 mb-4">
                 <div class="card shadow-sm border-0 mb-3">
@@ -973,7 +973,30 @@
         </div>
     </div>
 
-</div> <div class="modal fade" id="bookingModal" tabindex="-1">
+</div>
+<div class="modal fade" id="noticeDetailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold" id="notice-detail-title">Tiêu đề thông báo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body pt-2">
+                <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
+                    <span id="notice-detail-type" class="badge">Loại</span>
+                    <small id="notice-detail-date" class="text-muted"><i class="bi bi-clock"></i> Ngày đăng</small>
+                </div>
+                <div id="notice-detail-content" style="white-space: pre-wrap; font-size: 0.95rem;">
+                    Nội dung chi tiết của thông báo sẽ nằm ở đây...
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Đóng lại</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="bookingModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header bg-university text-white">
@@ -2196,12 +2219,19 @@
             el.style.opacity = '0';
             
             setTimeout(() => {
+                // Biến đổi cái item thành một chuỗi JSON an toàn để nhét vào hàm onClick
+                const safeItem = encodeURIComponent(JSON.stringify(item));
+
                 el.innerHTML = `
-                    <div class="d-flex justify-content-between align-items-center mb-0">
-                        <strong class="${titleColorClass} text-truncate" style="max-width: 75%; font-size: 0.85rem;">${item.title}</strong>
+                    <div class="d-flex justify-content-between align-items-center mb-0" 
+                         style="cursor: pointer;" 
+                         onclick="openNoticeDetail('${safeItem}')">
+                        <strong class="${titleColorClass} text-truncate" style="max-width: 75%; font-size: 0.85rem;" title="Nhấn để xem chi tiết">${item.title}</strong>
                         <span class="text-muted" style="font-size: 0.7rem;">${dateStr}</span>
                     </div>
-                    <div class="text-muted text-truncate" style="font-size: 0.8rem;" title="${item.content}">${item.content}</div>
+                    <div class="text-muted text-truncate" style="font-size: 0.8rem; cursor: pointer;" 
+                         title="Nhấn để xem chi tiết" 
+                         onclick="openNoticeDetail('${safeItem}')">${item.content}</div>
                 `;
                 el.style.opacity = '1';
             }, 400); // 400ms là thời gian đợi nó mờ hẳn rồi mới đổi chữ
@@ -2211,6 +2241,37 @@
         renderBox('danger', 'ticker-danger', 'text-danger');
         renderBox('warning', 'ticker-warning', 'text-warning-emphasis fw-bold');
         renderBox('info', 'ticker-info', 'text-primary');
+    }
+    // Hàm mở Modal hiển thị chi tiết Thông báo
+    let noticeModalInstance;
+    function openNoticeDetail(encodedItem) {
+        // Giải mã dữ liệu
+        const item = JSON.parse(decodeURIComponent(encodedItem));
+        
+        // Đổ dữ liệu vào Modal
+        document.getElementById('notice-detail-title').innerText = item.title;
+        document.getElementById('notice-detail-content').innerText = item.content;
+        document.getElementById('notice-detail-date').innerHTML = `<i class="bi bi-clock"></i> ${new Date(item.created_at).toLocaleDateString('vi-VN')}`;
+        
+        // Xử lý màu sắc cho cái Nhãn (Badge)
+        const typeEl = document.getElementById('notice-detail-type');
+        typeEl.className = 'badge'; // Reset class
+        if (item.type === 'danger' || item.type === 'Quan trọng') {
+            typeEl.classList.add('bg-danger');
+            typeEl.innerText = 'Quan trọng';
+        } else if (item.type === 'warning' || item.type === 'Lưu ý') {
+            typeEl.classList.add('bg-warning', 'text-dark');
+            typeEl.innerText = 'Lưu ý';
+        } else {
+            typeEl.classList.add('bg-info', 'text-dark');
+            typeEl.innerText = 'Bình thường';
+        }
+
+        // Khởi tạo và hiển thị Modal
+        if (!noticeModalInstance) {
+            noticeModalInstance = new bootstrap.Modal(document.getElementById('noticeDetailModal'));
+        }
+        noticeModalInstance.show();
     }
 
     let addResourceModalInstance = null;
