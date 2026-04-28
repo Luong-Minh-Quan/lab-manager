@@ -71,6 +71,28 @@
         /* Hiệu ứng chuyển đổi màu siêu mượt cho Dark Mode */
         html, body, .card, .modal-content, .btn, .navbar, .table {
         transition: background-color 0.4s ease-in-out, color 0.4s ease-in-out, border-color 0.4s ease-in-out !important;
+            /* ==========================================
+       TỐI ƯU HÓA DARK MODE TOÀN DIỆN
+       ========================================== */
+        [data-bs-theme="dark"] body {
+            background-color: #121212 !important; /* Đen nhám chuẩn app */
+            color: #e0e0e0 !important;
+        }
+        /* Xóa bỏ nền trắng/sáng bị ép cứng ở các thẻ */
+        [data-bs-theme="dark"] .bg-light, 
+        [data-bs-theme="dark"] .bg-white {
+            background-color: #1e1e1e !important; /* Màu xám đen cho thẻ Card */
+            color: #e0e0e0 !important;
+        }
+        /* Xóa bỏ chữ bị ép màu đen */
+        [data-bs-theme="dark"] .text-dark {
+            color: #f8f9fa !important; 
+        }
+        /* Lật màu viền cho hài hòa */
+        [data-bs-theme="dark"] .border-bottom,
+        [data-bs-theme="dark"] .border {
+            border-color: #333 !important;
+        }
     }
     </style>
 </head>
