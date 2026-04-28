@@ -587,11 +587,11 @@
                     <p class="text-muted small mb-3">Vui lòng nhập mật khẩu mới cho tài khoản của bạn.</p>
                     <div class="mb-3">
                         <label class="form-label fw-bold small">Mật khẩu mới</label>
-                        <input type="password" id="new-recovery-password" class="form-control" placeholder="Ít nhất 6 ký tự">
+                        <input type="password" id="new-recovery-password" class="form-control" placeholder="Ít nhất 6 ký tự"onkeypress="if(event.key === 'Enter') updateRecoveredPassword()">
                     </div>
                     <div class="mb-4">
                         <label class="form-label fw-bold small">Xác nhận mật khẩu mới</label>
-                        <input type="password" id="confirm-recovery-password" class="form-control" placeholder="Nhập lại mật khẩu mới">
+                        <input type="password" id="confirm-recovery-password" class="form-control" placeholder="Nhập lại mật khẩu mới"onkeypress="if(event.key === 'Enter') updateRecoveredPassword()">
                     </div>
                     <button type="button" class="btn btn-primary w-100 fw-bold" onclick="updateRecoveredPassword()">
                         <i class="bi bi-floppy-fill"></i> Lưu mật khẩu & Đăng nhập
@@ -3206,7 +3206,22 @@
 
         Swal.fire({ title: 'Đang cập nhật...', didOpen: () => Swal.showLoading() });
 
-        // Gọi lệnh đổi mật khẩu của Supabase
+        // --- BỘ LỌC XỬ LÝ LINK LỖI 2 DẤU ## ---
+        // Lấy đoạn mã phía sau thanh địa chỉ và cạo bỏ toàn bộ dấu #
+        const hashString = window.location.hash.replace(/^#+/, ''); 
+        const urlParams = new URLSearchParams(hashString);
+        const accessToken = urlParams.get('access_token');
+        const refreshToken = urlParams.get('refresh_token');
+
+        // Ép Supabase phải thiết lập phiên đăng nhập từ mã Token này
+        if (accessToken && refreshToken) {
+            await _supabase.auth.setSession({
+                access_token: accessToken,
+                refresh_token: refreshToken
+            });
+        }
+
+        // Gọi lệnh đổi mật khẩu sau khi đã ép phiên đăng nhập thành công
         const { data, error } = await _supabase.auth.updateUser({
             password: newPass
         });
@@ -3214,15 +3229,17 @@
         if (error) {
             Swal.fire('Lỗi', error.message, 'error');
         } else {
-            // Đổi thành công: Đóng modal, báo thành công và load lại trang vào thẳng hệ thống
+            // Đổi thành công: Dọn dẹp URL, đóng modal và báo thành công
+            window.history.replaceState(null, null, window.location.pathname); // Xóa link rác trên thanh địa chỉ
             bootstrap.Modal.getInstance(document.getElementById('resetPasswordModal')).hide();
+            
             Swal.fire({
                 title: 'Thành công!',
                 text: 'Mật khẩu của bạn đã được thay đổi an toàn.',
                 icon: 'success',
                 confirmButtonText: 'Vào hệ thống'
             }).then(() => {
-                checkSession(); // Gọi hàm kiểm tra phiên để hiển thị màn hình chính
+                checkSession(); // Load lại web
             });
         }
     }
