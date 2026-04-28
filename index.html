@@ -68,6 +68,10 @@
         .view-section { animation: fadeIn 0.4s; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .table-custom th { background-color: #f8f9fa; color: #003366; font-weight: 600; }
+        /* Hiệu ứng chuyển đổi màu siêu mượt cho Dark Mode */
+        html, body, .card, .modal-content, .btn, .navbar, .table {
+        transition: background-color 0.4s ease-in-out, color 0.4s ease-in-out, border-color 0.4s ease-in-out !important;
+    }
     </style>
 </head>
 <body>
@@ -176,6 +180,11 @@
                         <li><a class="dropdown-item" href="#" onclick="showView('contact-support-view')"><i class="bi bi-headset"></i> Liên hệ & Báo lỗi Web</a></li>
                         <li><a class="dropdown-item" href="#" onclick="showView('faq-view')"><i class="bi bi-question-circle"></i> Câu hỏi thường gặp (FAQ)</a></li>
                     </ul>
+                </li>
+                <li class="nav-item ms-2 d-flex align-items-center">
+                    <button id="theme-toggle" class="btn btn-sm btn-outline-warning rounded-circle" style="width: 32px; height: 32px; padding: 0;" title="Chuyển chế độ giao diện">
+                        <i id="theme-icon" class="bi bi-moon-stars-fill"></i>
+                    </button>
                 </li>
             </ul>
             
@@ -3243,6 +3252,65 @@
             });
         }
     }
+    // ==========================================
+    // HỆ THỐNG DARK MODE TỰ ĐỘNG & THỦ CÔNG
+    // ==========================================
+    const themeToggleBtn = document.getElementById('theme-toggle');
+    const themeIcon = document.getElementById('theme-icon');
+    let currentHourTracker = new Date().getHours();
+
+    // 1. Hàm áp dụng Giao diện và đổi Icon
+    function applyTheme(theme) {
+        // Lệnh của Bootstrap 5 để đổi màu toàn bộ Web
+        document.documentElement.setAttribute('data-bs-theme', theme);
+        localStorage.setItem('user_theme_preference', theme); // Lưu lại lựa chọn vào máy
+
+        if (theme === 'dark') {
+            themeIcon.className = 'bi bi-sun-fill text-warning'; // Đổi icon thành Mặt trời
+            themeToggleBtn.classList.replace('btn-outline-dark', 'btn-outline-light');
+        } else {
+            themeIcon.className = 'bi bi-moon-stars-fill text-dark'; // Đổi icon thành Mặt trăng
+            themeToggleBtn.classList.replace('btn-outline-light', 'btn-outline-dark');
+        }
+    }
+
+    // 2. Khởi tạo Giao diện lúc tải trang web
+    function initTheme() {
+        const savedTheme = localStorage.getItem('user_theme_preference');
+        const hour = new Date().getHours();
+        const isNightTime = hour >= 21 || hour < 5; // Từ 9h tối (21) đến trước 5h sáng (5)
+
+        // Nếu người dùng đã từng tự bấm chọn, thì tôn trọng lựa chọn đó
+        if (savedTheme) {
+            applyTheme(savedTheme);
+        } else {
+            // Nếu chưa chọn, tự động bật theo giờ
+            applyTheme(isNightTime ? 'dark' : 'light');
+        }
+    }
+
+    // 3. Sự kiện khi người dùng tự bấm nút
+    if(themeToggleBtn) {
+        themeToggleBtn.addEventListener('click', () => {
+            const currentTheme = document.documentElement.getAttribute('data-bs-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            applyTheme(newTheme);
+        });
+    }
+
+    // 4. Radar giám sát thời gian chạy ngầm (Kiểm tra mỗi phút)
+    // Tự động chuyển mode nếu người dùng đang mở máy đúng vào khoảnh khắc giao thừa (21:00 hoặc 05:00)
+    setInterval(() => {
+        const nowHour = new Date().getHours();
+        if (currentHourTracker !== nowHour) { // Chỉ kích hoạt khi vừa bước sang giờ mới
+            if (nowHour === 21) applyTheme('dark');  // Đúng 9h tối -> Tự tắt đèn
+            if (nowHour === 5) applyTheme('light');  // Đúng 5h sáng -> Tự bật đèn
+            currentHourTracker = nowHour;
+        }
+    }, 60000);
+
+    // Chạy ngay khi web vừa load xong
+    initTheme();
 </script>
 </body>
 </html>
