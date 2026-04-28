@@ -3165,18 +3165,34 @@
             );
         }, 1000);
     }
-    // 1. "BẮT TÍN HIỆU" KHI NGƯỜI DÙNG BẤM LINK TỪ EMAIL
+    // "BẮT TÍN HIỆU" KHI NGƯỜI DÙNG BẤM LINK TỪ EMAIL
+    // --- HÀM TỰ ĐỘNG BẮT LINK KHÔI PHỤC MẬT KHẨU ---
+    // Chúng ta dùng "Cảm biến kép" để đảm bảo link email luôn hoạt động
+    
+    // 1. Kiểm tra ngay lập tức khi trang vừa load (Dành cho trường hợp link có ##)
+    window.addEventListener('DOMContentLoaded', () => {
+        const hash = window.location.hash;
+        if (hash.includes('type=recovery') || hash.includes('access_token')) {
+            console.log("Phát hiện link khôi phục mật khẩu từ URL!");
+            setTimeout(() => {
+                const resetModal = new bootstrap.Modal(document.getElementById('resetPasswordModal'));
+                resetModal.show();
+            }, 1000); // Đợi 1 giây để đảm bảo giao diện đã sẵn sàng
+        }
+    });
+
+    // 2. Lắng nghe tín hiệu chuẩn từ Supabase Auth
     _supabase.auth.onAuthStateChange((event, session) => {
-        // Nếu hệ thống phát hiện đây là sự kiện Khôi phục mật khẩu
+        console.log("Sự kiện Auth mới:", event);
         if (event === 'PASSWORD_RECOVERY') {
-            // Tắt ngay cái popup loading (nếu có) và mở Modal nhập mật khẩu mới
             Swal.close(); 
-            const resetModal = new bootstrap.Modal(document.getElementById('resetPasswordModal'));
+            const resetElement = document.getElementById('resetPasswordModal');
+            const resetModal = new bootstrap.Modal(resetElement);
             resetModal.show();
         }
     });
 
-    // 2. HÀM CẬP NHẬT MẬT KHẨU MỚI LÊN SUPABASE
+    // 3. HÀM CẬP NHẬT MẬT KHẨU MỚI LÊN SUPABASE
     async function updateRecoveredPassword() {
         const newPass = document.getElementById('new-recovery-password').value;
         const confirmPass = document.getElementById('confirm-recovery-password').value;
