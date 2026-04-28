@@ -1300,8 +1300,19 @@
             <div class="col-md-4">
                 <label class="form-label fw-bold small text-muted mb-1">Ca thực hành (Hôm nay)</label>
                 <select id="live-shift-filter" class="form-select border-warning">
-                    <option value="shift1">Sáng (07:30 - 11:30) - Lương Minh Quân</option>
-                    <option value="shift2">Chiều (13:30 - 17:30) - Nguyễn Văn A</option>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold small text-muted mb-1">Máy / Thiết bị</label>
+                        <select id="live-machine-filter" class="form-select border-warning" onchange="updateLiveShiftFilter()">
+                            <option value="Máy phay CNC 01">Máy phay CNC 01</option>
+                            <option value="Máy phay CNC 02">Máy phay CNC 02</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold small text-muted mb-1">Ca thực hành (Hôm nay)</label>
+                        <select id="live-shift-filter" class="form-select border-warning">
+                            <option value="">Vui lòng chọn máy trước...</option>
+                        </select>
+                    </div>
                 </select>
             </div>
             <div class="col-md-2">
@@ -1599,7 +1610,8 @@
         currentView = viewId; // Thêm dòng này để hệ thống biết đang ở màn hình nào
         document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
         document.getElementById(viewId).classList.remove('hidden');
-        if(viewId === 'monitor-energy-view') initLivePowerChart(); // Đổi tên hàm chart cho phần mới
+        if(viewId === 'monitor-energy-view') initLivePowerChart();// Đổi tên hàm chart cho phần mới
+        updateLiveShiftFilter(); // Tự load danh sách sinh viên đăng ký
     }
 
     // 2. XÁC THỰC VÀ PHÂN QUYỀN
@@ -2291,6 +2303,42 @@
         } else {
             machineSelect.innerHTML = '<option value="rb1">Cánh tay Robot 6 trục</option><option value="plc">Băng tải phân loại PLC</option>';
         }
+    }
+    // Hàm tự động tải danh sách Ca thực hành hôm nay của thiết bị được chọn
+    async function updateLiveShiftFilter() {
+        const machineSelect = document.getElementById('live-machine-filter');
+        const machineName = machineSelect.options[machineSelect.selectedIndex].text; // Lấy tên máy đang chọn
+        const shiftSelect = document.getElementById('live-shift-filter');
+
+        // Hiển thị trạng thái đang tải
+        shiftSelect.innerHTML = '<option value="">Đang tải dữ liệu ca máy...</option>';
+
+        // Lấy ngày hôm nay (YYYY-MM-DD)
+        const today = new Date().toISOString().split('T')[0];
+
+        // Truy vấn Supabase: Lấy các ca đã DUYỆT của MÁY NÀY trong NGÀY HÔM NAY
+        const { data, error } = await _supabase
+            .from('bookings')
+            .select('id, start_time, end_time, full_name')
+            .eq('booking_date', today)
+            .eq('status', 'approved')
+            .ilike('machine_name', `%${machineName}%`) // Tìm tên máy có chứa chuỗi này
+            .order('start_time', { ascending: true }); // Sắp xếp theo giờ từ sáng đến tối
+
+        // Nếu lỗi hoặc không có ai đăng ký máy này hôm nay
+        if (error || !data || data.length === 0) {
+            shiftSelect.innerHTML = '<option value="">Hôm nay trống, không có ca nào</option>';
+            return;
+        }
+
+        // Nếu có dữ liệu, đổ vào Dropdown
+        let optionsHtml = '';
+        data.forEach(b => {
+            const timeSlot = `${b.start_time.substring(0,5)} - ${b.end_time.substring(0,5)}`;
+            optionsHtml += `<option value="${b.id}">${timeSlot} | SV: ${b.full_name}</option>`;
+        });
+        
+        shiftSelect.innerHTML = optionsHtml;
     }
     // Hàm mở Modal Báo cáo chung
     function openFeedbackModal(modalId) {
