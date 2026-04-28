@@ -178,7 +178,6 @@
                     <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown"><i class="bi bi-broadcast"></i> Giám sát</a>
                     <ul class="dropdown-menu">
                         <li><a class="dropdown-item fw-bold text-primary" href="#" onclick="showView('monitor-energy-view')"><i class="bi bi-lightning-charge"></i> Theo dõi điện năng (KC868)</a></li>
-                        <li><a class="dropdown-item" href="#">Theo dõi sử dụng máy</a></li>
                         <li><a class="dropdown-item" href="#">Camera PTN</a></li>
                         <li><a class="dropdown-item fw-bold text-danger" href="#" onclick="showView('monitor-door-view')"><i class="bi bi-door-open"></i> Mở cửa từ xa (ESP32)</a></li>
                         <li><a class="dropdown-item" href="#">Điều khiển thiết bị</a></li>
@@ -1576,10 +1575,15 @@
     });
 
     // Hàm chuyển đổi màn hình mượt mà
+    // THÊM DÒNG NÀY Ở NGOÀI CÙNG
+    let currentView = 'home-view';
+
+    // SỬA LẠI HÀM showView
     function showView(viewId) {
+        currentView = viewId; // Thêm dòng này để hệ thống biết đang ở màn hình nào
         document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
         document.getElementById(viewId).classList.remove('hidden');
-        if(viewId === 'monitor-energy-view') initFakeCharts();
+        if(viewId === 'monitor-energy-view') initLivePowerChart(); // Đổi tên hàm chart cho phần mới
     }
 
     // 2. XÁC THỰC VÀ PHÂN QUYỀN
