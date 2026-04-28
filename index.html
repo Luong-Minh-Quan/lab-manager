@@ -105,6 +105,18 @@
         html, body, .card, .btn, .navbar, .table, .view-section {
             transition: background-color 0.4s ease-in-out, color 0.4s ease-in-out, border-color 0.4s ease-in-out !important;
         }
+        
+            .animate-flicker {
+            animation: flicker 0.8s infinite;
+        }
+        @keyframes flicker {
+            0% { opacity: 1; }
+            50% { opacity: 0.3; }
+            100% { opacity: 1; }
+        }
+        .transition-all {
+            transition: all 0.3s ease;
+        }
     }
     </style>
 </head>
@@ -170,7 +182,7 @@
                         <li><a class="dropdown-item" href="#">Camera PTN</a></li>
                         <li><a class="dropdown-item fw-bold text-danger" href="#" onclick="showView('monitor-door-view')"><i class="bi bi-door-open"></i> Mở cửa từ xa (ESP32)</a></li>
                         <li><a class="dropdown-item" href="#">Điều khiển thiết bị</a></li>
-                        <li><a class="dropdown-item" href="#">Cảnh báo bất thường</a></li>
+                        <li><a class="dropdown-item text-danger fw-bold" href="#" onclick="showView('anomaly-monitor-view')"><i class="bi bi-exclamation-triangle-fill"></i> Cảnh báo bất thường</a></li>
                     </ul>
                 </li>
 
@@ -589,6 +601,36 @@
                 </div>
             </div>
         </div>
+    </div>
+    <div id="anomaly-monitor-view" class="view-section hidden">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h3 class="fw-bold text-university m-0"><i class="bi bi-shield-lock-fill text-danger"></i> Hệ thống Giám sát An toàn & Ngưỡng vận hành</h3>
+            <div id="connection-status" class="badge bg-success shadow-sm"><i class="bi bi-broadcast"></i> KC868 Online</div>
+        </div>
+
+        <div class="card shadow-sm border-0 border-top border-4 border-primary mb-4">
+            <div class="card-header bg-white fw-bold"><i class="bi bi-sliders"></i> Thiết lập ngưỡng bảo vệ thiết bị</div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle text-center small">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="text-start ps-3">Tên thiết bị</th>
+                                <th style="width: 200px;">Dòng điện Max (A)</th>
+                                <th style="width: 200px;">Độ rung Max (mm/s)</th>
+                                <th>Trạng thái bảo vệ</th>
+                                <th>Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="threshold-config-list">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-3" id="live-monitor-grid">
+            </div>
     </div>
     <div class="modal fade" id="addAccountModal" tabindex="-1">
         <div class="modal-dialog">
@@ -3346,6 +3388,128 @@
 
     // Chạy ngay khi web vừa load xong
     initTheme();
+
+    // DỮ LIỆU GIẢ LẬP CÁC MÁY CNC (Sếp có thể sửa tên theo ý muốn)
+    let machineDevices = [
+        { id: 'cnc-01', name: 'Máy phay CNC 01', maxA: 15.0, maxV: 5.0, currA: 0, currV: 0, status: 'off' },
+        { id: 'cnc-02', name: 'Máy phay CNC 02', maxA: 12.0, maxV: 4.5, currA: 0, currV: 0, status: 'off' }
+    ];
+
+    // 1. Hàm khởi tạo giao diện Anomaly View
+    function initAnomalyDashboard() {
+        const configBody = document.getElementById('threshold-config-list');
+        const monitorGrid = document.getElementById('live-monitor-grid');
+        
+        configBody.innerHTML = '';
+        monitorGrid.innerHTML = '';
+
+        machineDevices.forEach(m => {
+            // Vẽ bảng cấu hình
+            configBody.innerHTML += `
+                <tr>
+                    <td class="text-start ps-3 fw-bold">${m.name}</td>
+                    <td><input type="number" id="limit-a-${m.id}" class="form-control form-control-sm mx-auto text-center" style="width: 80px;" value="${m.maxA}"></td>
+                    <td><input type="number" id="limit-v-${m.id}" class="form-control form-control-sm mx-auto text-center" style="width: 80px;" value="${m.maxV}"></td>
+                    <td><span class="badge bg-info-subtle text-info"><i class="bi bi-shield-check"></i> Đang giám sát</span></td>
+                    <td><button class="btn btn-sm btn-primary" onclick="updateMachineLimit('${m.id}')">Lưu</button></td>
+                </tr>
+            `;
+
+            // Vẽ Card giám sát
+            monitorGrid.innerHTML += `
+                <div class="col-md-6">
+                    <div id="card-${m.id}" class="card border-0 shadow-sm h-100 transition-all">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <h6 class="fw-bold">${m.name}</h6>
+                                <span id="status-${m.id}" class="badge bg-secondary">Đang tắt</span>
+                            </div>
+                            <div class="row mt-3 text-center">
+                                <div class="col-6 border-end">
+                                    <div class="small text-muted">Dòng điện (A)</div>
+                                    <div id="val-a-${m.id}" class="fs-4 fw-bold">0.0</div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="small text-muted">Độ rung (mm/s)</div>
+                                    <div id="val-v-${m.id}" class="fs-4 fw-bold">0.0</div>
+                                </div>
+                            </div>
+                            <div id="alert-zone-${m.id}" class="mt-3 hidden">
+                                <div class="alert alert-danger p-2 mb-2 d-flex align-items-center">
+                                    <i class="bi bi-exclamation-triangle-fill me-2 animate-flicker"></i>
+                                    <strong class="small">PHÁT HIỆN BẤT THƯỜNG!</strong>
+                                </div>
+                                <button class="btn btn-danger btn-sm w-100 fw-bold" onclick="emergencyStop('${m.id}')">
+                                    <i class="bi bi-power"></i> NGẮT ĐIỆN KHẨN CẤP
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+    }
+
+    // 2. Cập nhật ngưỡng mới từ giao diện
+    function updateMachineLimit(id) {
+        const newA = parseFloat(document.getElementById(`limit-a-${id}`).value);
+        const newV = parseFloat(document.getElementById(`limit-v-${id}`).value);
+        const machine = machineDevices.find(m => m.id === id);
+        machine.maxA = newA;
+        machine.maxV = newV;
+        Swal.fire({ icon: 'success', title: 'Đã cập nhật ngưỡng an toàn cho ' + machine.name, timer: 1500, showConfirmButton: false });
+    }
+
+    // 3. Hàm mô phỏng dữ liệu (Dùng để DEMO trước hội đồng)
+    setInterval(() => {
+        if (currentView !== 'anomaly-monitor-view') return;
+
+        machineDevices.forEach(m => {
+            // Giả lập: 80% thời gian là bình thường, 20% là nhảy số cao để test
+            const isAbnormal = Math.random() > 0.85; 
+            m.currA = isAbnormal ? (m.maxA + Math.random() * 5).toFixed(1) : (m.maxA * 0.6 + Math.random()).toFixed(1);
+            m.currV = isAbnormal ? (m.maxV + Math.random() * 3).toFixed(1) : (m.maxV * 0.4 + Math.random()).toFixed(1);
+
+            // Cập nhật con số lên màn hình
+            document.getElementById(`val-a-${m.id}`).innerText = m.currA;
+            document.getElementById(`val-v-${m.id}`).innerText = m.currV;
+
+            // KIỂM TRA NGƯỠNG
+            const card = document.getElementById(`card-${m.id}`);
+            const alertZone = document.getElementById(`alert-zone-${m.id}`);
+            const statusBadge = document.getElementById(`status-${m.id}`);
+
+            if (parseFloat(m.currA) > m.maxA || parseFloat(m.currV) > m.maxV) {
+                card.classList.add('bg-danger-subtle', 'border', 'border-danger');
+                alertZone.classList.remove('hidden');
+                statusBadge.className = 'badge bg-danger animate-flicker';
+                statusBadge.innerText = 'CẢNH BÁO';
+            } else {
+                card.classList.remove('bg-danger-subtle', 'border', 'border-danger');
+                alertZone.classList.add('hidden');
+                statusBadge.className = 'badge bg-success';
+                statusBadge.innerText = 'Đang chạy';
+            }
+        });
+    }, 2000); // Cứ 2 giây nhảy số một lần
+
+    // 4. Lệnh ngắt khẩn cấp
+    function emergencyStop(id) {
+        Swal.fire({
+            title: 'XÁC NHẬN NGẮT ĐIỆN?',
+            text: "Lệnh dừng khẩn cấp sẽ được gửi tới tủ điện KC868 ngay lập tức!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            confirmButtonText: 'NGẮT ĐIỆN NGAY'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                Swal.fire('Đã ngắt điện!', 'Hệ thống đã ngắt relay tổng máy ' + id, 'success');
+                // Tại đây sếp sẽ gọi lệnh _supabase hoặc API gửi tới KC868 thật
+            }
+        });
+    }
+
 </script>
 </body>
 </html>
