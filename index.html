@@ -1280,44 +1280,60 @@
         </div>
     </div>
     <div id="monitor-energy-view" class="view-section hidden">
-        <h3 class="fw-bold mb-4 text-university"><i class="bi bi-lightning-charge-fill text-warning"></i> Giám sát Điện năng (Realtime)</h3>
-        
-        <div class="card shadow-sm border-0 mb-4">
-            <div class="card-body p-0">
-                <table class="table table-hover align-middle text-center table-custom mb-0">
-                    <thead>
-                        <tr><th class="text-start ps-4">Thiết bị (Tủ điện)</th><th>Công suất</th><th>Điện áp</th><th>Dòng điện</th><th>Tổng kWh</th><th>Trạng thái</th></tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td class="text-start ps-4 fw-bold"><i class="bi bi-hdd-rack text-primary me-2"></i> KC868-A16_Tủ_K101</td>
-                            <td class="text-danger fw-bold">1250 W</td><td>221.5 V</td><td>5.64 A</td><td class="text-primary fw-bold">124.5</td>
-                            <td><span class="badge bg-success"><span class="spinner-grow spinner-grow-sm" style="width: 8px; height: 8px;"></span> Online</span></td>
-                        </tr>
-                        <tr>
-                            <td class="text-start ps-4 fw-bold"><i class="bi bi-hdd-rack text-primary me-2"></i> KC868-A16_Tủ_C102</td>
-                            <td class="text-success fw-bold">120 W</td><td>220.1 V</td><td>0.54 A</td><td class="text-primary fw-bold">45.2</td>
-                            <td><span class="badge bg-success"><span class="spinner-grow spinner-grow-sm" style="width: 8px; height: 8px;"></span> Online</span></td>
-                        </tr>
-                    </tbody>
-                </table>
+        <h3 class="fw-bold mb-4 text-warning"><i class="bi bi-activity"></i> Giám sát Điện năng Chi tiết (Realtime)</h3>
+
+        <div class="row g-3 mb-4 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label fw-bold small text-muted mb-1">Phòng PTN</label>
+                <select id="live-room-filter" class="form-select border-warning" onchange="updateLiveMachineFilter()">
+                    <option value="K101">K101 - PTN Cơ Khí</option>
+                    <option value="C102">C102 - PTN Tự Động Hóa</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-bold small text-muted mb-1">Máy / Thiết bị</label>
+                <select id="live-machine-filter" class="form-select border-warning">
+                    <option value="cnc1">Máy phay CNC 01</option>
+                    <option value="cnc2">Máy phay CNC 02</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label fw-bold small text-muted mb-1">Ca thực hành (Hôm nay)</label>
+                <select id="live-shift-filter" class="form-select border-warning">
+                    <option value="shift1">Sáng (07:30 - 11:30) - Lương Minh Quân</option>
+                    <option value="shift2">Chiều (13:30 - 17:30) - Nguyễn Văn A</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                 <button class="btn btn-warning w-100 fw-bold" onclick="startRealtimeTracking()"><i class="bi bi-play-circle-fill"></i> Theo dõi ngay</button>
             </div>
         </div>
 
-        <div class="row">
+        <div class="row g-4">
             <div class="col-md-8">
-                <div class="card shadow-sm border-0 h-100">
-                    <div class="card-body">
-                        <h6 class="fw-bold text-center text-muted mb-3">Công suất tiêu thụ theo thời gian (W)</h6>
-                        <canvas id="powerChart" height="100"></canvas>
+                <div class="card shadow-sm border-0 p-3 h-100">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="fw-bold text-muted mb-0" id="chart-energy-title">Công suất theo thời gian thực (W)</h6>
+                        <span class="badge bg-success" id="chart-status"><span class="spinner-grow spinner-grow-sm" style="width: 8px; height: 8px;"></span> Đang chờ lệnh...</span>
                     </div>
+                    <canvas id="livePowerChart" style="max-height: 350px;"></canvas>
                 </div>
             </div>
+            
             <div class="col-md-4">
-                <div class="card shadow-sm border-0 h-100">
-                    <div class="card-body d-flex flex-column justify-content-center">
-                        <h6 class="fw-bold text-center text-muted mb-3">So sánh điện năng các phòng</h6>
-                        <canvas id="roomChart" height="200"></canvas>
+                <div class="card shadow-sm border-0 h-100 border-start border-4 border-danger">
+                    <div class="card-header bg-white fw-bold text-danger"><i class="bi bi-shield-exclamation"></i> Trạng thái & Cảnh báo</div>
+                    <div class="card-body d-flex flex-column justify-content-center text-center">
+                        <h1 class="display-3 fw-bold mb-0 text-dark" id="live-power-val" style="transition: color 0.3s;">0</h1>
+                        <p class="text-muted fw-bold">Công suất hiện tại (W)</p>
+
+                        <hr class="my-4">
+
+                        <h5 class="text-secondary mb-3" id="live-power-max">Ngưỡng an toàn: <span class="fw-bold text-danger">1500 W</span></h5>
+                        
+                        <div id="live-alert-badge" class="alert alert-secondary py-3 fw-bold mb-0">
+                            Hệ thống đang ở trạng thái nghỉ.
+                        </div>
                     </div>
                 </div>
             </div>
@@ -2158,15 +2174,123 @@
 
     // Biểu đồ trang trí
     let powerChart, roomChart;
-    function initFakeCharts() {
-        if(powerChart) powerChart.destroy();
-        if(roomChart) roomChart.destroy();
+    // ==========================================
+    // LOGIC GIÁM SÁT ĐIỆN NĂNG THỜI GIAN THỰC
+    // ==========================================
+    let livePowerChartObj = null;
+    let realtimeInterval = null;
+    let chartDataPoints = [];
+    let chartLabels = [];
+    const POWER_THRESHOLD = 1500; // Ngưỡng báo động giả định (1500W)
+
+    // Khởi tạo biểu đồ rỗng
+    function initLivePowerChart() {
+        if(livePowerChartObj) livePowerChartObj.destroy();
         
-        const ctx1 = document.getElementById('powerChart').getContext('2d');
-        powerChart = new Chart(ctx1, { type: 'line', data: { labels: ['08:00', '08:15', '08:30'], datasets: [{ label: 'Công suất (W)', data: [100, 1050, 1200], borderColor: '#cc0000', fill: true, tension: 0.3 }] } });
+        const ctx = document.getElementById('livePowerChart').getContext('2d');
+        livePowerChartObj = new Chart(ctx, { 
+            type: 'line', 
+            data: { 
+                labels: chartLabels, 
+                datasets: [{ 
+                    label: 'Công suất (W)', 
+                    data: chartDataPoints, 
+                    borderColor: '#0d6efd', 
+                    backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                    borderWidth: 2,
+                    fill: true, 
+                    tension: 0.4,
+                    pointRadius: 3
+                }] 
+            },
+            options: {
+                responsive: true,
+                scales: { 
+                    y: { beginAtZero: true, suggestedMax: 2000 },
+                    x: { display: false } // Ẩn nhãn trục X để nhìn mượt như nhịp tim
+                },
+                animation: { duration: 0 } // Tắt animation để vẽ Realtime không bị giật
+            }
+        });
+    }
+
+    // Nút "Theo dõi ngay"
+    function startRealtimeTracking() {
+        const machine = document.getElementById('live-machine-filter');
+        const machineName = machine.options[machine.selectedIndex].text;
         
-        const ctx2 = document.getElementById('roomChart').getContext('2d');
-        roomChart = new Chart(ctx2, { type: 'doughnut', data: { labels: ['K101', 'C102', 'Khác'], datasets: [{ data: [124.5, 45.2, 30.0], backgroundColor: ['#003366', '#009933', '#e0e0e0'] }] } });
+        document.getElementById('chart-energy-title').innerText = `Giám sát: ${machineName}`;
+        document.getElementById('chart-status').innerHTML = `<span class="spinner-grow spinner-grow-sm" style="width: 8px; height: 8px;"></span> Đang Live...`;
+        
+        // Reset data
+        chartDataPoints = [];
+        chartLabels = [];
+        if(realtimeInterval) clearInterval(realtimeInterval);
+
+        let timeTick = 0;
+
+        // Mô phỏng lấy dữ liệu từ KC868 mỗi giây
+        realtimeInterval = setInterval(() => {
+            if(currentView !== 'monitor-energy-view') {
+                clearInterval(realtimeInterval);
+                return;
+            }
+
+            timeTick++;
+            const now = new Date().toLocaleTimeString('vi-VN');
+            
+            // Giả lập: Bình thường chạy 500-800W. Thi thoảng bị vọt lên >1500W (Kẹt phôi / Ăn dao sâu)
+            const isAbnormal = Math.random() > 0.9; 
+            let currentPower = isAbnormal ? (1500 + Math.random() * 500) : (500 + Math.random() * 300);
+            currentPower = Math.round(currentPower);
+
+            // Cập nhật mảng dữ liệu (Giữ tối đa 30 điểm trên màn hình)
+            chartLabels.push(now);
+            chartDataPoints.push(currentPower);
+            if(chartLabels.length > 30) {
+                chartLabels.shift();
+                chartDataPoints.shift();
+            }
+
+            // Cập nhật Biểu đồ
+            livePowerChartObj.update();
+
+            // CẬP NHẬT UI CẢNH BÁO BÊN PHẢI
+            const valDisplay = document.getElementById('live-power-val');
+            const alertBadge = document.getElementById('live-alert-badge');
+
+            valDisplay.innerText = currentPower;
+
+            if (currentPower >= POWER_THRESHOLD) {
+                valDisplay.className = 'display-3 fw-bold mb-0 text-danger animate-flicker';
+                alertBadge.className = 'alert alert-danger py-3 fw-bold mb-0 animate-flicker';
+                alertBadge.innerHTML = '<i class="bi bi-exclamation-triangle-fill"></i> QUÁ TẢI / KẸT PHÔI!';
+                
+                // Đổi màu đường line thành đỏ
+                livePowerChartObj.data.datasets[0].borderColor = '#dc3545';
+                livePowerChartObj.data.datasets[0].backgroundColor = 'rgba(220, 53, 69, 0.1)';
+            } else {
+                valDisplay.className = 'display-3 fw-bold mb-0 text-primary';
+                alertBadge.className = 'alert alert-success py-3 fw-bold mb-0';
+                alertBadge.innerHTML = '<i class="bi bi-check-circle-fill"></i> Hoạt động ổn định';
+                
+                // Đổi màu đường line về xanh
+                livePowerChartObj.data.datasets[0].borderColor = '#0d6efd';
+                livePowerChartObj.data.datasets[0].backgroundColor = 'rgba(13, 110, 253, 0.1)';
+            }
+
+        }, 1000); // 1 giây lấy mẫu 1 lần
+    }
+
+    // Giả lập thay đổi Dropdown Máy dựa theo Phòng
+    function updateLiveMachineFilter() {
+        const room = document.getElementById('live-room-filter').value;
+        const machineSelect = document.getElementById('live-machine-filter');
+        if(room === 'K101') {
+            machineSelect.innerHTML = '<option value="cnc1">Máy phay CNC 01</option><option value="cnc2">Máy phay CNC 02</option>';
+        } else {
+            machineSelect.innerHTML = '<option value="rb1">Cánh tay Robot 6 trục</option><option value="plc">Băng tải phân loại PLC</option>';
+        }
     }
     // Hàm mở Modal Báo cáo chung
     function openFeedbackModal(modalId) {
