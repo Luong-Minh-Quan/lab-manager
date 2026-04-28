@@ -197,7 +197,8 @@
             </div>
             <div class="card-body p-4 text-center">
                 <input type="email" id="login-email" class="form-control mb-3 py-2" placeholder="Email (VD: 123210069@sv1.dut.udn.vn)">
-                <input type="password" id="login-password" class="form-control mb-2 py-2" placeholder="Mật khẩu (Mk lần đầu là MSSV)">
+                <input type="password" id="login-password" class="form-control mb-2 py-2" placeholder="Mật khẩu (Mk lần đầu là MSSV)"onkeypress="if(event.key === 'Enter') handleLogin()">
+
                 <div class="text-end mb-4">
                     <a href="#" class="text-decoration-none small text-danger" onclick="handleForgotPassword()">Quên mật khẩu?</a>
                 </div>
@@ -576,6 +577,29 @@
             </div>
         </div>
     </div>   
+    <div class="modal fade" id="resetPasswordModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-primary text-white border-0">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-key-fill"></i> Thiết lập Mật khẩu mới</h5>
+                </div>
+                <div class="modal-body p-4">
+                    <p class="text-muted small mb-3">Vui lòng nhập mật khẩu mới cho tài khoản của bạn.</p>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small">Mật khẩu mới</label>
+                        <input type="password" id="new-recovery-password" class="form-control" placeholder="Ít nhất 6 ký tự">
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-bold small">Xác nhận mật khẩu mới</label>
+                        <input type="password" id="confirm-recovery-password" class="form-control" placeholder="Nhập lại mật khẩu mới">
+                    </div>
+                    <button type="button" class="btn btn-primary w-100 fw-bold" onclick="updateRecoveredPassword()">
+                        <i class="bi bi-floppy-fill"></i> Lưu mật khẩu & Đăng nhập
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
     <div class="modal fade" id="editAccountModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content border-0 shadow">
@@ -3140,6 +3164,51 @@
                 'success'
             );
         }, 1000);
+    }
+    // 1. "BẮT TÍN HIỆU" KHI NGƯỜI DÙNG BẤM LINK TỪ EMAIL
+    _supabase.auth.onAuthStateChange((event, session) => {
+        // Nếu hệ thống phát hiện đây là sự kiện Khôi phục mật khẩu
+        if (event === 'PASSWORD_RECOVERY') {
+            // Tắt ngay cái popup loading (nếu có) và mở Modal nhập mật khẩu mới
+            Swal.close(); 
+            const resetModal = new bootstrap.Modal(document.getElementById('resetPasswordModal'));
+            resetModal.show();
+        }
+    });
+
+    // 2. HÀM CẬP NHẬT MẬT KHẨU MỚI LÊN SUPABASE
+    async function updateRecoveredPassword() {
+        const newPass = document.getElementById('new-recovery-password').value;
+        const confirmPass = document.getElementById('confirm-recovery-password').value;
+
+        if (!newPass || newPass.length < 6) {
+            return Swal.fire('Lỗi', 'Mật khẩu mới phải có ít nhất 6 ký tự!', 'error');
+        }
+        if (newPass !== confirmPass) {
+            return Swal.fire('Lỗi', 'Mật khẩu xác nhận không khớp!', 'error');
+        }
+
+        Swal.fire({ title: 'Đang cập nhật...', didOpen: () => Swal.showLoading() });
+
+        // Gọi lệnh đổi mật khẩu của Supabase
+        const { data, error } = await _supabase.auth.updateUser({
+            password: newPass
+        });
+
+        if (error) {
+            Swal.fire('Lỗi', error.message, 'error');
+        } else {
+            // Đổi thành công: Đóng modal, báo thành công và load lại trang vào thẳng hệ thống
+            bootstrap.Modal.getInstance(document.getElementById('resetPasswordModal')).hide();
+            Swal.fire({
+                title: 'Thành công!',
+                text: 'Mật khẩu của bạn đã được thay đổi an toàn.',
+                icon: 'success',
+                confirmButtonText: 'Vào hệ thống'
+            }).then(() => {
+                checkSession(); // Gọi hàm kiểm tra phiên để hiển thị màn hình chính
+            });
+        }
     }
 </script>
 </body>
