@@ -16,7 +16,7 @@
     <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
 
     <style>
-        body { background-color: #f0f2f5; font-family: 'Segoe UI', system-ui, sans-serif; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; }
         .bg-university { background-color: #003366; color: white; }
         .text-university { color: #003366; }
         .bg-accent { background-color: #cc0000; color: white; }
@@ -72,26 +72,38 @@
         html, body, .card, .modal-content, .btn, .navbar, .table {
         transition: background-color 0.4s ease-in-out, color 0.4s ease-in-out, border-color 0.4s ease-in-out !important;
             /* ==========================================
-       TỐI ƯU HÓA DARK MODE TOÀN DIỆN
+       /* ==========================================
+       TỐI ƯU HÓA DARK MODE TOÀN DIỆN (BẢN MẠNH NHẤT)
        ========================================== */
-        [data-bs-theme="dark"] body {
-            background-color: #121212 !important; /* Đen nhám chuẩn app */
+        /* 1. Ép đen nền tảng dưới cùng */
+        html[data-bs-theme="dark"], 
+        html[data-bs-theme="dark"] body {
+            background-color: #121212 !important; 
             color: #e0e0e0 !important;
         }
-        /* Xóa bỏ nền trắng/sáng bị ép cứng ở các thẻ */
-        [data-bs-theme="dark"] .bg-light, 
-        [data-bs-theme="dark"] .bg-white {
-            background-color: #1e1e1e !important; /* Màu xám đen cho thẻ Card */
+
+        /* 2. Tiêu diệt mọi thẻ div, section vô tình bị gán nền sáng */
+        html[data-bs-theme="dark"] .bg-light, 
+        html[data-bs-theme="dark"] .bg-white,
+        html[data-bs-theme="dark"] .view-section {
+            background-color: #121212 !important; 
             color: #e0e0e0 !important;
         }
-        /* Xóa bỏ chữ bị ép màu đen */
-        [data-bs-theme="dark"] .text-dark {
+
+        /* 3. Nâng các khối thẻ (Card) lên màu xám đen để tạo chiều sâu 3D */
+        html[data-bs-theme="dark"] .card {
+            background-color: #1e1e1e !important;
+            border-color: #333 !important;
+        }
+
+        /* 4. Đổi màu chữ tối thành sáng */
+        html[data-bs-theme="dark"] .text-dark {
             color: #f8f9fa !important; 
         }
-        /* Lật màu viền cho hài hòa */
-        [data-bs-theme="dark"] .border-bottom,
-        [data-bs-theme="dark"] .border {
-            border-color: #333 !important;
+
+        /* 5. Hiệu ứng chuyển màu mượt mà */
+        html, body, .card, .btn, .navbar, .table, .view-section {
+            transition: background-color 0.4s ease-in-out, color 0.4s ease-in-out, border-color 0.4s ease-in-out !important;
         }
     }
     </style>
