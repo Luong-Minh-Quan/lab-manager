@@ -1292,27 +1292,15 @@
             </div>
             <div class="col-md-3">
                 <label class="form-label fw-bold small text-muted mb-1">Máy / Thiết bị</label>
-                <select id="live-machine-filter" class="form-select border-warning">
-                    <option value="cnc1">Máy phay CNC 01</option>
-                    <option value="cnc2">Máy phay CNC 02</option>
+                <select id="live-machine-filter" class="form-select border-warning" onchange="updateLiveShiftFilter()">
+                    <option value="Máy phay CNC 01">Máy phay CNC 01</option>
+                    <option value="Máy phay CNC 02">Máy phay CNC 02</option>
                 </select>
             </div>
             <div class="col-md-4">
                 <label class="form-label fw-bold small text-muted mb-1">Ca thực hành (Hôm nay)</label>
                 <select id="live-shift-filter" class="form-select border-warning">
-                    <div class="col-md-3">
-                        <label class="form-label fw-bold small text-muted mb-1">Máy / Thiết bị</label>
-                        <select id="live-machine-filter" class="form-select border-warning" onchange="updateLiveShiftFilter()">
-                            <option value="Máy phay CNC 01">Máy phay CNC 01</option>
-                            <option value="Máy phay CNC 02">Máy phay CNC 02</option>
-                        </select>
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label fw-bold small text-muted mb-1">Ca thực hành (Hôm nay)</label>
-                        <select id="live-shift-filter" class="form-select border-warning">
-                            <option value="">Vui lòng chọn máy trước...</option>
-                        </select>
-                    </div>
+                    <option value="">Vui lòng chọn máy trước...</option>
                 </select>
             </div>
             <div class="col-md-2">
