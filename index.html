@@ -614,9 +614,16 @@
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h3 class="fw-bold text-primary mb-0"><i class="bi bi-people-fill"></i> Quản lý Tài khoản & Phân quyền</h3>
             
-            <button class="btn btn-primary fw-bold" onclick="openAddAccountModal()">
-                <i class="bi bi-person-plus"></i> Thêm tài khoản mới
-            </button>
+            <div class="d-flex gap-3">
+                <div class="input-group shadow-sm" style="width: 300px;">
+                    <span class="input-group-text bg-white border-primary text-primary"><i class="bi bi-search"></i></span>
+                    <input type="text" id="search-account" class="form-control border-primary" placeholder="Tìm theo Email, Tên..." onkeyup="filterTableData('search-account', 'admin-accounts-list')">
+                </div>
+
+                <button class="btn btn-primary fw-bold shadow-sm" onclick="openAddAccountModal()">
+                    <i class="bi bi-person-plus"></i> Thêm tài khoản mới
+                </button>
+            </div>
         </div>
         <div class="card shadow-sm border-0">
             <div class="card-body p-0">
@@ -1101,7 +1108,14 @@
             </div>
         </div>
     </div> <div id="history-view" class="view-section hidden">
-        <h3 class="fw-bold mb-4 text-university" id="history-title"><i class="bi bi-clock-history"></i> Quản lý Lịch & Xét duyệt</h3>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h3 class="fw-bold text-university m-0" id="history-title"><i class="bi bi-clock-history"></i> Quản lý Lịch & Xét duyệt</h3>
+            
+            <div class="input-group shadow-sm" style="max-width: 350px;">
+                <span class="input-group-text bg-white border-primary text-primary"><i class="bi bi-search"></i></span>
+                <input type="text" id="search-history" class="form-control border-primary" placeholder="Tìm tên SV, mã máy, trạng thái..." onkeyup="filterTableData('search-history', 'history-list')">
+            </div>
+        </div>
         <div class="card shadow-sm border-0">
             <div class="card-body p-0">
                 <div class="table-responsive">
@@ -3841,6 +3855,30 @@
         const month = document.getElementById('consumable-month-picker').value;
         const wb = XLSX.utils.table_to_book(document.getElementById('table-consumables'));
         XLSX.writeFile(wb, `Bao_Cao_Vat_Tu_Thang_${month}.xlsx`);
+    }
+    // ==========================================
+    // HÀM TÌM KIẾM ĐA NĂNG CHO MỌI BẢNG DỮ LIỆU
+    // ==========================================
+    function filterTableData(inputId, tbodyId) {
+        const input = document.getElementById(inputId);
+        const filter = input.value.toLowerCase(); // Chuyển chữ gõ vào thành chữ thường
+        const tbody = document.getElementById(tbodyId);
+        const rows = tbody.getElementsByTagName('tr');
+
+        for (let i = 0; i < rows.length; i++) {
+            // Quét toàn bộ nội dung text của cả cái hàng đó
+            const rowText = rows[i].textContent.toLowerCase(); 
+            
+            // Bỏ qua dòng thông báo "Đang tải dữ liệu..." hoặc "Không có dữ liệu"
+            if (rows[i].cells.length === 1) continue; 
+
+            // Nếu tìm thấy chữ thì hiện, không thì ẩn
+            if (rowText.includes(filter)) {
+                rows[i].style.display = '';
+            } else {
+                rows[i].style.display = 'none';
+            }
+        }
     }
 </script>
 </body>
