@@ -1559,12 +1559,21 @@
     let currentView = 'home-view';
 
     // SỬA LẠI HÀM showView
+    // BIẾN TOÀN CỤC VÀ HÀM CHUYỂN MÀN HÌNH
+    let currentView = 'home-view';
+    
     function showView(viewId) {
-        currentView = viewId; // Thêm dòng này để hệ thống biết đang ở màn hình nào
+        currentView = viewId; 
         document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
         document.getElementById(viewId).classList.remove('hidden');
-        if(viewId === 'monitor-energy-view') initLivePowerChart();// Đổi tên hàm chart cho phần mới
-        updateLiveShiftFilter(); // Tự load danh sách sinh viên đăng ký
+        
+        // Nếu mở trang Giám sát Điện năng thì tự động load Biểu đồ và Máy móc
+        if(viewId === 'monitor-energy-view') {
+            initLivePowerChart(); 
+            if (typeof updateLiveMachineFilter === "function") {
+                updateLiveMachineFilter(); 
+            }
+        }
     }
 
     // 2. XÁC THỰC VÀ PHÂN QUYỀN
@@ -2931,21 +2940,36 @@
     }
     // Hàm tự động cập nhật danh sách phòng vào các bộ lọc Dropdown
     // Hàm tự động cập nhật danh sách phòng vào CÁC bộ lọc
+    // HÀM TỰ ĐỘNG TẢI DANH SÁCH PTN VÀO CÁC DROPDOWN
     async function refreshRoomFilters() {
         const { data: rooms } = await _supabase.from('rooms').select('room_code, room_name').eq('status', 'active');
         if (!rooms) return;
 
-        // Tạo sẵn chuỗi HTML các <option>
-        let optionsHtml = '<option value="all">Tất cả phòng</option>';
-        rooms.forEach(r => { optionsHtml += `<option value="${r.room_code}">Phòng ${r.room_code}</option>`; });
+        // 1. Chuỗi HTML cho trang Thống kê (Có thêm dòng "Tất cả phòng")
+        let optionsAllHtml = '<option value="all">Tất cả phòng</option>';
+        rooms.forEach(r => { 
+            optionsAllHtml += `<option value="${r.room_code}">${r.room_code} - ${r.room_name}</option>`; 
+        });
 
-        // Cập nhật cho bộ lọc bên trang Check-in
+        // 2. Chuỗi HTML cho trang Giám sát Realtime (Chỉ chứa danh sách phòng)
+        let optionsLiveHtml = '';
+        rooms.forEach(r => { 
+            optionsLiveHtml += `<option value="${r.room_code}">${r.room_code} - ${r.room_name}</option>`; 
+        });
+
+        // Đổ dữ liệu vào trang Nhật ký
         const checkinFilter = document.getElementById('filter-log-room');
-        if(checkinFilter) checkinFilter.innerHTML = optionsHtml;
+        if(checkinFilter) checkinFilter.innerHTML = optionsAllHtml;
 
-        // Cập nhật cho bộ lọc bên trang Điện năng
+        // Đổ dữ liệu vào trang Thống kê điện năng
         const energyFilter = document.getElementById('filter-energy-room');
-        if(energyFilter) energyFilter.innerHTML = optionsHtml;
+        if(energyFilter) energyFilter.innerHTML = optionsAllHtml;
+
+        // Đổ dữ liệu vào trang Giám sát Realtime
+        const liveRoomFilter = document.getElementById('live-room-filter');
+        if(liveRoomFilter) {
+            liveRoomFilter.innerHTML = optionsLiveHtml;
+        }
     }
     let energyChartObj = null;
 
