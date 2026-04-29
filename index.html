@@ -1536,8 +1536,7 @@
                 <div class="mb-3">
                     <label class="form-label fw-bold">Chọn Phòng Thí Nghiệm</label>
                     <select id="feedback-room" class="form-select">
-                        <option value="K101">K101 - PTN Cơ Khí Chế Tạo 1</option>
-                        <option value="C102">C102 - PTN Tự Động Hóa</option>
+                        <option value="">Đang tải danh sách phòng...</option>
                     </select>
                 </div>
                 <div class="mb-3">
@@ -3150,6 +3149,11 @@
         const liveRoomFilter = document.getElementById('live-room-filter');
         if(liveRoomFilter) {
             liveRoomFilter.innerHTML = optionsLiveHtml;
+        }
+        // Đổ dữ liệu vào Form Báo cáo tình trạng PTN ---
+        const feedbackRoomSelect = document.getElementById('feedback-room');
+        if (feedbackRoomSelect) {
+            feedbackRoomSelect.innerHTML = optionsLiveHtml;
         }
     }
     let energyChartObj = null;
