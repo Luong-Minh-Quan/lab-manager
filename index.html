@@ -148,7 +148,11 @@
                         <li><a class="dropdown-item" href="#" onclick="showView('managers-view')"><i class="bi bi-person-badge"></i> Danh mục cán bộ quản lý</a></li>
                         <li><a class="dropdown-item" href="#" onclick="showView('departments-view')"><i class="bi bi-diagram-3"></i> Danh mục khoa / bộ môn</a></li>
                         <li><a class="dropdown-item" href="#" onclick="loadMaintenanceSchedule()"><i class="bi bi-calendar-check"></i> Danh mục lịch bảo trì</a></li>
-                        <li><a class="dropdown-item" href="#"><i class="bi bi-box-seam"></i> Danh mục vật tư tiêu hao</a></li>
+                        <li class="nav-item role-level-2 hidden">
+                            <a class="dropdown-item fw-bold text-success" href="#" onclick="loadConsumablesView()">
+                                <i class="bi bi-box-seam"></i> Danh mục vật tư tiêu hao
+                            </a>
+                        </li>
                     </ul>
                 </li>
 
@@ -403,6 +407,38 @@
                 </div>
             </div>
         </div>
+    </div>
+    <div id="consumables-view" class="view-section hidden">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h3 class="fw-bold text-university m-0"><i class="bi bi-box-seam-fill text-success"></i> Quản lý Vật tư tiêu hao</h3>
+            <div class="d-flex gap-2">
+                <input type="month" id="consumable-month-picker" class="form-control form-control-sm" style="width: 160px;" onchange="loadConsumablesData()">
+                <button class="btn btn-sm btn-success fw-bold" onclick="exportConsumablesExcel()">
+                    <i class="bi bi-file-earmark-excel"></i> Xuất Excel
+                </button>
+            </div>
+        </div>
+
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-bordered align-middle text-center mb-0" id="table-consumables">
+                        <thead class="table-light">
+                            <tr class="small text-uppercase">
+                                <th style="width: 200px;">Phòng Thí Nghiệm</th>
+                                <th>Tên vật tư thay thế</th>
+                                <th style="width: 180px;">Ngày thay thế</th>
+                                <th style="width: 150px;">Số lượng còn lại</th>
+                                <th style="width: 100px;">Lưu</th>
+                            </tr>
+                        </thead>
+                        <tbody id="consumables-list">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <p class="small text-muted mt-3 fst-italic">* Chú ý: Tên phòng được lấy tự động từ danh sách PTN đã phê duyệt. Các ô khác cho phép nhập tay như Excel.</p>
     </div>
     <div id="admin-notice-view" class="view-section hidden">
         <h3 class="fw-bold mb-4 text-primary"><i class="bi bi-megaphone"></i> Quản lý Thông báo Trang chủ</h3>
@@ -3712,6 +3748,84 @@
         initAnomalyDashboard();
     });
 
+    // 1. Hàm khởi tạo màn hình
+    async function loadConsumablesView() {
+        showView('consumables-view');
+        // Đặt tháng mặc định là tháng hiện tại
+        const now = new Date();
+        const monthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        document.getElementById('consumable-month-picker').value = monthStr;
+        loadConsumablesData();
+    }
+
+    // 2. Tải dữ liệu từ Supabase và vẽ bảng Excel
+    async function loadConsumablesData() {
+        const month = document.getElementById('consumable-month-picker').value;
+        const tbody = document.getElementById('consumables-list');
+        tbody.innerHTML = '<tr><td colspan="5" class="p-3">Đang đồng bộ dữ liệu...</td></tr>';
+
+        // Lấy danh sách 21 phòng đã có trong hệ thống 
+        const { data: rooms } = await _supabase.from('rooms').select('room_code, room_name').eq('status', 'active');
+        // Lấy dữ liệu vật tư của tháng được chọn
+        const { data: records } = await _supabase.from('consumables').select('*').eq('report_month', month);
+
+        let html = '';
+        rooms.forEach(r => {
+            // Tìm xem phòng này đã có dòng dữ liệu nào trong tháng này chưa
+            const record = records ? records.find(rec => rec.room_code === r.room_code) : null;
+            const id = record ? record.id : 'new-' + r.room_code;
+            
+            html += `
+                <tr>
+                    <td class="text-start ps-3 bg-light fw-bold small">${r.room_code} - ${r.room_name}</td>
+                    <td class="p-0"><input type="text" id="name-${id}" class="form-control form-control-sm border-0 text-center" value="${record ? record.material_name || '' : ''}" placeholder="..."></td>
+                    <td class="p-0"><input type="date" id="date-${id}" class="form-control form-control-sm border-0 text-center" value="${record ? record.replacement_date || '' : ''}"></td>
+                    <td class="p-0"><input type="number" id="stock-${id}" class="form-control form-control-sm border-0 text-center" value="${record ? record.stock_remaining || 0 : 0}"></td>
+                    <td>
+                        <button class="btn btn-sm btn-link p-0 text-primary" onclick="saveConsumableRow('${id}', '${r.room_code}')">
+                            <i class="bi bi-cloud-arrow-up-fill fs-5"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+        tbody.innerHTML = html;
+    }
+
+    // 3. Hàm lưu từng dòng (Giống như bấm Ctrl+S trong Excel)
+    async function saveConsumableRow(id, roomCode) {
+        const month = document.getElementById('consumable-month-picker').value;
+        const name = document.getElementById(`name-${id}`).value;
+        const date = document.getElementById(`date-${id}`).value;
+        const stock = document.getElementById(`stock-${id}`).value;
+
+        const dataObj = {
+            room_code: roomCode,
+            material_name: name,
+            replacement_date: date || null,
+            stock_remaining: parseInt(stock) || 0,
+            report_month: month
+        };
+
+        let result;
+        if (id.startsWith('new-')) {
+            result = await _supabase.from('consumables').insert([dataObj]);
+        } else {
+            result = await _supabase.from('consumables').update(dataObj).eq('id', id);
+        }
+
+        if (!result.error) {
+            Swal.fire({ icon: 'success', title: 'Đã lưu!', timer: 800, showConfirmButton: false, position: 'top-end' });
+            loadConsumablesData(); // Tải lại để cập nhật ID thật
+        }
+    }
+
+    // 4. Hàm Xuất Excel "Xịn"
+    function exportConsumablesExcel() {
+        const month = document.getElementById('consumable-month-picker').value;
+        const wb = XLSX.utils.table_to_book(document.getElementById('table-consumables'));
+        XLSX.writeFile(wb, `Bao_Cao_Vat_Tu_Thang_${month}.xlsx`);
+    }
 </script>
 </body>
 </html>
