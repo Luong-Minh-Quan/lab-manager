@@ -1929,7 +1929,37 @@
         if (start >= end) return Swal.fire('Lỗi', 'Giờ kết thúc phải sau giờ bắt đầu!', 'error');
 
         Swal.fire({ title: 'Đang kiểm tra...', didOpen: () => Swal.showLoading() });
+        
+        // --- LỚP KHIÊN BẢO VỆ CHỐNG TRÙNG LỊCH TUYỆT ĐỐI ---
+        // Lấy tất cả các đơn của máy này trong ngày hôm đó (cả Pending và Approved)
+        const { data: existingBookings } = await _supabase
+            .from('bookings')
+            .select('start_time, end_time')
+            .eq('machine_name', machineFullName)
+            .eq('booking_date', date)
+            .in('status', ['approved', 'pending']); 
 
+        let isOverlap = false;
+        if (existingBookings && existingBookings.length > 0) {
+            const newStart = parseInt(start.split(':')[0]) * 60 + parseInt(start.split(':')[1]);
+            const newEnd = parseInt(end.split(':')[0]) * 60 + parseInt(end.split(':')[1]);
+
+            for (let b of existingBookings) {
+                const bStart = parseInt(b.start_time.split(':')[0]) * 60 + parseInt(b.start_time.split(':')[1]);
+                const bEnd = parseInt(b.end_time.split(':')[0]) * 60 + parseInt(b.end_time.split(':')[1]);
+
+                // Thuật toán giao nhau: Bắt đầu của mình < Kết thúc của người ta VÀ Kết thúc của mình > Bắt đầu của người ta
+                if (newStart < bEnd && newEnd > bStart) {
+                    isOverlap = true; break;
+                }
+            }
+        }
+
+        if (isOverlap) {
+            Swal.close();
+            return Swal.fire('Trùng lịch', 'Khung giờ này vừa có người nhanh tay đăng ký trước hoặc đang chờ duyệt. Vui lòng chọn giờ khác!', 'error');
+        }
+        
         // Ghi vào Database (Thêm student_note)
         const { error } = await _supabase.from('bookings').insert([{
             user_id: currentUserProfile.id,
@@ -2018,25 +2048,37 @@
         // 4. ĐỔ DỮ LIỆU RA BẢNG HTML
         let html = '';
         filteredData.forEach(b => {
-            const statusColor = b.status === 'approved' ? 'bg-success' : (b.status === 'pending' ? 'bg-warning' : 'bg-danger');
+            // Sửa màu sắc để có thêm trạng thái Đã hủy (cancelled)
+            let statusColor = 'bg-danger'; let statusText = 'Từ chối';
+            if (b.status === 'approved') { statusColor = 'bg-success'; statusText = 'Đã duyệt'; }
+            else if (b.status === 'pending') { statusColor = 'bg-warning text-dark'; statusText = 'Chờ duyệt'; }
+            else if (b.status === 'cancelled') { statusColor = 'bg-secondary'; statusText = 'Đã hủy'; }
+
             let actionBtn = '';
             
             if (currentUserProfile.role !== 'student' && b.status === 'pending') {
                 actionBtn = `<button class="btn btn-sm btn-primary fw-bold" onclick="approveBooking('${b.id}', '${b.email}', '${b.machine_name}', '${b.id}')">Duyệt & Gửi QR</button>`;
-            } else if (currentUserProfile.role === 'student' && b.status === 'approved') {
-                actionBtn = `<button class="btn btn-sm btn-outline-success mb-1 w-100" onclick="viewMyQR('${b.id}')"><i class="bi bi-qr-code"></i> Xem QR</button><br>`;
+            } 
+            // Nếu là sinh viên và đơn đang chờ duyệt HOẶC đã duyệt (nhưng chưa trong quá khứ)
+            else if (currentUserProfile.role === 'student') {
+                if (b.status === 'approved') {
+                    actionBtn = `<button class="btn btn-sm btn-outline-success mb-1 w-100" onclick="viewMyQR('${b.id}')"><i class="bi bi-qr-code"></i> Xem QR</button><br>`;
+                    if (!b.machine_condition) {
+                        actionBtn += `<button class="btn btn-sm btn-warning w-100 fw-bold mb-1" onclick="openReportModal('${b.id}', '${b.machine_name}')"><i class="bi bi-tools"></i> Khai báo</button>`;
+                    } else {
+                        const conditionColor = b.machine_condition === 'Tốt' ? 'text-success' : 'text-danger';
+                        actionBtn += `<div class="small fw-bold ${conditionColor} mb-1">Đã báo: ${b.machine_condition}</div>`;
+                    }
+                }
                 
-                if (!b.machine_condition) {
-                    actionBtn += `<button class="btn btn-sm btn-warning w-100 fw-bold" onclick="openReportModal('${b.id}', '${b.machine_name}')"><i class="bi bi-tools"></i> Khai báo</button>`;
-                } else {
-                    const conditionColor = b.machine_condition === 'Tốt' ? 'text-success' : 'text-danger';
-                    actionBtn += `<span class="small fw-bold ${conditionColor}"> Đã báo: ${b.machine_condition}</span>`;
+                // Nút HỦY LỊCH (Chỉ hiện khi chưa qua ngày giờ thực hành và trạng thái chưa bị hủy/từ chối)
+                if ((b.status === 'pending' || b.status === 'approved') && viewType === 'upcoming') {
+                    actionBtn += `<button class="btn btn-sm btn-outline-danger w-100 mt-1" onclick="cancelBooking('${b.id}')"><i class="bi bi-x-circle"></i> Hủy lịch</button>`;
                 }
             } else {
                 actionBtn = `<span class="text-muted small">--</span>`;
             }
 
-            // Tạo đoạn hiển thị Ghi chú (Nếu có ghi chú thì mới in ra)
             const noteDisplay = b.student_note ? `<br><div class="text-muted mt-1" style="font-size: 0.8rem; background: #f8f9fa; padding: 4px; border-radius: 4px; border-left: 2px solid #0d6efd;"><b>Ghi chú:</b> ${b.student_note}</div>` : '';
 
             html += `
@@ -2049,14 +2091,12 @@
                         ${noteDisplay}
                     </td>
                     <td><span class="text-primary fw-bold">${b.booking_date}</span><br><small>${b.start_time.substring(0,5)} - ${b.end_time.substring(0,5)}</small></td>
-                    <td><span class="badge ${statusColor}">${b.status === 'approved' ? 'Đã duyệt' : (b.status === 'pending' ? 'Chờ duyệt' : 'Từ chối')}</span></td>
+                    <td><span class="badge ${statusColor}">${statusText}</span></td>
                     <td>${actionBtn}</td>
                 </tr>
             `;
         });
-
         tbody.innerHTML = html;
-
     }
 
     // 6. XEM LỊCH TRỐNG
@@ -3649,6 +3689,38 @@
             currentHourTracker = nowHour;
         }
     }, 60000);
+    // ==========================================
+    // RADAR GIÁM SÁT CHECK-IN & AUTO-HỦY LỊCH TRỄ
+    // ==========================================
+    // Radar này sẽ chạy ngầm mỗi 5 phút một lần để kiểm tra
+    setInterval(async () => {
+        const now = new Date();
+        const todayStr = now.toISOString().split('T')[0];
+        const currentMins = now.getHours() * 60 + now.getMinutes();
+
+        // 1. Tìm tất cả các ca thực hành: Của ngày hôm nay + Đã duyệt + CHƯA CHECK-IN (actual_start is null)
+        const { data: activeBookings } = await _supabase
+            .from('bookings')
+            .select('id, start_time')
+            .eq('booking_date', todayStr)
+            .eq('status', 'approved')
+            .is('actual_start', null);
+
+        if (activeBookings && activeBookings.length > 0) {
+            for (let b of activeBookings) {
+                const startMins = parseInt(b.start_time.split(':')[0]) * 60 + parseInt(b.start_time.split(':')[1]);
+                
+                // 2. Nếu giờ hiện tại > giờ bắt đầu + 30 phút -> Auto Hủy
+                if (currentMins > startMins + 30) {
+                    await _supabase.from('bookings').update({
+                        status: 'cancelled',
+                        condition_note: 'Hệ thống tự động hủy do sinh viên không Check-in (Quét QR) sau 30 phút.'
+                    }).eq('id', b.id);
+                    console.log(`[Hệ thống] Đã tự động hủy đơn #${b.id} do vắng mặt quá 30 phút.`);
+                }
+            }
+        }
+    }, 300000); // 300000ms = 5 phút quét 1 lần
 
     // Chạy ngay khi web vừa load xong
     initTheme();
@@ -3879,6 +3951,28 @@
                 rows[i].style.display = 'none';
             }
         }
+    }
+    // HÀM HỦY LỊCH DÀNH CHO SINH VIÊN
+    function cancelBooking(id) {
+        Swal.fire({
+            title: 'Xác nhận hủy lịch?',
+            text: "Ca thực hành này sẽ bị hủy bỏ và nhường chỗ cho người khác.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            confirmButtonText: 'Đồng ý hủy'
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                Swal.fire({ title: 'Đang xử lý...', didOpen: () => Swal.showLoading() });
+                // Cập nhật trạng thái thành 'cancelled'
+                const { error } = await _supabase.from('bookings').update({ status: 'cancelled' }).eq('id', id);
+                
+                if (error) return Swal.fire('Lỗi', error.message, 'error');
+                
+                Swal.fire('Thành công', 'Đã hủy lịch thành công!', 'success');
+                loadHistoryView('upcoming'); // Tải lại bảng
+            }
+        });
     }
 </script>
 </body>
