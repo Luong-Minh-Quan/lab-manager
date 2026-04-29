@@ -3206,12 +3206,27 @@
         document.getElementById('kpi-max-val').innerText = `${maxVal.toFixed(1)} kWh`;
 
         // TẠO CẢNH BÁO THÔNG MINH (Mockup AI)
-        const alerts = [
-            `Thiết bị <b>${maxMachine}</b> tiêu thụ chiếm ${(maxVal/totalKwh*100).toFixed(0)}% tổng năng lượng. Cần kiểm tra bảo dưỡng.`,
-            `Phát hiện mức điện năng tăng đột biến vào cuối tuần. Vui lòng rà soát lịch đăng ký.`,
-            `Hệ thống ổn định. Các máy chạy đúng công suất định mức.`
-        ];
-        document.getElementById('kpi-smart-alert').innerHTML = totalKwh > 0 ? alerts[Math.floor(Math.random() * 2)] : alerts[2];
+        // TẠO CẢNH BÁO THÔNG MINH (Dựa trên Thuật toán Rule-based)
+        let alertHtml = '';
+        if (totalKwh === 0) {
+            alertHtml = `<span class="text-muted">Hệ thống đang nghỉ, không có dữ liệu tiêu thụ.</span>`;
+        } else {
+            const percent = (maxVal / totalKwh) * 100;
+            
+            // Luật 1: Nếu có 1 máy "ngốn" hơn 50% tổng điện năng của cả phòng -> Cảnh báo Đỏ
+            if (percent >= 50) {
+                alertHtml = `Thiết bị <b>${maxMachine}</b> đang ngốn tới <b class="text-danger">${percent.toFixed(0)}%</b> tổng năng lượng. Cần ưu tiên kiểm tra kẹt phôi hoặc bảo dưỡng!`;
+            } 
+            // Luật 2: Nếu tổng điện năng tiêu thụ quá cao (Ví dụ > 1000 kWh) -> Cảnh báo Vàng
+            else if (totalKwh > 1000) { 
+                alertHtml = `Tổng tải hệ thống đang ở mức rất cao (<b>${totalKwh.toFixed(0)} kWh</b>). Đề nghị giãn bớt lịch thực hành để tránh quá tải điện.`;
+            } 
+            // Luật 3: Các trường hợp còn lại -> Hệ thống tốt
+            else {
+                alertHtml = `<span class="text-success"><i class="bi bi-check-circle-fill"></i> Năng lượng phân bổ đồng đều. Hệ thống hoạt động tối ưu.</span>`;
+            }
+        }
+        document.getElementById('kpi-smart-alert').innerHTML = alertHtml;
 
         // --- 2. VẼ BAR CHART (XẾP HẠNG THIẾT BỊ) ---
         if (energyBarChartObj) energyBarChartObj.destroy();
