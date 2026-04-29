@@ -211,13 +211,14 @@
                 <li class="nav-item dropdown role-level-3 hidden">
                     <a class="nav-link dropdown-toggle text-warning" href="#" data-bs-toggle="dropdown"><i class="bi bi-gear-fill"></i> Quản trị</a>
                     <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="#"onclick="loadAdminAccounts()">Quản lý tài khoản</a></li>
-                        <li><a class="dropdown-item" href="#" onclick="loadHistoryView()">Duyệt đăng ký</a></li>
-                        <li><a class="dropdown-item fw-bold text-primary" href="#" onclick="loadAdminNotices()"><i class="bi bi-megaphone"></i> Quản lý Thông báo</a></li>
-                        <li><a class="dropdown-item" href="#">Cấu hình hệ thống</a></li>
-                        <li><a class="dropdown-item" href="#">Kết nối thiết bị KC868</a></li>
-                        <li><a class="dropdown-item" href="#">Cấu hình ESP32 / RFID / QR</a></li>
-                        <li><a class="dropdown-item" href="#">Backup dữ liệu</a></li>
+                        <li><a class="dropdown-item fw-bold text-dark" href="#" onclick="loadAdminAccounts()"><i class="bi bi-people"></i> Quản lý Tài khoản & Phân quyền</a></li>
+                        <li><a class="dropdown-item fw-bold text-dark" href="#" onclick="loadHistoryView()"><i class="bi bi-card-checklist"></i> Xét duyệt Đăng ký</a></li>
+                        <li><a class="dropdown-item fw-bold text-primary" href="#" onclick="loadAdminNotices()"><i class="bi bi-megaphone"></i> Quản lý Thông báo hệ thống</a></li>
+                        
+                        <li><hr class="dropdown-divider"></li>
+                        
+                        <li><a class="dropdown-item text-muted" href="#" onclick="Swal.fire('Thông tin', 'Tính năng quản lý IP phần cứng đang được phát triển ở giai đoạn 2.', 'info')"><i class="bi bi-cpu"></i> Quản lý Node mạng KC868/ESP32 (Bản Beta)</a></li>
+                        <li><a class="dropdown-item text-muted" href="#" onclick="window.open('https://supabase.com', '_blank')"><i class="bi bi-cloud-arrow-down"></i> Backup Database (Supabase Console)</a></li>
                     </ul>
                 </li>
 
@@ -779,7 +780,7 @@
     </div>
     <div id="managers-view" class="view-section hidden">
         <h3 class="fw-bold mb-4 text-university"><i class="bi bi-person-lines-fill"></i> Danh bạ Cán bộ Quản lý PTN</h3>
-        <div class="card shadow-sm border-4 border-top border-4 border-primary">
+        <div class="card shadow-sm border-1 border-top border-4 border-primary">
             <div class="card-body p-0">
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0 text-center">
