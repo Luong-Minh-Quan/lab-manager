@@ -786,29 +786,66 @@
         </div>
     </div>
     <div id="stats-usage-view" class="view-section hidden">
-        <h3 class="fw-bold mb-4 text-university"><i class="bi bi-pie-chart"></i> Thống kê hiệu suất sử dụng máy</h3>
-        <div class="row g-4">
-            <div class="col-md-12">
-                <div class="card shadow-sm border-0 p-3">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h6 class="fw-bold text-muted mb-0">Tần suất sử dụng các loại máy</h6>
-                        <button class="btn btn-sm btn-success fw-bold" onclick="exportData('bookings')">
-                            <i class="bi bi-file-earmark-excel"></i> Xuất Excel Lịch sử & Chi tiết
-                        </button>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h3 class="fw-bold text-university m-0"><i class="bi bi-pie-chart-fill"></i> Phân tích Hiệu suất Sử dụng PTN</h3>
+            <div class="d-flex gap-2">
+                <select id="filter-usage-month" class="form-select form-select-sm border-primary" onchange="loadUsageStats()">
+                    <option value="all">Tất cả thời gian</option>
+                    <option value="04">Tháng 4</option><option value="05">Tháng 5</option><option value="06">Tháng 6</option>
+                </select>
+                <button class="btn btn-sm btn-success fw-bold" onclick="exportData('bookings')">
+                    <i class="bi bi-file-earmark-excel"></i> Xuất Excel
+                </button>
+            </div>
+        </div>
+
+        <div class="row g-3 mb-4">
+            <div class="col-md-3">
+                <div class="card shadow-sm border-0 border-start border-4 border-primary h-100">
+                    <div class="card-body">
+                        <div class="text-muted small fw-bold text-uppercase mb-1">Tổng lượt dùng</div>
+                        <h3 class="fw-bold text-primary mb-0" id="usage-kpi-total">0 <small class="fs-6 text-muted">lượt</small></h3>
                     </div>
-                    <canvas id="chartMachineUsage" style="max-height: 300px;"></canvas>
                 </div>
             </div>
-            <div class="col-md-6">
-                <div class="card shadow-sm border-0 p-3">
-                    <h6 class="fw-bold text-muted">Phân bổ theo Mục đích</h6>
-                    <canvas id="chartPurpose"></canvas>
+            <div class="col-md-3">
+                <div class="card shadow-sm border-0 border-start border-4 border-success h-100">
+                    <div class="card-body">
+                        <div class="text-muted small fw-bold text-uppercase mb-1">Tổng giờ hoạt động</div>
+                        <h3 class="fw-bold text-success mb-0" id="usage-kpi-hours">0 <small class="fs-6 text-muted">giờ</small></h3>
+                    </div>
                 </div>
             </div>
-            <div class="col-md-6">
-                <div class="card shadow-sm border-0 p-3">
-                    <h6 class="fw-bold text-muted">Số giờ hoạt động tích lũy (Giờ)</h6>
-                    <div id="usage-summary-list" class="mt-2"></div>
+            <div class="col-md-3">
+                <div class="card shadow-sm border-0 border-start border-4 border-info h-100">
+                    <div class="card-body">
+                        <div class="text-muted small fw-bold text-uppercase mb-1">Thành viên tích cực nhất</div>
+                        <h6 class="fw-bold text-info mb-0 text-truncate" id="usage-kpi-top-user">--</h6>
+                        <small class="text-muted" id="usage-kpi-top-user-val">0 lượt đăng ký</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card shadow-sm border-0 bg-warning-subtle h-100">
+                    <div class="card-body">
+                        <div class="text-warning-emphasis small fw-bold text-uppercase mb-1"><i class="bi bi-lightbulb-fill"></i> Insight Vận hành</div>
+                        <div class="small fw-bold text-dark" id="usage-kpi-insight">Đang phân tích...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-md-8">
+                <div class="card shadow-sm border-0 p-3 h-100">
+                    <h6 class="fw-bold text-muted mb-3">Tần suất sử dụng các loại máy (Lượt)</h6>
+                    <canvas id="chartMachineUsage" style="max-height: 280px;"></canvas>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card shadow-sm border-0 p-3 h-100">
+                    <h6 class="fw-bold text-muted mb-3">Phân bổ Mục đích sử dụng</h6>
+                    <canvas id="chartPurpose" style="max-height: 280px;"></canvas>
                 </div>
             </div>
         </div>
@@ -2663,44 +2700,90 @@
     // 3. HÀM THỐNG KÊ LƯỢT SỬ DỤNG
     async function loadUsageStats() {
         showView('stats-usage-view');
-        const { data, error } = await _supabase.from('bookings').select('*').eq('status', 'approved');
+        
+        const monthFilter = document.getElementById('filter-usage-month').value;
+        let query = _supabase.from('bookings').select('*').eq('status', 'approved');
+        
+        const { data, error } = await query;
         if (error || !data) return;
 
+        // Lọc theo tháng
+        let filteredData = data;
+        if (monthFilter !== 'all') {
+            filteredData = data.filter(b => b.booking_date.split('-')[1] === monthFilter);
+        }
+
+        // --- BỘ ĐẾM (COUNTERS) ---
         const machineStats = {};
         const purposeStats = { "Thực hành": 0, "Nghiên cứu": 0, "Giảng dạy": 0 };
+        const userStats = {};
+        const hourStats = {};
+        const roomStats = {};
+        let totalHours = 0;
 
-        data.forEach(b => {
-            machineStats[b.machine_name] = (machineStats[b.machine_name] || 0) + 1;
+        filteredData.forEach(b => {
+            // Xử lý Tên máy & Phòng
+            const exactMachine = b.machine_name.substring(b.machine_name.indexOf(' - ') + 3) || b.machine_name;
+            const roomCode = b.machine_name.split(' - ')[0];
+
+            machineStats[exactMachine] = (machineStats[exactMachine] || 0) + 1;
             purposeStats[b.purpose] = (purposeStats[b.purpose] || 0) + 1;
+            userStats[b.full_name] = (userStats[b.full_name] || 0) + 1;
+            roomStats[roomCode] = (roomStats[roomCode] || 0) + 1;
+
+            // Xử lý Giờ hoạt động
+            const startMins = parseInt(b.start_time.split(':')[0]) * 60 + parseInt(b.start_time.split(':')[1]);
+            const endMins = parseInt(b.end_time.split(':')[0]) * 60 + parseInt(b.end_time.split(':')[1]);
+            totalHours += (endMins - startMins) / 60;
+
+            // Xử lý Khung giờ cao điểm (Lấy giờ bắt đầu)
+            const startHour = b.start_time.split(':')[0] + ":00";
+            hourStats[startHour] = (hourStats[startHour] || 0) + 1;
         });
 
-        // Vẽ biểu đồ Cột cho Máy
+        // --- TÌM CÁC CHỈ SỐ TOP 1 ---
+        const getTop = (obj) => Object.entries(obj).sort((a,b) => b[1] - a[1])[0] || ["--", 0];
+        
+        const [topUser, topUserCount] = getTop(userStats);
+        const [peakHour, peakHourCount] = getTop(hourStats);
+        const [hotRoom, hotRoomCount] = getTop(roomStats);
+
+        // Đổ dữ liệu lên KPI Cards
+        document.getElementById('usage-kpi-total').innerHTML = `${filteredData.length} <small class="fs-6 text-muted">lượt</small>`;
+        document.getElementById('usage-kpi-hours').innerHTML = `${totalHours.toFixed(1)} <small class="fs-6 text-muted">giờ</small>`;
+        document.getElementById('usage-kpi-top-user').innerText = topUser;
+        document.getElementById('usage-kpi-top-user-val').innerText = `${topUserCount} lượt đăng ký`;
+
+        // Insight ngẫu nhiên (Giữa Giờ cao điểm và Phòng Hot)
+        const isShowPeak = Math.random() > 0.5;
+        if (isShowPeak && peakHour !== "--") {
+            document.getElementById('usage-kpi-insight').innerHTML = `Khung giờ <b>${peakHour}</b> đang quá tải (${peakHourCount} lượt). Cần phân luồng sinh viên.`;
+        } else if (hotRoom !== "--") {
+            document.getElementById('usage-kpi-insight').innerHTML = `Phòng <b>${hotRoom}</b> hoạt động tối đa công suất (${hotRoomCount} lượt). Cần kiểm tra vật tư.`;
+        } else {
+            document.getElementById('usage-kpi-insight').innerHTML = "Chưa đủ dữ liệu phân tích.";
+        }
+
+        // --- VẼ BIỂU ĐỒ ---
         if(usageChartObj) usageChartObj.destroy();
         usageChartObj = new Chart(document.getElementById('chartMachineUsage'), {
             type: 'bar',
             data: {
                 labels: Object.keys(machineStats),
-                datasets: [{ label: 'Số lượt mượn', data: Object.values(machineStats), backgroundColor: '#003366' }]
-            }
+                datasets: [{ label: 'Số lượt sử dụng', data: Object.values(machineStats), backgroundColor: '#003366', borderRadius: 4 }]
+            },
+            options: { plugins: { legend: { display: false } } }
         });
 
-        // Vẽ biểu đồ Tròn cho Mục đích
         if(purposeChartObj) purposeChartObj.destroy();
         purposeChartObj = new Chart(document.getElementById('chartPurpose'), {
             type: 'doughnut',
             data: {
                 labels: Object.keys(purposeStats),
                 datasets: [{ data: Object.values(purposeStats), backgroundColor: ['#0d6efd', '#fd7e14', '#6f42c1'] }]
-            }
+            },
+            options: { cutout: '65%' } // Tạo hình Donut đẹp hơn
         });
-
-        // Hiển thị tóm tắt giờ hoạt động (giả lập dựa trên số lượt)
-        document.getElementById('usage-summary-list').innerHTML = Object.keys(machineStats).map(name => `
-            <div class="d-flex justify-content-between mb-2">
-                <small>${name}</small>
-                <span class="fw-bold">${machineStats[name] * 2} giờ</span>
-            </div>
-        `).join('');
     }
     // HÀM XUẤT EXCEL TỔNG QUÁT
     async function exportData(type) {
