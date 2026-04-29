@@ -2054,6 +2054,12 @@
             else if (b.status === 'pending') { statusColor = 'bg-warning text-dark'; statusText = 'Chờ duyệt'; }
             else if (b.status === 'cancelled') { statusColor = 'bg-secondary'; statusText = 'Đã hủy'; }
 
+            // --- ĐÃ THÊM: Khối hiển thị Trạng thái kèm tên người duyệt (Audit) ---
+            let statusDisplay = `<span class="badge ${statusColor}">${statusText}</span>`;
+            if (b.status === 'approved' && b.approved_by) {
+                statusDisplay += `<br><small class="text-muted" style="font-size: 0.7rem;"><i class="bi bi-person-check-fill"></i> Bởi: ${b.approved_by}</small>`;
+            }
+
             let actionBtn = '';
             
             if (currentUserProfile.role !== 'student' && b.status === 'pending') {
@@ -2091,7 +2097,9 @@
                         ${noteDisplay}
                     </td>
                     <td><span class="text-primary fw-bold">${b.booking_date}</span><br><small>${b.start_time.substring(0,5)} - ${b.end_time.substring(0,5)}</small></td>
-                    <td><span class="badge ${statusColor}">${statusText}</span></td>
+                    
+                    <td>${statusDisplay}</td> 
+                    
                     <td>${actionBtn}</td>
                 </tr>
             `;
@@ -2207,7 +2215,10 @@
     // 7. DUYỆT ĐƠN VÀ GỬI EMAIL (EmailJS)
     async function approveBooking(id, email, machineName, qrToken) {
         Swal.fire({ title: 'Đang phê duyệt...', didOpen: () => Swal.showLoading() });
-        const { error } = await _supabase.from('bookings').update({ status: 'approved' }).eq('id', id);
+        const { error } = await _supabase.from('bookings').update({ 
+            status: 'approved',
+            approved_by: currentUserProfile.full_name // Lưu tên vị Quản lý đang bấm nút này
+        }).eq('id', id);
         if (error) return Swal.fire('Lỗi Database', error.message, 'error');
 
         const qrImageLink = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${qrToken}`;
