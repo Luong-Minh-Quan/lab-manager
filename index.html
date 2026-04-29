@@ -2075,7 +2075,14 @@
         }
 
         const tbody = document.getElementById('history-list');
-        tbody.innerHTML = '<tr><td colspan="5">Đang tải dữ liệu...</td></tr>';
+        tbody.innerHTML = `
+            <tr id="loading-spinner">
+                <td colspan="10" class="text-center py-5">
+                    <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status"></div>
+                    <div class="mt-3 text-muted fw-bold small">ĐANG ĐỒNG BỘ DỮ LIỆU...</div>
+                </td>
+            </tr>
+        `;
 
         // 2. TRUY VẤN THÔNG MINH THEO VAI TRÒ (Fix lỗi mất lịch sử)
         let query = _supabase.from('bookings').select('*');
@@ -3380,7 +3387,14 @@
     async function loadAdminAccounts() {
         showView('admin-accounts-view');
         const tbody = document.getElementById('admin-accounts-list');
-        tbody.innerHTML = '<tr><td colspan="5">Đang tải dữ liệu...</td></tr>';
+        tbody.innerHTML = `
+            <tr id="loading-spinner">
+                <td colspan="10" class="text-center py-5">
+                    <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status"></div>
+                    <div class="mt-3 text-muted fw-bold small">ĐANG ĐỒNG BỘ DỮ LIỆU...</div>
+                </td>
+            </tr>
+        `;
 
         // Lấy danh sách từ bảng profiles
         const { data, error } = await _supabase.from('profiles').select('*');
