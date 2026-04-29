@@ -1554,12 +1554,9 @@
         }
     });
 
-    // Hàm chuyển đổi màn hình mượt mà
-    // THÊM DÒNG NÀY Ở NGOÀI CÙNG
-    let currentView = 'home-view';
-
     // SỬA LẠI HÀM showView
     // BIẾN TOÀN CỤC VÀ HÀM CHUYỂN MÀN HÌNH
+    // BIẾN TOÀN CỤC VÀ HÀM CHUYỂN MÀN HÌNH (Đảm bảo chỉ có 1 biến let currentView ở đây)
     let currentView = 'home-view';
     
     function showView(viewId) {
@@ -1569,10 +1566,9 @@
         
         // Nếu mở trang Giám sát Điện năng thì tự động load Biểu đồ và Máy móc
         if(viewId === 'monitor-energy-view') {
-            initLivePowerChart(); 
-            if (typeof updateLiveMachineFilter === "function") {
-                updateLiveMachineFilter(); 
-            }
+            // Em thêm lệnh kiểm tra an toàn (typeof) để web không bao giờ bị sụp nữa
+            if (typeof initLivePowerChart === "function") initLivePowerChart(); 
+            if (typeof updateLiveMachineFilter === "function") updateLiveMachineFilter(); 
         }
     }
 
