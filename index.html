@@ -2048,24 +2048,32 @@
         // 4. ĐỔ DỮ LIỆU RA BẢNG HTML
         let html = '';
         filteredData.forEach(b => {
-            // Sửa màu sắc để có thêm trạng thái Đã hủy (cancelled)
+            // Sửa màu sắc trạng thái
             let statusColor = 'bg-danger'; let statusText = 'Từ chối';
             if (b.status === 'approved') { statusColor = 'bg-success'; statusText = 'Đã duyệt'; }
             else if (b.status === 'pending') { statusColor = 'bg-warning text-dark'; statusText = 'Chờ duyệt'; }
             else if (b.status === 'cancelled') { statusColor = 'bg-secondary'; statusText = 'Đã hủy'; }
+            else if (b.status === 'rejected') { statusColor = 'bg-danger'; statusText = 'Từ chối'; }
 
-            // --- ĐÃ THÊM: Khối hiển thị Trạng thái kèm tên người duyệt (Audit) ---
+            // --- Khối hiển thị Trạng thái kèm tên người duyệt/từ chối (Audit) ---
             let statusDisplay = `<span class="badge ${statusColor}">${statusText}</span>`;
-            if (b.status === 'approved' && b.approved_by) {
-                statusDisplay += `<br><small class="text-muted" style="font-size: 0.7rem;"><i class="bi bi-person-check-fill"></i> Bởi: ${b.approved_by}</small>`;
+            if ((b.status === 'approved' || b.status === 'rejected') && b.approved_by) {
+                const icon = b.status === 'approved' ? 'bi-person-check-fill' : 'bi-person-x-fill';
+                statusDisplay += `<br><small class="text-muted" style="font-size: 0.7rem;"><i class="bi ${icon}"></i> Bởi: ${b.approved_by}</small>`;
             }
 
             let actionBtn = '';
             
+            // NẾU LÀ QUẢN LÝ: THÊM 2 NÚT DUYỆT VÀ TỪ CHỐI
             if (currentUserProfile.role !== 'student' && b.status === 'pending') {
-                actionBtn = `<button class="btn btn-sm btn-primary fw-bold" onclick="approveBooking('${b.id}', '${b.email}', '${b.machine_name}', '${b.id}')">Duyệt & Gửi QR</button>`;
+                actionBtn = `
+                    <div class="d-flex flex-column gap-1">
+                        <button class="btn btn-sm btn-primary fw-bold" onclick="approveBooking('${b.id}', '${b.email}', '${b.machine_name}', '${b.id}')"><i class="bi bi-check-circle"></i> Duyệt đơn</button>
+                        <button class="btn btn-sm btn-outline-danger fw-bold" onclick="rejectBooking('${b.id}')"><i class="bi bi-x-circle"></i> Từ chối</button>
+                    </div>
+                `;
             } 
-            // Nếu là sinh viên và đơn đang chờ duyệt HOẶC đã duyệt (nhưng chưa trong quá khứ)
+            // NẾU LÀ SINH VIÊN
             else if (currentUserProfile.role === 'student') {
                 if (b.status === 'approved') {
                     actionBtn = `<button class="btn btn-sm btn-outline-success mb-1 w-100" onclick="viewMyQR('${b.id}')"><i class="bi bi-qr-code"></i> Xem QR</button><br>`;
@@ -2077,7 +2085,7 @@
                     }
                 }
                 
-                // Nút HỦY LỊCH (Chỉ hiện khi chưa qua ngày giờ thực hành và trạng thái chưa bị hủy/từ chối)
+                // Nút HỦY LỊCH
                 if ((b.status === 'pending' || b.status === 'approved') && viewType === 'upcoming') {
                     actionBtn += `<button class="btn btn-sm btn-outline-danger w-100 mt-1" onclick="cancelBooking('${b.id}')"><i class="bi bi-x-circle"></i> Hủy lịch</button>`;
                 }
@@ -2085,7 +2093,11 @@
                 actionBtn = `<span class="text-muted small">--</span>`;
             }
 
+            // Ghi chú của sinh viên
             const noteDisplay = b.student_note ? `<br><div class="text-muted mt-1" style="font-size: 0.8rem; background: #f8f9fa; padding: 4px; border-radius: 4px; border-left: 2px solid #0d6efd;"><b>Ghi chú:</b> ${b.student_note}</div>` : '';
+            
+            // HIỂN THỊ LÝ DO TỪ CHỐI CỦA QUẢN LÝ (Chữ đỏ)
+            const rejectDisplay = (b.status === 'rejected' && b.condition_note) ? `<br><div class="text-danger mt-1" style="font-size: 0.8rem; background: #fff5f5; padding: 4px; border-radius: 4px; border-left: 2px solid #dc3545;"><b><i class="bi bi-exclamation-circle"></i> Lý do từ chối:</b> ${b.condition_note}</div>` : '';
 
             html += `
                 <tr>
@@ -2095,11 +2107,10 @@
                         <span class="badge bg-light text-dark border mb-1">${b.purpose}</span>
                         <span class="badge bg-info text-dark mb-1"><i class="bi bi-people-fill"></i> ${b.participants || 1} Sinh viên</span>
                         ${noteDisplay}
+                        ${rejectDisplay}
                     </td>
                     <td><span class="text-primary fw-bold">${b.booking_date}</span><br><small>${b.start_time.substring(0,5)} - ${b.end_time.substring(0,5)}</small></td>
-                    
                     <td>${statusDisplay}</td> 
-                    
                     <td>${actionBtn}</td>
                 </tr>
             `;
@@ -3982,6 +3993,40 @@
                 
                 Swal.fire('Thành công', 'Đã hủy lịch thành công!', 'success');
                 loadHistoryView('upcoming'); // Tải lại bảng
+            }
+        });
+    }
+    // HÀM TỪ CHỐI ĐƠN ĐĂNG KÝ (DÀNH CHO QUẢN LÝ)
+    function rejectBooking(id) {
+        Swal.fire({
+            title: 'Từ chối đăng ký?',
+            text: "Nhập lý do từ chối để sinh viên biết (Tùy chọn):",
+            input: 'text',
+            inputPlaceholder: 'VD: Trùng lịch bảo trì, sai mục đích...',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Xác nhận Từ chối',
+            cancelButtonText: 'Đóng'
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                Swal.fire({ title: 'Đang xử lý...', didOpen: () => Swal.showLoading() });
+                
+                // Lấy lý do quản lý vừa nhập
+                const reason = result.value || 'Quản lý không phê duyệt.';
+                
+                // Cập nhật trạng thái thành 'rejected', lưu lý do và lưu tên người từ chối
+                const { error } = await _supabase.from('bookings').update({ 
+                    status: 'rejected',
+                    condition_note: reason,
+                    approved_by: currentUserProfile.full_name
+                }).eq('id', id);
+                
+                if (error) return Swal.fire('Lỗi', error.message, 'error');
+                
+                Swal.fire('Thành công', 'Đã từ chối đơn đăng ký!', 'success');
+                loadHistoryView(); // Tải lại bảng
             }
         });
     }
