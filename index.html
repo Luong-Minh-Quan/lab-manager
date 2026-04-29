@@ -1628,6 +1628,8 @@
         loadHomeNotices();
         loadTodayDashboard();
         loadLatestWarnings();
+        fetchRoomsData(); 
+        refreshRoomFilters();
 
         // 2. Kiểm tra xem người dùng đã đăng nhập chưa
         const { data: { user } } = await _supabase.auth.getUser();
@@ -1657,7 +1659,7 @@
         currentUserProfile = profile;
 
         // Cập nhật Tên hiển thị góc phải
-        const roleText = profile.role === 'admin' ? 'Ban Quản Lý' : (profile.role === 'manager' ? 'Quản lý PTN' : 'Sinh viên');
+        const roleText = profile.role === 'admin' ? 'Quản Trị Viên' : (profile.role === 'manager' ? 'Quản lý PTN' : 'Sinh viên');
         document.getElementById('user-info-display').innerHTML = `<i class="bi bi-person-circle"></i> ${profile.full_name} (${roleText})`;
         
         // Cập nhật nút thành "Đăng xuất"
@@ -1684,8 +1686,7 @@
         }
 
         showView('home-view');
-        fetchRoomsData();
-        refreshRoomFilters();
+        
         // Cập nhật cho bộ lọc bên trang Giám sát Realtime mới
         const liveRoomFilter = document.getElementById('live-room-filter');
         if(liveRoomFilter) liveRoomFilter.innerHTML = optionsHtml;
@@ -1749,7 +1750,9 @@
 
         const tbody = document.getElementById('dm-ptn-tbody');
         let html = '';
-        const isStaff = currentUserProfile.role !== 'student';
+        
+        // SỬA Ở ĐÂY: Kiểm tra xem có user đăng nhập không rồi mới soi Role
+        const isStaff = currentUserProfile ? (currentUserProfile.role !== 'student') : false;
 
         rooms.forEach(room => {
             html += `
@@ -1773,6 +1776,24 @@
 
     // Xem chi tiết máy trong phòng và Nút Đặt Lịch
     async function viewRoomDetails(roomId, roomCode, roomName) {
+        // --- CHẶN KHÁCH VÃNG LAI ---
+        if (!currentUserProfile) {
+            return Swal.fire({
+                title: 'Yêu cầu đăng nhập',
+                text: 'Bạn cần đăng nhập bằng tài khoản Sinh viên/Cán bộ để xem chi tiết máy móc và đặt lịch thực hành!',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Đăng nhập ngay',
+                cancelButtonText: 'Đóng lại',
+                confirmButtonColor: '#003366'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    showView('auth-view'); // Nhảy thẳng sang màn hình đăng nhập
+                }
+            });
+        }
+        // -----------------------------
+
         Swal.fire({ title: `Đang tải thiết bị...`, didOpen: () => Swal.showLoading() });
         const { data: machines, error } = await _supabase.from('machines').select('*').eq('room_id', roomId);
         Swal.close();
