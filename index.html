@@ -570,6 +570,9 @@
                     <option value="11">Tháng 11</option>
                     <option value="12">Tháng 12</option>
                 </select>
+                <button class="btn btn-sm btn-warning fw-bold text-dark" onclick="exportData('energy')">
+                    <i class="bi bi-file-earmark-excel"></i> Xuất Excel
+                </button>
             </div>
         </div>
     
@@ -1227,9 +1230,19 @@
                 <h4 class="fw-bold text-success m-0"><i class="bi bi-calendar-check-fill"></i> Lịch sử dụng sắp tới (Đã duyệt)</h4>
                 <div class="d-flex gap-2">
                     <select id="filter-approved-month" class="form-select form-select-sm border-success" onchange="loadHistoryView()">
-                        <option value="all">Tất cả tháng</option>
-                        <option value="04">Tháng 4</option><option value="05">Tháng 5</option><option value="06">Tháng 6</option>
-                        <option value="07">Tháng 7</option><option value="08">Tháng 8</option><option value="09">Tháng 9</option>
+                        <option value="all">Tất cả các tháng</option>
+                    <option value="01">Tháng 1</option>
+                    <option value="02">Tháng 2</option>
+                    <option value="03">Tháng 3</option>
+                    <option value="04">Tháng 4</option>
+                    <option value="05">Tháng 5</option>
+                    <option value="06">Tháng 6</option>
+                    <option value="07">Tháng 7</option>
+                    <option value="08">Tháng 8</option>
+                    <option value="09">Tháng 9</option>
+                    <option value="10">Tháng 10</option>
+                    <option value="11">Tháng 11</option>
+                    <option value="12">Tháng 12</option>
                     </select>
                     <button class="btn btn-sm btn-success fw-bold" onclick="exportApprovedUpcoming()">
                         <i class="bi bi-file-earmark-excel"></i> Xuất Excel
@@ -1406,6 +1419,9 @@
                     <option value="all">Tất cả phòng</option>
                 </select>
                 <button class="btn btn-sm btn-outline-primary" onclick="loadUsageLogs()"><i class="bi bi-arrow-clockwise"></i> Làm mới</button>
+                <button class="btn btn-sm btn-success fw-bold" onclick="exportData('usage_logs')">
+                    <i class="bi bi-file-earmark-excel"></i> Xuất Excel
+                </button>
             </div>
         </div>
     
@@ -2946,50 +2962,39 @@
         });
     }
     // HÀM XUẤT EXCEL TỔNG QUÁT
+    // HÀM XUẤT EXCEL TỔNG QUÁT (Bản Full - Hỗ trợ mọi bảng)
     async function exportData(type) {
         Swal.fire({ title: 'Đang khởi tạo dữ liệu...', didOpen: () => Swal.showLoading() });
 
         let data = [];
         let fileName = "";
         let sheetName = "";
+        const now = new Date();
 
+        // 1. XUẤT LỊCH SỬ ĐĂNG KÝ
         if (type === 'bookings') {
-            const { data: res } = await _supabase.from('bookings').select('*').order('created_at', {ascending: false});
-            
-            // --- LẤY BỘ LỌC TỪ MÀN HÌNH ĐỂ ÉP VÀO FILE EXCEL ---
+            const { data: res } = await _supabase.from('bookings').select('*').eq('status', 'approved').order('booking_date', {ascending: false});
             const monthFilter = document.getElementById('filter-usage-month').value;
-            const now = new Date();
-            const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
             const currentMins = now.getHours() * 60 + now.getMinutes();
+            const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
 
-            // Lọc dữ liệu khớp 100% với trên biểu đồ (Đã duyệt, Đã xong, Đúng tháng)
             let validData = res.filter(b => {
-                if (b.status !== 'approved') return false; 
+                const bDate = new Date(b.booking_date);
+                const bDateMidnight = new Date(bDate.getFullYear(), bDate.getMonth(), bDate.getDate()).getTime();
                 
-                const dbDate = b.booking_date.split('T')[0];
-                
-                // Lọc quá khứ / hiện tại
-                let isPast = false;
-                if (dbDate < todayStr) isPast = true;
-                else if (dbDate === todayStr) {
+                if (bDateMidnight > todayMidnight) return false;
+                if (bDateMidnight === todayMidnight) {
+                    if (!b.end_time) return true;
                     const endMins = parseInt(b.end_time.split(':')[0]) * 60 + parseInt(b.end_time.split(':')[1]);
-                    isPast = endMins <= currentMins;
+                    if (endMins > currentMins) return false;
                 }
-                if (!isPast) return false;
-
-                // Lọc theo tháng đang chọn trên web
-                if (monthFilter !== 'all') {
-                    if (dbDate.split('-')[1] !== monthFilter) return false;
-                }
+                const bMonth = String(bDate.getMonth() + 1).padStart(2, '0');
+                if (monthFilter !== 'all' && bMonth !== monthFilter) return false;
                 return true;
             });
 
-            // Cảnh báo nếu tháng đó không có dữ liệu
-            if (validData.length === 0) {
-                return Swal.fire('Thông báo', 'Tháng này không có ca thực hành nào để xuất Excel!', 'info');
-            }
+            if (validData.length === 0) return Swal.fire('Thông báo', 'Không có dữ liệu để xuất!', 'info');
 
-            // Định dạng lại dữ liệu để lên Excel đẹp hơn
             data = validData.map(item => ({
                 "Người đăng ký": item.full_name,
                 "Email": item.email,
@@ -2997,17 +3002,17 @@
                 "Ngày sử dụng": item.booking_date,
                 "Khung giờ": `${item.start_time.substring(0,5)} - ${item.end_time.substring(0,5)}`,
                 "Mục đích": item.purpose,
-                "Trạng thái": "Đã hoàn thành",
-                "Tình trạng máy": item.machine_condition || 'Chưa báo cáo'
+                "Trạng thái": "Đã hoàn thành"
             }));
-            
-            // Tên file linh hoạt theo tháng
             const monthText = monthFilter === 'all' ? 'Tat_Ca' : `Thang_${monthFilter}`;
             fileName = `Lich_Su_Su_Dung_PTN_${monthText}_${now.getFullYear()}.xlsx`;
             sheetName = "LichSuSuDung";
         } 
+        // 2. XUẤT HỘP THƯ GÓP Ý
         else if (type === 'feedbacks') {
             const { data: res } = await _supabase.from('feedbacks').select('*').order('created_at', {ascending: false});
+            if (!res || res.length === 0) return Swal.fire('Thông báo', 'Không có dữ liệu góp ý!', 'info');
+
             data = res.map(item => ({
                 "Loại báo cáo": item.type === 'lab_condition' ? 'Cơ sở vật chất' : 'Vi phạm nội quy',
                 "Phòng": item.room_code,
@@ -3017,27 +3022,89 @@
                 "Ngày gửi": new Date(item.created_at).toLocaleDateString('vi-VN'),
                 "Trạng thái": item.status === 'pending' ? 'Chờ xử lý' : 'Đã xong'
             }));
-            fileName = `Bao_Cao_Gop_Y_Vi_Pham_${new Date().toLocaleDateString('vi-VN')}.xlsx`;
+            fileName = `Bao_Cao_Gop_Y_Vi_Pham_${now.toLocaleDateString('vi-VN').replace(/\//g, '-')}.xlsx`;
             sheetName = "GopYViPham";
         }
+        // 3. XUẤT THỐNG KÊ ĐIỆN NĂNG
+        else if (type === 'energy') {
+            const monthFilter = document.getElementById('filter-energy-month').value;
+            const roomFilter = document.getElementById('filter-energy-room').value;
+            
+            let query = _supabase.from('bookings').select('*').gt('energy_consumed', 0).order('booking_date', {ascending: false});
+            if (roomFilter !== 'all') query = query.ilike('machine_name', `${roomFilter}%`);
+            
+            const { data: res } = await query;
+            let validData = res || [];
+            if (monthFilter !== 'all') {
+                validData = validData.filter(b => b.booking_date.split('-')[1] === monthFilter);
+            }
 
-        if (data.length === 0) {
-            return Swal.fire('Thông báo', 'Không có dữ liệu để xuất!', 'info');
+            if (validData.length === 0) return Swal.fire('Thông báo', 'Không có dữ liệu điện năng (Hoặc số điện = 0) trong khoảng thời gian này!', 'info');
+
+            data = validData.map(item => ({
+                "Mã Ca": `#${item.id.substring(0,6)}`,
+                "Tên Thiết bị": item.machine_name,
+                "Người thực hành": item.full_name,
+                "Ngày sử dụng": new Date(item.booking_date).toLocaleDateString('vi-VN'),
+                "Khung giờ": `${item.start_time.substring(0,5)} - ${item.end_time.substring(0,5)}`,
+                "Điện năng (kWh)": item.energy_consumed,
+                "Chi phí tạm tính (VNĐ)": (parseFloat(item.energy_consumed) * 2500).toLocaleString('vi-VN')
+            }));
+
+            const rText = roomFilter === 'all' ? 'TatCaPhong' : roomFilter;
+            const mText = monthFilter === 'all' ? 'TatCaThang' : `Thang${monthFilter}`;
+            fileName = `Bao_Cao_Dien_Nang_${rText}_${mText}.xlsx`;
+            sheetName = "ThongKeDienNang";
+        }
+        // 4. XUẤT NHẬT KÝ RA VÀO (CHECK-IN/OUT)
+        else if (type === 'usage_logs') {
+            const roomFilter = document.getElementById('filter-log-room').value;
+            let query = _supabase.from('bookings').select('*').eq('status', 'approved').order('actual_start', { ascending: false, nullsFirst: false });
+            if (roomFilter !== 'all') query = query.ilike('machine_name', `${roomFilter}%`);
+            
+            const { data: res } = await query;
+            if (!res || res.length === 0) return Swal.fire('Thông báo', 'Không có nhật ký ra vào nào!', 'info');
+
+            data = res.map(item => {
+                const checkIn = item.actual_start ? new Date(item.actual_start).toLocaleString('vi-VN') : 'Chưa Check-in';
+                const checkOut = item.actual_end ? new Date(item.actual_end).toLocaleString('vi-VN') : 'Chưa Check-out';
+                
+                let statusText = 'Chưa vào PTN';
+                if (item.checkin_status === 'in_progress') statusText = 'Đang ở trong PTN';
+                else if (item.checkin_status === 'completed') statusText = 'Đã ra về';
+
+                return {
+                    "Mã Ca": `#${item.id.substring(0,6)}`,
+                    "Sinh viên": item.full_name,
+                    "Thiết bị / Máy": item.machine_name,
+                    "Ngày đăng ký": new Date(item.booking_date).toLocaleDateString('vi-VN'),
+                    "Giờ vào (Check-in)": checkIn,
+                    "Giờ ra (Check-out)": checkOut,
+                    "Điện năng (kWh)": item.energy_consumed || 0,
+                    "Trạng thái": statusText
+                };
+            });
+
+            const rText = roomFilter === 'all' ? 'TatCaPhong' : roomFilter;
+            fileName = `Nhat_Ky_Ra_Vao_PTN_${rText}_${now.toLocaleDateString('vi-VN').replace(/\//g, '-')}.xlsx`;
+            sheetName = "NhatKyRaVao";
         }
 
-        // --- Xử lý tạo file Excel bằng SheetJS ---
-        const wb = XLSX.utils.book_new(); // Tạo workbook mới
-        const ws = XLSX.utils.json_to_sheet(data); // Chuyển JSON thành worksheet
+        if (data.length === 0) return;
 
-        // Chỉnh độ rộng các cột tự động cho dễ nhìn
-        const wscols = Object.keys(data[0]).map(() => ({ wch: 20 }));
+        // TẠO VÀ XUẤT EXCEL BẰNG SHEETJS
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.json_to_sheet(data);
+
+        // Kéo rộng cột tự động
+        const wscols = Object.keys(data[0]).map(() => ({ wch: 22 }));
         ws['!cols'] = wscols;
 
-        XLSX.utils.book_append_sheet(wb, ws, sheetName); // Thêm sheet vào book
-        XLSX.writeFile(wb, fileName); // Xuất file và tải về
-
-        Swal.fire('Thành công', `Đã tải xuống file: ${fileName}`, 'success');
+        XLSX.utils.book_append_sheet(wb, ws, sheetName);
+        XLSX.writeFile(wb, fileName);
+        Swal.fire('Thành công', `Đã tải xuống file: <b>${fileName}</b>`, 'success');
     }
+    
     // BIẾN VÀ HÀM GỌI MODAL LỊCH ĐẦY ĐỦ
     let fullScheduleModalInstance = null;
     function openFullScheduleModal() {
