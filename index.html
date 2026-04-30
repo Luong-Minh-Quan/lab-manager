@@ -1187,16 +1187,22 @@
                 </div>
             </div>
         </div>
-    </div> <div id="history-view" class="view-section hidden">
+    </div> 
+    <div id="history-view" class="view-section hidden">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h3 class="fw-bold text-university m-0" id="history-title"><i class="bi bi-clock-history"></i> Quản lý Lịch & Xét duyệt</h3>
             
             <div class="input-group shadow-sm" style="max-width: 350px;">
                 <span class="input-group-text bg-white border-primary text-primary"><i class="bi bi-search"></i></span>
-                <input type="text" id="search-history" class="form-control border-primary" placeholder="Tìm tên SV, mã máy, trạng thái..." onkeyup="filterTableData('search-history', 'history-list')">
+                <input type="text" id="search-history" class="form-control border-primary" placeholder="Tìm tên SV, mã máy..." onkeyup="filterTableData('search-history', 'history-list')">
             </div>
         </div>
-        <div class="card shadow-sm border-0">
+
+        <!-- BẢNG 1: DANH SÁCH ĐƠN CHỜ DUYỆT -->
+        <div class="card shadow-sm border-0 mb-5">
+            <div class="card-header bg-warning-subtle fw-bold text-dark py-3" id="header-table-1">
+                <i class="bi bi-hourglass-split"></i> Danh sách cần xử lý
+            </div>
             <div class="card-body p-0">
                 <div class="table-responsive">
                     <table class="table align-middle table-hover text-center mb-0 table-custom">
@@ -1211,6 +1217,47 @@
                         </thead>
                         <tbody id="history-list"></tbody>
                     </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- BẢNG 2: DANH SÁCH LỊCH ĐÃ DUYỆT (CHỈ HIỆN CHO QUẢN LÝ/ADMIN) -->
+        <div id="manager-approved-section" class="hidden border-top pt-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 class="fw-bold text-success m-0"><i class="bi bi-calendar-check-fill"></i> Lịch sử dụng sắp tới (Đã duyệt)</h4>
+                <div class="d-flex gap-2">
+                    <select id="filter-approved-month" class="form-select form-select-sm border-success" onchange="loadHistoryView()">
+                        <option value="all">Tất cả tháng</option>
+                        <option value="04">Tháng 4</option><option value="05">Tháng 5</option><option value="06">Tháng 6</option>
+                        <option value="07">Tháng 7</option><option value="08">Tháng 8</option><option value="09">Tháng 9</option>
+                    </select>
+                    <button class="btn btn-sm btn-success fw-bold" onclick="exportApprovedUpcoming()">
+                        <i class="bi bi-file-earmark-excel"></i> Xuất Excel
+                    </button>
+                </div>
+            </div>
+
+            <div class="input-group shadow-sm mb-3" style="max-width: 350px;">
+                <span class="input-group-text bg-white border-success text-success"><i class="bi bi-search"></i></span>
+                <input type="text" id="search-approved" class="form-control border-success" placeholder="Tìm nhanh trong lịch đã duyệt..." onkeyup="filterTableData('search-approved', 'approved-upcoming-list')">
+            </div>
+
+            <div class="card shadow-sm border-0 border-top border-4 border-success">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table align-middle table-hover text-center mb-0 table-custom">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="text-start ps-4">Người đăng ký</th>
+                                    <th class="text-start">Thiết bị & Mục đích</th>
+                                    <th>Thời gian (Ca)</th>
+                                    <th>Người duyệt đơn</th>
+                                    <th>Trạng thái</th>
+                                </tr>
+                            </thead>
+                            <tbody id="approved-upcoming-list"></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -2082,145 +2129,187 @@
     }
 
     // 5. TẢI LỊCH SỬ VÀ XÉT DUYỆT ĐƠN
+    // 5. TẢI LỊCH SỬ VÀ XÉT DUYỆT ĐƠN (ĐÃ NÂNG CẤP KIẾN TRÚC 2 BẢNG CHO QUẢN LÝ)
     async function loadHistoryView(viewType = 'upcoming') {
         showView('history-view'); 
 
-        // 1. Đổi tiêu đề màn hình cho sinh viên và Admin dễ phân biệt
+        const tbody = document.getElementById('history-list');
+        const tbodyApproved = document.getElementById('approved-upcoming-list');
+        const managerSection = document.getElementById('manager-approved-section');
+        const headerTable1 = document.getElementById('header-table-1');
+
+        // 1. Giao diện Tiêu đề
         const titleEl = document.querySelector('#history-view h3');
         if (titleEl) {
             if (currentUserProfile.role !== 'student') {
-                titleEl.innerHTML = '<i class="bi bi-card-checklist"></i> Duyệt đơn đăng ký';
-            } else if (viewType === 'upcoming') {
-                titleEl.innerHTML = '<i class="bi bi-calendar-check"></i> Lịch đã đăng ký';
+                titleEl.innerHTML = '<i class="bi bi-card-checklist"></i> Xét duyệt & Lịch sắp tới';
+                headerTable1.innerHTML = '<i class="bi bi-hourglass-split"></i> Đơn chờ xét duyệt';
+                managerSection.classList.remove('hidden'); // Mở khóa Bảng 2 cho Quản lý
             } else {
-                titleEl.innerHTML = '<i class="bi bi-clock-history"></i> Lịch sử sử dụng';
+                titleEl.innerHTML = viewType === 'upcoming' ? '<i class="bi bi-calendar-check"></i> Lịch đã đăng ký' : '<i class="bi bi-clock-history"></i> Lịch sử sử dụng';
+                headerTable1.innerHTML = '<i class="bi bi-list-task"></i> Danh sách ca thực hành';
+                managerSection.classList.add('hidden'); // Giấu Bảng 2 đi đối với Sinh viên
             }
         }
 
-        const tbody = document.getElementById('history-list');
-        tbody.innerHTML = `
-            <tr id="loading-spinner">
-                <td colspan="10" class="text-center py-5">
-                    <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status"></div>
-                    <div class="mt-3 text-muted fw-bold small">ĐANG ĐỒNG BỘ DỮ LIỆU...</div>
-                </td>
-            </tr>
-        `;
+        tbody.innerHTML = `<tr><td colspan="100%" class="text-center py-5"><div class="spinner-border text-primary" role="status"></div><div class="mt-2 fw-bold text-muted small">ĐANG TẢI DỮ LIỆU...</div></td></tr>`;
+        if (tbodyApproved && currentUserProfile.role !== 'student') {
+            tbodyApproved.innerHTML = `<tr><td colspan="100%" class="text-center py-5"><div class="spinner-border text-success" role="status"></div><div class="mt-2 fw-bold text-muted small">ĐANG TẢI LỊCH SẮP TỚI...</div></td></tr>`;
+        }
 
-        // 2. TRUY VẤN THÔNG MINH THEO VAI TRÒ (Fix lỗi mất lịch sử)
+        // 2. Fetch Data từ Supabase
         let query = _supabase.from('bookings').select('*');
-
         if (currentUserProfile.role === 'student') {
-            // Sinh viên: Lấy tất cả đơn của chính mình
             query = query.eq('user_id', currentUserProfile.id);
         } else {
-            // Quản lý/Admin: Mục duyệt đơn sẽ lấy tất cả đơn đang chờ duyệt của mọi người
-            query = query.eq('status', 'pending');
+            // Quản lý/Admin lấy CẢ đơn Pending và đơn Approved
+            query = query.in('status', ['pending', 'approved', 'rejected']); 
         }
 
-        // Lấy dữ liệu từ Database
         const { data, error } = await query.order('booking_date', { ascending: true });
+        if (error || !data) return tbody.innerHTML = `<tr><td colspan="5" class="text-danger">Lỗi: ${error.message}</td></tr>`;
 
-        if (error || !data) {
-            return tbody.innerHTML = `<tr><td colspan="5" class="text-danger p-4">Lỗi: ${error?.message}</td></tr>`;
-        }
-
-        // 3. BỘ LỌC THỜI GIAN
+        // 3. Chuẩn hóa thời gian thực
         const now = new Date();
-        const year = now.getFullYear();
-        const month = String(now.getMonth() + 1).padStart(2, '0');
-        const day = String(now.getDate()).padStart(2, '0');
-        const todayStr = `${year}-${month}-${day}`; 
-
+        const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
         const currentMins = now.getHours() * 60 + now.getMinutes();
 
-        const filteredData = data.filter(b => {
-            const endMins = parseInt(b.end_time.split(':')[0]) * 60 + parseInt(b.end_time.split(':')[1]);
-            const isPast = b.booking_date < todayStr || (b.booking_date === todayStr && endMins < currentMins);
+        // 4. CHIA NHÁNH RENDER GIAO DIỆN
+        
+        // --- TRƯỜNG HỢP A: LÀ SINH VIÊN (Chỉ có 1 bảng) ---
+        if (currentUserProfile.role === 'student') {
+            let filteredData = data.filter(b => {
+                const dbDate = b.booking_date.split('T')[0];
+                let isPast = dbDate < todayStr || (dbDate === todayStr && parseInt(b.end_time.split(':')[0]) * 60 + parseInt(b.end_time.split(':')[1]) < currentMins);
+                return viewType === 'upcoming' ? !isPast : isPast;
+            });
 
-            // Admin duyệt đơn thì hiển thị hết, không cần lọc quá khứ/tương lai
-            if (currentUserProfile.role !== 'student') return true; 
+            if (filteredData.length === 0) return tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-muted">Hiện không có dữ liệu.</td></tr>`;
+            tbody.innerHTML = renderTableRows(filteredData, 'student', viewType);
+        } 
+        
+        // --- TRƯỜNG HỢP B: LÀ QUẢN LÝ / ADMIN (Có 2 bảng) ---
+        else {
+            // Bảng 1: Lọc Đơn đang chờ duyệt (Pending)
+            const pendingData = data.filter(b => b.status === 'pending');
+            tbody.innerHTML = pendingData.length > 0 ? renderTableRows(pendingData, 'manager', 'pending') : `<tr><td colspan="5" class="p-4 text-success fw-bold"><i class="bi bi-check-circle"></i> Đã duyệt hết tất cả các đơn đăng ký!</td></tr>`;
 
-            // Sinh viên thì lọc theo tab
-            if (viewType === 'upcoming') return !isPast; 
-            else return isPast;  
-        });
+            // Bảng 2: Lọc Đơn đã duyệt VÀ thuộc về tương lai (Upcoming Approved)
+            let approvedData = data.filter(b => {
+                if (b.status !== 'approved') return false;
+                const dbDate = b.booking_date.split('T')[0];
+                if (dbDate < todayStr) return false; // Lọc bỏ quá khứ
+                if (dbDate === todayStr && parseInt(b.end_time.split(':')[0]) * 60 + parseInt(b.end_time.split(':')[1]) < currentMins) return false;
+                return true;
+            });
 
-        if (filteredData.length === 0) {
-            return tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-muted">Hiện không có dữ liệu cho mục này.</td></tr>`;
+            // Ép thêm bộ lọc Tháng cho Bảng 2
+            const monthFilter = document.getElementById('filter-approved-month').value;
+            if (monthFilter !== 'all') {
+                approvedData = approvedData.filter(b => b.booking_date.split('-')[1] === monthFilter);
+            }
+
+            tbodyApproved.innerHTML = approvedData.length > 0 ? renderTableRows(approvedData, 'manager', 'approved_upcoming') : `<tr><td colspan="5" class="p-4 text-muted">Tháng này chưa có lịch sử dụng nào sắp tới.</td></tr>`;
         }
+    }
 
-        // 4. ĐỔ DỮ LIỆU RA BẢNG HTML
-        let html = '';
-        filteredData.forEach(b => {
-            // Sửa màu sắc trạng thái
+    // HÀM VẼ GIAO DIỆN HÀNG TRONG BẢNG (Giúp code gọn gàng, không bị lặp lại)
+    function renderTableRows(dataArray, userRole, viewContext) {
+        return dataArray.map(b => {
+            // Màu sắc trạng thái
             let statusColor = 'bg-danger'; let statusText = 'Từ chối';
             if (b.status === 'approved') { statusColor = 'bg-success'; statusText = 'Đã duyệt'; }
             else if (b.status === 'pending') { statusColor = 'bg-warning text-dark'; statusText = 'Chờ duyệt'; }
             else if (b.status === 'cancelled') { statusColor = 'bg-secondary'; statusText = 'Đã hủy'; }
-            else if (b.status === 'rejected') { statusColor = 'bg-danger'; statusText = 'Từ chối'; }
 
-            // --- Khối hiển thị Trạng thái kèm tên người duyệt/từ chối (Audit) ---
-            let statusDisplay = `<span class="badge ${statusColor}">${statusText}</span>`;
-            if ((b.status === 'approved' || b.status === 'rejected') && b.approved_by) {
-                const icon = b.status === 'approved' ? 'bi-person-check-fill' : 'bi-person-x-fill';
-                statusDisplay += `<br><small class="text-muted" style="font-size: 0.7rem;"><i class="bi ${icon}"></i> Bởi: ${b.approved_by}</small>`;
+            // Ghi chú & Lý do
+            const noteDisplay = b.student_note ? `<br><div class="text-muted mt-1 small" style="background:#f8f9fa; padding:4px; border-left:2px solid #0d6efd;"><b>Ghi chú:</b> ${b.student_note}</div>` : '';
+            const rejectDisplay = (b.status === 'rejected' && b.condition_note) ? `<br><div class="text-danger mt-1 small" style="background:#fff5f5; padding:4px; border-left:2px solid #dc3545;"><b>Lý do:</b> ${b.condition_note}</div>` : '';
+
+            // Cột "Người duyệt đơn" (Chỉ vẽ khi ở Bảng 2 của Quản lý)
+            let approvedByCol = '';
+            if (viewContext === 'approved_upcoming') {
+                approvedByCol = `<td><span class="badge bg-light text-primary border"><i class="bi bi-person-check-fill"></i> ${b.approved_by || 'Hệ thống'}</span></td>`;
             }
 
+            // Nút Thao tác (Hành động)
             let actionBtn = '';
-            
-            // NẾU LÀ QUẢN LÝ: THÊM 2 NÚT DUYỆT VÀ TỪ CHỐI
-            if (currentUserProfile.role !== 'student' && b.status === 'pending') {
+            if (userRole === 'manager' && b.status === 'pending') {
                 actionBtn = `
                     <div class="d-flex flex-column gap-1">
                         <button class="btn btn-sm btn-primary fw-bold" onclick="approveBooking('${b.id}', '${b.email}', '${b.machine_name}', '${b.id}')"><i class="bi bi-check-circle"></i> Duyệt đơn</button>
                         <button class="btn btn-sm btn-outline-danger fw-bold" onclick="rejectBooking('${b.id}')"><i class="bi bi-x-circle"></i> Từ chối</button>
-                    </div>
-                `;
-            } 
-            // NẾU LÀ SINH VIÊN
-            else if (currentUserProfile.role === 'student') {
-                if (b.status === 'approved') {
-                    actionBtn = `<button class="btn btn-sm btn-outline-success mb-1 w-100" onclick="viewMyQR('${b.id}')"><i class="bi bi-qr-code"></i> Xem QR</button><br>`;
-                    if (!b.machine_condition) {
-                        actionBtn += `<button class="btn btn-sm btn-warning w-100 fw-bold mb-1" onclick="openReportModal('${b.id}', '${b.machine_name}')"><i class="bi bi-tools"></i> Khai báo</button>`;
-                    } else {
-                        const conditionColor = b.machine_condition === 'Tốt' ? 'text-success' : 'text-danger';
-                        actionBtn += `<div class="small fw-bold ${conditionColor} mb-1">Đã báo: ${b.machine_condition}</div>`;
-                    }
-                }
-                
-                // Nút HỦY LỊCH
-                if ((b.status === 'pending' || b.status === 'approved') && viewType === 'upcoming') {
+                    </div>`;
+            } else if (userRole === 'student') {
+                if (b.status === 'approved') actionBtn = `<button class="btn btn-sm btn-outline-success mb-1 w-100" onclick="viewMyQR('${b.id}')"><i class="bi bi-qr-code"></i> Xem QR</button>`;
+                if ((b.status === 'pending' || b.status === 'approved') && viewContext === 'upcoming') {
                     actionBtn += `<button class="btn btn-sm btn-outline-danger w-100 mt-1" onclick="cancelBooking('${b.id}')"><i class="bi bi-x-circle"></i> Hủy lịch</button>`;
                 }
-            } else {
-                actionBtn = `<span class="text-muted small">--</span>`;
+            } else if (viewContext === 'approved_upcoming') {
+                actionBtn = `<span class="badge bg-success pulse"><i class="bi bi-clock-history"></i> Sắp diễn ra</span>`;
             }
 
-            // Ghi chú của sinh viên
-            const noteDisplay = b.student_note ? `<br><div class="text-muted mt-1" style="font-size: 0.8rem; background: #f8f9fa; padding: 4px; border-radius: 4px; border-left: 2px solid #0d6efd;"><b>Ghi chú:</b> ${b.student_note}</div>` : '';
-            
-            // HIỂN THỊ LÝ DO TỪ CHỐI CỦA QUẢN LÝ (Chữ đỏ)
-            const rejectDisplay = (b.status === 'rejected' && b.condition_note) ? `<br><div class="text-danger mt-1" style="font-size: 0.8rem; background: #fff5f5; padding: 4px; border-radius: 4px; border-left: 2px solid #dc3545;"><b><i class="bi bi-exclamation-circle"></i> Lý do từ chối:</b> ${b.condition_note}</div>` : '';
-
-            html += `
+            // --- LẮP RÁP HÀNG ---
+            return `
                 <tr>
                     <td class="text-start ps-4"><b>${b.full_name}</b><br><small class="text-muted">${b.email}</small></td>
                     <td class="text-start">
                         <b>${b.machine_name}</b><br>
                         <span class="badge bg-light text-dark border mb-1">${b.purpose}</span>
-                        <span class="badge bg-info text-dark mb-1"><i class="bi bi-people-fill"></i> ${b.participants || 1} Sinh viên</span>
-                        ${noteDisplay}
-                        ${rejectDisplay}
+                        <span class="badge bg-info text-dark mb-1"><i class="bi bi-people-fill"></i> ${b.participants || 1} SV</span>
+                        ${noteDisplay}${rejectDisplay}
                     </td>
                     <td><span class="text-primary fw-bold">${b.booking_date}</span><br><small>${b.start_time.substring(0,5)} - ${b.end_time.substring(0,5)}</small></td>
-                    <td>${statusDisplay}</td> 
+                    ${approvedByCol}
+                    ${viewContext !== 'approved_upcoming' ? `<td><span class="badge ${statusColor}">${statusText}</span></td>` : ''}
                     <td>${actionBtn}</td>
                 </tr>
             `;
+        }).join('');
+    }
+
+    // HÀM XUẤT EXCEL CHO BẢNG "LỊCH ĐÃ DUYỆT SẮP TỚI"
+    async function exportApprovedUpcoming() {
+        Swal.fire({ title: 'Đang tạo Excel...', didOpen: () => Swal.showLoading() });
+        const monthFilter = document.getElementById('filter-approved-month').value;
+        const now = new Date();
+        const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+        const currentMins = now.getHours() * 60 + now.getMinutes();
+
+        // Truy vấn CSDL
+        const { data: res } = await _supabase.from('bookings').select('*').eq('status', 'approved').order('booking_date', {ascending: true});
+        
+        // Lọc tương lai và lọc theo tháng
+        let validData = res.filter(b => {
+            const dbDate = b.booking_date.split('T')[0];
+            if (dbDate < todayStr) return false;
+            if (dbDate === todayStr && parseInt(b.end_time.split(':')[0]) * 60 + parseInt(b.end_time.split(':')[1]) < currentMins) return false;
+            if (monthFilter !== 'all' && dbDate.split('-')[1] !== monthFilter) return false;
+            return true;
         });
-        tbody.innerHTML = html;
+
+        if (validData.length === 0) return Swal.fire('Thông báo', 'Tháng này chưa có lịch nào sắp tới để xuất.', 'info');
+
+        // Định dạng cột Excel
+        const excelData = validData.map(item => ({
+            "Người đăng ký": item.full_name,
+            "Email SV": item.email,
+            "Thiết bị": item.machine_name,
+            "Ngày sử dụng": item.booking_date,
+            "Khung giờ": `${item.start_time.substring(0,5)} - ${item.end_time.substring(0,5)}`,
+            "Ghi chú SV": item.student_note || '',
+            "Người duyệt đơn": item.approved_by || 'Hệ thống',
+            "Trạng thái": "Đã duyệt - Sắp diễn ra"
+        }));
+
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.json_to_sheet(excelData);
+        ws['!cols'] = [{wch: 20}, {wch: 25}, {wch: 25}, {wch: 15}, {wch: 15}, {wch: 25}, {wch: 20}, {wch: 20}];
+        
+        const monthText = monthFilter === 'all' ? 'Tat_Ca' : `Thang_${monthFilter}`;
+        XLSX.utils.book_append_sheet(wb, ws, "LichSapToi");
+        XLSX.writeFile(wb, `Lich_Sap_Toi_PTN_${monthText}_${now.getFullYear()}.xlsx`);
+        Swal.fire('Thành công', 'Đã tải xuống file Excel!', 'success');
     }
 
     // 6. XEM LỊCH TRỐNG
