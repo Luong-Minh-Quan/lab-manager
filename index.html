@@ -2756,18 +2756,25 @@
         if (error || !data) return;
 
         // --- ĐÃ THÊM: CHỈ LẤY NHỮNG CA ĐÃ KẾT THÚC (QUÁ KHỨ) ---
+        // --- CHUẨN HÓA THỜI GIAN THEO MÚI GIỜ VIỆT NAM (Tránh lệch ngày UTC) ---
         const now = new Date();
-        const todayStr = now.toISOString().split('T')[0];
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const todayStr = `${year}-${month}-${day}`; 
         const currentMins = now.getHours() * 60 + now.getMinutes();
 
         let pastData = data.filter(b => {
-            if (b.booking_date < todayStr) return true; // Đã qua ngày hôm trước
-            if (b.booking_date === todayStr) {
-                // Nếu là hôm nay, chỉ lấy khi giờ kết thúc của ca đó đã trôi qua
+            const dbDate = b.booking_date.split('T')[0]; // Đề phòng chuỗi ngày bị dính chữ T
+
+            if (dbDate < todayStr) return true; // Các ngày trong quá khứ
+            if (dbDate === todayStr) {
+                // Nếu là hôm nay, phải qua giờ kết thúc
+                if (!b.end_time) return true; 
                 const endMins = parseInt(b.end_time.split(':')[0]) * 60 + parseInt(b.end_time.split(':')[1]);
                 return endMins <= currentMins; 
             }
-            return false; // Các ngày trong tương lai -> Bỏ qua
+            return false; // Tương lai -> Bỏ qua
         });
         // -------------------------------------------------------------
 
@@ -2859,18 +2866,55 @@
 
         if (type === 'bookings') {
             const { data: res } = await _supabase.from('bookings').select('*').order('created_at', {ascending: false});
+            
+            // --- LẤY BỘ LỌC TỪ MÀN HÌNH ĐỂ ÉP VÀO FILE EXCEL ---
+            const monthFilter = document.getElementById('filter-usage-month').value;
+            const now = new Date();
+            const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+            const currentMins = now.getHours() * 60 + now.getMinutes();
+
+            // Lọc dữ liệu khớp 100% với trên biểu đồ (Đã duyệt, Đã xong, Đúng tháng)
+            let validData = res.filter(b => {
+                if (b.status !== 'approved') return false; 
+                
+                const dbDate = b.booking_date.split('T')[0];
+                
+                // Lọc quá khứ / hiện tại
+                let isPast = false;
+                if (dbDate < todayStr) isPast = true;
+                else if (dbDate === todayStr) {
+                    const endMins = parseInt(b.end_time.split(':')[0]) * 60 + parseInt(b.end_time.split(':')[1]);
+                    isPast = endMins <= currentMins;
+                }
+                if (!isPast) return false;
+
+                // Lọc theo tháng đang chọn trên web
+                if (monthFilter !== 'all') {
+                    if (dbDate.split('-')[1] !== monthFilter) return false;
+                }
+                return true;
+            });
+
+            // Cảnh báo nếu tháng đó không có dữ liệu
+            if (validData.length === 0) {
+                return Swal.fire('Thông báo', 'Tháng này không có ca thực hành nào để xuất Excel!', 'info');
+            }
+
             // Định dạng lại dữ liệu để lên Excel đẹp hơn
-            data = res.map(item => ({
+            data = validData.map(item => ({
                 "Người đăng ký": item.full_name,
                 "Email": item.email,
                 "Thiết bị": item.machine_name,
                 "Ngày sử dụng": item.booking_date,
                 "Khung giờ": `${item.start_time.substring(0,5)} - ${item.end_time.substring(0,5)}`,
                 "Mục đích": item.purpose,
-                "Trạng thái": item.status === 'approved' ? 'Đã duyệt' : 'Chờ duyệt',
+                "Trạng thái": "Đã hoàn thành",
                 "Tình trạng máy": item.machine_condition || 'Chưa báo cáo'
             }));
-            fileName = `Lich_Su_Su_Dung_PTN_${new Date().toLocaleDateString('vi-VN')}.xlsx`;
+            
+            // Tên file linh hoạt theo tháng
+            const monthText = monthFilter === 'all' ? 'Tat_Ca' : `Thang_${monthFilter}`;
+            fileName = `Lich_Su_Su_Dung_PTN_${monthText}_${now.getFullYear()}.xlsx`;
             sheetName = "LichSuSuDung";
         } 
         else if (type === 'feedbacks') {
