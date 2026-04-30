@@ -3064,15 +3064,29 @@
             sheetName = "ThongKeDienNang";
         }
         // 4. XUẤT NHẬT KÝ RA VÀO (CHECK-IN/OUT)
+        // 4. XUẤT NHẬT KÝ RA VÀO (CHECK-IN/OUT)
         else if (type === 'usage_logs') {
             const roomFilter = document.getElementById('filter-log-room').value;
-            let query = _supabase.from('bookings').select('*').eq('status', 'approved').order('actual_start', { ascending: false, nullsFirst: false });
+            const monthFilter = document.getElementById('filter-log-month').value; 
+            
+            let query = _supabase.from('bookings').select('*').eq('status', 'approved').order('booking_date', { ascending: false });
             if (roomFilter !== 'all') query = query.ilike('machine_name', `${roomFilter}%`);
             
             const { data: res } = await query;
-            if (!res || res.length === 0) return Swal.fire('Thông báo', 'Không có nhật ký ra vào nào!', 'info');
+            
+            // --- THUẬT TOÁN LỌC THÁNG BỌC THÉP TỪ DATE OBJECT ---
+            let validData = res || [];
+            if (monthFilter !== 'all') {
+                validData = validData.filter(b => {
+                    const bDate = new Date(b.booking_date);
+                    const bMonth = String(bDate.getMonth() + 1).padStart(2, '0');
+                    return bMonth === monthFilter;
+                });
+            }
 
-            data = res.map(item => {
+            if (validData.length === 0) return Swal.fire('Thông báo', 'Tháng này không có nhật ký ra vào nào!', 'info');
+
+            data = validData.map(item => {
                 const checkIn = item.actual_start ? new Date(item.actual_start).toLocaleString('vi-VN') : 'Chưa Check-in';
                 const checkOut = item.actual_end ? new Date(item.actual_end).toLocaleString('vi-VN') : 'Chưa Check-out';
                 
@@ -3093,7 +3107,8 @@
             });
 
             const rText = roomFilter === 'all' ? 'TatCaPhong' : roomFilter;
-            fileName = `Nhat_Ky_Ra_Vao_PTN_${rText}_${now.toLocaleDateString('vi-VN').replace(/\//g, '-')}.xlsx`;
+            const mText = monthFilter === 'all' ? 'TatCaThang' : `Thang_${monthFilter}`;
+            fileName = `Nhat_Ky_Ra_Vao_${rText}_${mText}_${now.getFullYear()}.xlsx`;
             sheetName = "NhatKyRaVao";
         }
 
@@ -3481,7 +3496,13 @@
         // THUẬT TOÁN LỌC THÁNG
         let filteredData = data;
         if (monthFilter !== 'all') {
-            filteredData = data.filter(b => b.booking_date.split('-')[1] === monthFilter);
+            filteredData = data.filter(b => {
+                // Đưa vào lò ép chuẩn thành Date Object
+                const bDate = new Date(b.booking_date);
+                // Bóc lấy tháng và tự động đệm số 0 đằng trước (VD: 5 -> 05)
+                const bMonth = String(bDate.getMonth() + 1).padStart(2, '0');
+                return bMonth === monthFilter;
+            });
         }
 
         tbody.innerHTML = filteredData.map(b => {
