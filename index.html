@@ -1418,6 +1418,13 @@
                 <select id="filter-log-room" class="form-select form-select-sm" style="width: 150px;" onchange="loadUsageLogs()">
                     <option value="all">Tất cả phòng</option>
                 </select>
+                <select id="filter-log-month" class="form-select form-select-sm border-primary" style="width: 130px;" onchange="loadUsageLogs()">
+                    <option value="all">Tất cả tháng</option>
+                    <option value="01">Tháng 1</option><option value="02">Tháng 2</option><option value="03">Tháng 3</option>
+                    <option value="04">Tháng 4</option><option value="05">Tháng 5</option><option value="06">Tháng 6</option>
+                    <option value="07">Tháng 7</option><option value="08">Tháng 8</option><option value="09">Tháng 9</option>
+                    <option value="10">Tháng 10</option><option value="11">Tháng 11</option><option value="12">Tháng 12</option>
+                </select>
                 <button class="btn btn-sm btn-outline-primary" onclick="loadUsageLogs()"><i class="bi bi-arrow-clockwise"></i> Làm mới</button>
                 <button class="btn btn-sm btn-success fw-bold" onclick="exportData('usage_logs')">
                     <i class="bi bi-file-earmark-excel"></i> Xuất Excel
@@ -3104,7 +3111,7 @@
         XLSX.writeFile(wb, fileName);
         Swal.fire('Thành công', `Đã tải xuống file: <b>${fileName}</b>`, 'success');
     }
-    
+
     // BIẾN VÀ HÀM GỌI MODAL LỊCH ĐẦY ĐỦ
     let fullScheduleModalInstance = null;
     function openFullScheduleModal() {
@@ -3445,10 +3452,13 @@
         refreshRoomFilters(); // Cập nhật lại danh mục phòng ngoài trang chính
     }
     // 1. Tải nhật ký sử dụng thực tế
+    // 1. Tải nhật ký sử dụng thực tế (Đã có bộ lọc Tháng)
     async function loadUsageLogs() {
         showView('usage-logs-view');
         const roomFilter = document.getElementById('filter-log-room').value;
+        const monthFilter = document.getElementById('filter-log-month').value; // Lấy giá trị tháng
         const tbody = document.getElementById('usage-logs-list');
+        
         tbody.innerHTML = `
             <tr id="loading-spinner">
                 <td colspan="100%" class="text-center py-5">
@@ -3463,11 +3473,18 @@
             query = query.ilike('machine_name', `${roomFilter}%`);
         }
 
-        const { data, error } = await query.order('actual_start', { ascending: false, nullsFirst: false });
+        // Ưu tiên xếp theo ngày đặt lịch để lọc tháng chuẩn xác
+        const { data, error } = await query.order('booking_date', { ascending: false });
 
         if (error || !data) return;
 
-        tbody.innerHTML = data.map(b => {
+        // THUẬT TOÁN LỌC THÁNG
+        let filteredData = data;
+        if (monthFilter !== 'all') {
+            filteredData = data.filter(b => b.booking_date.split('-')[1] === monthFilter);
+        }
+
+        tbody.innerHTML = filteredData.map(b => {
             const checkIn = b.actual_start ? new Date(b.actual_start).toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'}) : '--:--';
             const checkOut = b.actual_end ? new Date(b.actual_end).toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'}) : '--:--';
             
@@ -3476,9 +3493,11 @@
             else if (b.checkin_status === 'completed') statusBadge = '<span class="badge bg-secondary">Đã ra về</span>';
             else statusBadge = '<span class="badge bg-light text-muted">Chưa vào</span>';
 
+            const dateStr = new Date(b.booking_date).toLocaleDateString('vi-VN', {day:'2-digit', month:'2-digit'});
+
             return `
                 <tr>
-                    <td class="text-start ps-4"><b>${b.full_name}</b></td>
+                    <td class="text-start ps-4"><b>${b.full_name}</b><br><small class="text-muted">Ngày: ${dateStr}</small></td>
                     <td><small>${b.machine_name}</small></td>
                     <td class="fw-bold text-primary">${checkIn}</td>
                     <td class="fw-bold text-danger">${checkOut}</td>
@@ -3486,7 +3505,7 @@
                     <td>${statusBadge}</td>
                 </tr>
             `;
-        }).join('') || '<tr><td colspan="6" class="p-4 text-muted">Chưa có nhật ký ra vào nào.</td></tr>';
+        }).join('') || '<tr><td colspan="6" class="p-4 text-muted">Không có nhật ký ra vào nào trong khoảng thời gian này.</td></tr>';
     }
 
     // 2. HÀM GIẢ LẬP QUÉT MÃ QR (Demo cho thầy cô)
