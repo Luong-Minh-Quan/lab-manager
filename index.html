@@ -2755,10 +2755,26 @@
         const { data, error } = await query;
         if (error || !data) return;
 
-        // Lọc theo tháng
-        let filteredData = data;
+        // --- ĐÃ THÊM: CHỈ LẤY NHỮNG CA ĐÃ KẾT THÚC (QUÁ KHỨ) ---
+        const now = new Date();
+        const todayStr = now.toISOString().split('T')[0];
+        const currentMins = now.getHours() * 60 + now.getMinutes();
+
+        let pastData = data.filter(b => {
+            if (b.booking_date < todayStr) return true; // Đã qua ngày hôm trước
+            if (b.booking_date === todayStr) {
+                // Nếu là hôm nay, chỉ lấy khi giờ kết thúc của ca đó đã trôi qua
+                const endMins = parseInt(b.end_time.split(':')[0]) * 60 + parseInt(b.end_time.split(':')[1]);
+                return endMins <= currentMins; 
+            }
+            return false; // Các ngày trong tương lai -> Bỏ qua
+        });
+        // -------------------------------------------------------------
+
+        // Lọc theo tháng (Sử dụng mảng pastData đã lọc ở trên)
+        let filteredData = pastData;
         if (monthFilter !== 'all') {
-            filteredData = data.filter(b => b.booking_date.split('-')[1] === monthFilter);
+            filteredData = pastData.filter(b => b.booking_date.split('-')[1] === monthFilter);
         }
 
         // --- BỘ ĐẾM (COUNTERS) ---
