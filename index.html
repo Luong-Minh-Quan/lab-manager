@@ -2076,7 +2076,39 @@
         const note = document.getElementById('book-note').value; // <-- Lấy dữ liệu ghi chú
 
         if (!date || !start || !end) return Swal.fire('Cảnh báo', 'Vui lòng chọn ngày và giờ!', 'warning');
-        
+        // ==========================================
+        // LỚP KHIÊN BẢO VỆ 1: CHỈ CHO ĐĂNG KÝ TRONG CA QUY ĐỊNH
+        // ==========================================
+        // Hàm đổi giờ ra phút để so sánh không bao giờ sai
+        function timeToMinutes(timeStr) {
+            const [h, m] = timeStr.split(':').map(Number);
+            return h * 60 + m;
+        }
+
+        const startMins = timeToMinutes(start);
+        const endMins = timeToMinutes(end);
+
+        // Định nghĩa khung giờ (Tính bằng phút)
+        const morningStart = 7 * 60 + 30;    // 450  (07:30)
+        const morningEnd = 11 * 60 + 15;     // 675  (11:15)
+        const afternoonStart = 13 * 60 + 30; // 810  (13:30)
+        const afternoonEnd = 21 * 60 + 0;    // 1260 (21:00)
+
+        // Kiểm tra xem giờ sinh viên chọn có lọt thỏm trong ca Sáng hoặc ca Chiều không
+        const isValidMorning = (startMins >= morningStart && endMins <= morningEnd);
+        const isValidAfternoon = (startMins >= afternoonStart && endMins <= afternoonEnd);
+
+        if (!isValidMorning && !isValidAfternoon) {
+            return Swal.fire({
+                title: 'Sai khung giờ quy định!',
+                html: 'Hệ thống chỉ chấp nhận đăng ký trong 2 khung giờ:<br>' +
+                      '<b class="text-primary">Sáng:</b> 07:30 - 11:15<br>' +
+                      '<b class="text-danger">Chiều/Tối:</b> 13:30 - 21:00<br><br>' +
+                      '<i class="text-muted small">(Lưu ý: Không đặt giờ nằm ngoài khoảng này, và không đăng ký xuyên ca từ sáng sang chiều)</i>',
+                icon: 'error'
+            });
+        }
+        // ==========================================
         // --- CHẶN THỜI GIAN QUÁ KHỨ ---
         const now = new Date();
         const [y, m, d] = date.split('-').map(Number);
