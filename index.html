@@ -1914,7 +1914,7 @@
             const { count: countMachines } = await _supabase.from('machines').select('*', { count: 'exact', head: true }).eq('status', 'available');
             document.getElementById('stat-machines').innerText = countMachines || 0;
 
-            // 3. Tính tổng Sinh viên ĐANG thực hành tại thời điểm hiện tại (Real-time theo ca đăng ký)
+            // 3. Tính tổng Sinh viên ĐANG thực hành tại thời điểm hiện tại
             const { data: bookingsToday } = await _supabase.from('bookings')
                 .select('participants, start_time, end_time')
                 .eq('booking_date', today)
@@ -1922,15 +1922,13 @@
             
             let totalStudents = 0;
             const now = new Date();
-            const currentMins = now.getHours() * 60 + now.getMinutes(); // Lấy giờ hiện tại quy ra phút
+            const currentMins = now.getHours() * 60 + now.getMinutes();
 
             if (bookingsToday) {
                 bookingsToday.forEach(b => { 
-                    // Quy đổi giờ của ca đăng ký ra phút
                     const startMins = parseInt(b.start_time.split(':')[0]) * 60 + parseInt(b.start_time.split(':')[1]);
                     const endMins = parseInt(b.end_time.split(':')[0]) * 60 + parseInt(b.end_time.split(':')[1]);
                     
-                    // CHỈ CỘNG DỒN NẾU: Giờ hiện tại nằm kẹp giữa Giờ bắt đầu và Giờ kết thúc
                     if (currentMins >= startMins && currentMins <= endMins) {
                         totalStudents += parseInt(b.participants || 1); 
                     }
@@ -1942,11 +1940,28 @@
             const { count: countErrors } = await _supabase.from('machines').select('*', { count: 'exact', head: true }).eq('status', 'maintenance');
             document.getElementById('stat-errors').innerText = countErrors || 0;
 
-            // 5. Điện năng hôm nay (Mô phỏng)
-            // LƯU Ý: Vì chưa có phần cứng thiết bị đo điện năng đẩy lên DB, ta làm thuật toán mô phỏng tăng dần theo thời gian trong ngày
-            const currentHour = new Date().getHours();
-            const fakeEnergy = (currentHour * 5.5 + Math.random() * 2).toFixed(1);
-            document.getElementById('stat-energy').innerHTML = `${fakeEnergy} <small class="fs-6">kWh</small>`;
+            // =========================================================
+            // 5. ĐIỆN NĂNG HÔM NAY (DỮ LIỆU THỰC TẾ)
+            // =========================================================
+            let totalEnergyToday = 0.0;
+            
+            // A. Lấy tổng điện năng từ các ca thực hành của sinh viên đã/đang chạy hôm nay
+            const { data: energyBookings } = await _supabase.from('bookings').select('energy_consumed').eq('booking_date', today);
+            if (energyBookings) {
+                energyBookings.forEach(b => { 
+                    totalEnergyToday += parseFloat(b.energy_consumed || 0); 
+                });
+            }
+            
+            // B. Lấy THÊM lượng điện năng của các máy đang được Admin mở từ xa (Chạy tự do không theo ca)
+            const { data: activeMachines } = await _supabase.from('machines').select('energy_consumed').eq('power_status', true);
+            if (activeMachines) {
+                activeMachines.forEach(m => { 
+                    totalEnergyToday += parseFloat(m.energy_consumed || 0); 
+                });
+            }
+
+            document.getElementById('stat-energy').innerHTML = `${totalEnergyToday.toFixed(2)} <small class="fs-6">kWh</small>`;
 
         } catch (err) {
             console.error("Lỗi khi tải thống kê:", err);
@@ -2682,6 +2697,7 @@ function startRealtimeTracking() {
         }
     }
     // Hàm tự động tải danh sách Ca thực hành hôm nay của thiết bị được chọn
+    // Hàm tự động tải danh sách Ca thực hành hôm nay của thiết bị được chọn
     async function updateLiveShiftFilter() {
         const machineSelect = document.getElementById('live-machine-filter');
         const machineName = machineSelect.options[machineSelect.selectedIndex].text; // Lấy tên máy đang chọn
@@ -2690,7 +2706,6 @@ function startRealtimeTracking() {
         // Hiển thị trạng thái đang tải
         shiftSelect.innerHTML = '<option value="">Đang tải dữ liệu ca máy...</option>';
 
-        // Lấy ngày hôm nay (YYYY-MM-DD)
         const today = new Date().toISOString().split('T')[0];
 
         // Truy vấn Supabase: Lấy các ca đã DUYỆT của MÁY NÀY trong NGÀY HÔM NAY
@@ -2699,21 +2714,19 @@ function startRealtimeTracking() {
             .select('id, start_time, end_time, full_name')
             .eq('booking_date', today)
             .eq('status', 'approved')
-            .ilike('machine_name', `%${machineName}%`) // Tìm tên máy có chứa chuỗi này
-            .order('start_time', { ascending: true }); // Sắp xếp theo giờ từ sáng đến tối
+            .ilike('machine_name', `%${machineName}%`) 
+            .order('start_time', { ascending: true }); 
 
-        // Nếu lỗi hoặc không có ai đăng ký máy này hôm nay
-        if (error || !data || data.length === 0) {
-            shiftSelect.innerHTML = '<option value="">Hôm nay trống, không có ca nào</option>';
-            return;
+        // LUÔN LUÔN CÓ TÙY CHỌN ƯU TIÊN CHO ADMIN BẬT MÁY TỪ XA
+        let optionsHtml = '<option value="remote_admin" class="fw-bold text-danger">⭐ Chế độ Quản trị / Chạy tự do</option>';
+
+        // Nếu có sinh viên đăng ký, thì ghép thêm vào danh sách
+        if (!error && data && data.length > 0) {
+            data.forEach(b => {
+                const timeSlot = `${b.start_time.substring(0,5)} - ${b.end_time.substring(0,5)}`;
+                optionsHtml += `<option value="${b.id}">Sinh viên: ${b.full_name} (${timeSlot})</option>`;
+            });
         }
-
-        // Nếu có dữ liệu, đổ vào Dropdown
-        let optionsHtml = '';
-        data.forEach(b => {
-            const timeSlot = `${b.start_time.substring(0,5)} - ${b.end_time.substring(0,5)}`;
-            optionsHtml += `<option value="${b.id}">${timeSlot} | SV: ${b.full_name}</option>`;
-        });
         
         shiftSelect.innerHTML = optionsHtml;
     }
