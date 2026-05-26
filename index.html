@@ -183,7 +183,7 @@
                     <ul class="dropdown-menu">
                         <li><a class="dropdown-item fw-bold text-primary" href="#" onclick="showView('monitor-energy-view')"><i class="bi bi-lightning-charge"></i> Theo dõi điện năng</a></li>
                         
-                        <li><a class="dropdown-item fw-bold text-danger" href="#" onclick="showView('monitor-door-view')"><i class="bi bi-door-open"></i> Mở cửa từ xa</a></li>
+                        <li><a class="dropdown-item fw-bold text-danger" href="#" onclick="loadRemoteControlView()"><i class="bi bi-door-open"></i> Mở cửa từ xa</a></li>
                         
                         <li><a class="dropdown-item text-danger fw-bold" href="#" onclick="showView('anomaly-monitor-view')"><i class="bi bi-exclamation-triangle-fill"></i> Cảnh báo bất thường</a></li>
                     </ul>
@@ -1514,23 +1514,14 @@
     </div>
     
     <div id="monitor-door-view" class="view-section hidden">
-        <h3 class="fw-bold mb-4 text-university"><i class="bi bi-door-open-fill text-danger"></i> Điều khiển Cửa & Thiết bị</h3>
+        <h3 class="fw-bold mb-4 text-university"><i class="bi bi-door-open-fill text-danger"></i> Điều khiển Cửa & Thiết bị (Real-time)</h3>
         <div class="row">
             <div class="col-md-7">
                 <div class="card shadow-sm border-0">
                     <table class="table mb-0 align-middle table-hover table-custom text-center">
-                        <thead><tr><th class="text-start ps-4">Phòng PTN</th><th>Trạng thái cửa</th><th>Nút điều khiển</th></tr></thead>
-                        <tbody>
-                            <tr>
-                                <td class="text-start ps-4 fw-bold">PTN Cơ khí 1 (K101)</td>
-                                <td><span class="badge bg-danger px-3 py-2"><i class="bi bi-lock-fill"></i> Đang khóa</span></td>
-                                <td><button class="btn btn-success btn-sm fw-bold px-3"><i class="bi bi-unlock-fill"></i> MỞ CỬA</button></td>
-                            </tr>
-                            <tr>
-                                <td class="text-start ps-4 fw-bold">PTN CNC (K102)</td>
-                                <td><span class="badge bg-success px-3 py-2"><i class="bi bi-unlock-fill"></i> Đang mở</span></td>
-                                <td><button class="btn btn-danger btn-sm fw-bold px-3"><i class="bi bi-lock-fill"></i> KHÓA CỬA</button></td>
-                            </tr>
+                        <thead><tr><th class="text-start ps-4">Phòng / Thiết bị</th><th>Trạng thái hiện tại</th><th>Nút điều khiển từ xa</th></tr></thead>
+                        <tbody id="remote-control-list">
+                            <tr><td colspan="3" class="p-4 text-muted"><div class="spinner-border spinner-border-sm"></div> Đang kết nối thiết bị...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -1542,12 +1533,8 @@
                         <span class="spinner-border spinner-border-sm text-success"></span>
                     </div>
                     <div class="card-body p-0">
-                        <div class="terminal-log">
-                            <div class="log-info">[08:45:12] SYSTEM: Kết nối ESP32-K101 ổn định.</div>
-                            <div class="text-white">[08:50:05] SENSOR: SV quét QR tại K101 -> Hợp lệ.</div>
-                            <div class="log-warn">[08:50:08] ACTION: Relay K101 kích hoạt MỞ CỬA.</div>
-                            <div class="log-error">[09:12:30] ALERT: Cửa C102 mở quá 5 phút chưa đóng!</div>
-                            <div class="log-info blink">_</div>
+                        <div class="terminal-log" id="system-terminal-log">
+                            <div class="log-info">[HỆ THỐNG] Khởi tạo kết nối máy chủ Supabase...</div>
                         </div>
                     </div>
                 </div>
@@ -4613,6 +4600,130 @@
             }
         });
     }
+    // ==========================================
+// ĐIỀU KHIỂN THIẾT BỊ TỪ XA (REMOTE CONTROL)
+// ==========================================
+
+// 1. Tải danh sách thiết bị và trạng thái hiển thị lên bảng
+async function loadRemoteControlView() {
+    showView('monitor-door-view');
+    const tbody = document.getElementById('remote-control-list');
+    
+    // Lấy dữ liệu Phòng (Cửa) và Máy (Nguồn điện)
+    const [roomsRes, machinesRes] = await Promise.all([
+        _supabase.from('rooms').select('id, room_code, room_name, door_status').eq('status', 'active'),
+        _supabase.from('machines').select('id, machine_name, power_status').eq('status', 'available')
+    ]);
+
+    if (roomsRes.error || machinesRes.error) {
+        return addTerminalLog("Lỗi truy xuất cơ sở dữ liệu!", "error");
+    }
+
+    let html = '';
+
+    // Render danh sách Cửa phòng
+    roomsRes.data.forEach(room => {
+        const isMokhoa = room.door_status === true;
+        const badge = isMokhoa ? '<span class="badge bg-success px-3 py-2"><i class="bi bi-unlock-fill"></i> Đang mở cửa</span>' : '<span class="badge bg-danger px-3 py-2"><i class="bi bi-lock-fill"></i> Đang khóa</span>';
+        const btn = isMokhoa 
+            ? `<button class="btn btn-danger btn-sm fw-bold px-3 w-100" onclick="toggleRemoteDevice('room', '${room.id}', false, '${room.room_code}')"><i class="bi bi-lock-fill"></i> KHÓA CỬA</button>`
+            : `<button class="btn btn-success btn-sm fw-bold px-3 w-100" onclick="toggleRemoteDevice('room', '${room.id}', true, '${room.room_code}')"><i class="bi bi-unlock-fill"></i> MỞ CỬA</button>`;
+
+        html += `
+            <tr>
+                <td class="text-start ps-4 fw-bold text-primary"><i class="bi bi-door-closed"></i> Cửa ${room.room_code}</td>
+                <td>${badge}</td>
+                <td style="width: 140px;">${btn}</td>
+            </tr>
+        `;
+    });
+
+    // Render danh sách Máy móc
+    machinesRes.data.forEach(machine => {
+        const isBatDien = machine.power_status === true;
+        const badge = isBatDien ? '<span class="badge bg-warning text-dark px-3 py-2"><i class="bi bi-lightning-fill"></i> Đang cấp điện</span>' : '<span class="badge bg-secondary px-3 py-2"><i class="bi bi-power"></i> Đang ngắt điện</span>';
+        const btn = isBatDien 
+            ? `<button class="btn btn-secondary btn-sm fw-bold px-3 w-100" onclick="toggleRemoteDevice('machine', '${machine.id}', false, '${machine.machine_name}')"><i class="bi bi-power"></i> NGẮT ĐIỆN</button>`
+            : `<button class="btn btn-warning btn-sm fw-bold px-3 w-100 text-dark" onclick="toggleRemoteDevice('machine', '${machine.id}', true, '${machine.machine_name}')"><i class="bi bi-lightning-charge"></i> CẤP ĐIỆN</button>`;
+
+        html += `
+            <tr>
+                <td class="text-start ps-4 fw-bold"><i class="bi bi-cpu"></i> ${machine.machine_name}</td>
+                <td>${badge}</td>
+                <td style="width: 140px;">${btn}</td>
+            </tr>
+        `;
+    });
+
+    tbody.innerHTML = html;
+}
+
+// 2. Hàm Gửi lệnh điều khiển lên Supabase
+async function toggleRemoteDevice(type, id, targetState, deviceName) {
+    const actionText = targetState ? "BẬT/MỞ" : "TẮT/KHÓA";
+    
+    // Xác nhận từ quản lý để tránh bấm nhầm
+    const confirm = await Swal.fire({
+        title: `Xác nhận ${actionText}?`,
+        text: `Bạn đang ra lệnh từ xa cho: ${deviceName}`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: targetState ? '#198754' : '#dc3545',
+        confirmButtonText: `Đồng ý ${actionText}`
+    });
+
+    if (!confirm.isConfirmed) return;
+
+    Swal.fire({ title: 'Đang truyền lệnh tới KC868...', didOpen: () => Swal.showLoading() });
+    
+    // Ghi log ra màn hình Terminal ảo
+    addTerminalLog(`COMMAND: Gửi lệnh ${actionText} tới ${deviceName}...`, 'warn');
+
+    let error;
+    if (type === 'room') {
+        const res = await _supabase.from('rooms').update({ door_status: targetState }).eq('id', id);
+        error = res.error;
+    } else {
+        const res = await _supabase.from('machines').update({ power_status: targetState }).eq('id', id);
+        error = res.error;
+    }
+
+    if (error) {
+        addTerminalLog(`LỖI: Mất kết nối tới máy chủ. ${error.message}`, 'error');
+        return Swal.fire('Lỗi', 'Không thể gửi lệnh!', 'error');
+    }
+
+    addTerminalLog(`SUCCESS: Đã cập nhật trạng thái ${deviceName} thành ${targetState ? 'ON' : 'OFF'}.`, 'info');
+    Swal.fire('Thành công', 'Đã lưu lệnh. Tủ điện KC868 sẽ nhận được lệnh trong giây lát.', 'success');
+    
+    // Tải lại bảng để cập nhật màu sắc nút bấm
+    loadRemoteControlView();
+}
+
+// 3. Hàm tạo hiệu ứng chữ chạy trong Terminal
+function addTerminalLog(message, type = 'info') {
+    const terminal = document.getElementById('system-terminal-log');
+    if (!terminal) return;
+
+    const timeStr = new Date().toLocaleTimeString('vi-VN', { hour12: false });
+    let colorClass = 'text-white';
+    if (type === 'error') colorClass = 'log-error';
+    if (type === 'warn') colorClass = 'log-warn';
+    if (type === 'info') colorClass = 'log-info';
+
+    // Xóa con trỏ nhấp nháy cũ
+    const cursor = terminal.querySelector('.blink');
+    if(cursor) cursor.remove();
+
+    // Thêm dòng log mới
+    terminal.innerHTML += `<div class="${colorClass}">[${timeStr}] ${message}</div>`;
+    
+    // Thêm lại con trỏ nhấp nháy ở cuối
+    terminal.innerHTML += `<div class="log-info blink">_</div>`;
+    
+    // Tự động cuộn xuống dòng mới nhất
+    terminal.scrollTop = terminal.scrollHeight;
+}
 </script>
 </body>
 </html>
