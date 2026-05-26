@@ -2588,72 +2588,71 @@
     }
 
     // Nút "Theo dõi ngay"
-    function startRealtimeTracking() {
-        const machine = document.getElementById('live-machine-filter');
-        const machineName = machine.options[machine.selectedIndex].text;
-        
-        document.getElementById('chart-energy-title').innerText = `Giám sát: ${machineName}`;
-        document.getElementById('chart-status').innerHTML = `<span class="spinner-grow spinner-grow-sm" style="width: 8px; height: 8px;"></span> Đang Live...`;
-        
-        // Reset data
-        chartDataPoints = [];
-        chartLabels = [];
-        if(realtimeInterval) clearInterval(realtimeInterval);
+    let supabaseSubscriptionObj = null; // Biến lưu cổng lắng nghe
 
-        let timeTick = 0;
+function startRealtimeTracking() {
+    const machineSelect = document.getElementById('live-machine-filter');
+    const machineId = machineSelect.value; 
+    const machineName = machineSelect.options[machineSelect.selectedIndex].text;
+    
+    // Đổi tiêu đề bảng điều khiển sang chế độ Live thực tế
+    document.getElementById('chart-energy-title').innerText = `Giám sát năng lượng thực tế: ${machineName}`;
+    document.getElementById('chart-status').innerHTML = `<span class="spinner-grow spinner-grow-sm text-success" style="width: 8px; height: 8px;"></span> <b class="text-success">ĐANG LIÊN KẾT ĐỒNG HỒ...</b>`;
+    
+    // Reset sạch sẽ mảng dữ liệu cũ trên biểu đồ đường
+    chartDataPoints = [];
+    chartLabels = [];
+    
+    // Ngắt kênh kết nối cũ nếu sếp chuyển đổi chọn xem máy khác
+    if (supabaseSubscriptionObj) _supabase.removeChannel(supabaseSubscriptionObj);
 
-        // Mô phỏng lấy dữ liệu từ KC868 mỗi giây
-        realtimeInterval = setInterval(() => {
-            if(currentView !== 'monitor-energy-view') {
-                clearInterval(realtimeInterval);
-                return;
-            }
-
-            timeTick++;
-            const now = new Date().toLocaleTimeString('vi-VN');
+    // MỞ ĐƯỜNG ỐNG SÓNG REAL-TIME: Chỉ lắng nghe đúng dòng dữ liệu có ID của máy này bị thay đổi
+    supabaseSubscriptionObj = _supabase
+        .channel('pdm-live-bus-data')
+        .on('postgres_changes', { 
+            event: 'UPDATE', 
+            schema: 'public', 
+            table: 'machines', 
+            filter: `id=eq.${machineId}` 
+        }, 
+        payload => {
+            const bayGio = new Date().toLocaleTimeString('vi-VN', { hour12: false });
             
-            // Giả lập: Bình thường chạy 500-800W. Thi thoảng bị vọt lên >1500W (Kẹt phôi / Ăn dao sâu)
-            const isAbnormal = Math.random() > 0.9; 
-            let currentPower = isAbnormal ? (1500 + Math.random() * 500) : (500 + Math.random() * 300);
-            currentPower = Math.round(currentPower);
+            // Đọc trực tiếp 2 giá trị thật do mạch KC868 vừa bắn lên Cloud
+            const wattThucTe = payload.new.live_watt || 0; 
+            const kwhTieuThu = payload.new.energy_consumed || 0;
 
-            // Cập nhật mảng dữ liệu (Giữ tối đa 30 điểm trên màn hình)
-            chartLabels.push(now);
-            chartDataPoints.push(currentPower);
+            // Bơm số liệu thực vào mảng đồ thị nhịp tim (Giữ tối đa 30 điểm cho mượt)
+            chartLabels.push(bayGio);
+            chartDataPoints.push(wattThucTe);
             if(chartLabels.length > 30) {
                 chartLabels.shift();
                 chartDataPoints.shift();
             }
+            
+            // Vẽ lại biểu đồ
+            if(livePowerChartObj) livePowerChartObj.update();
 
-            // Cập nhật Biểu đồ
-            livePowerChartObj.update();
-
-            // CẬP NHẬT UI CẢNH BÁO BÊN PHẢI
+            // Cập nhật các khối hiển thị số liệu to trên giao diện
             const valDisplay = document.getElementById('live-power-val');
             const alertBadge = document.getElementById('live-alert-badge');
+            
+            if(valDisplay) valDisplay.innerText = wattThucTe;
 
-            valDisplay.innerText = currentPower;
-
-            if (currentPower >= POWER_THRESHOLD) {
-                valDisplay.className = 'display-3 fw-bold mb-0 text-danger animate-flicker';
-                alertBadge.className = 'alert alert-danger py-3 fw-bold mb-0 animate-flicker';
-                alertBadge.innerHTML = '<i class="bi bi-exclamation-triangle-fill"></i> QUÁ TẢI / KẸT PHÔI!';
-                
-                // Đổi màu đường line thành đỏ
-                livePowerChartObj.data.datasets[0].borderColor = '#dc3545';
-                livePowerChartObj.data.datasets[0].backgroundColor = 'rgba(220, 53, 69, 0.1)';
-            } else {
-                valDisplay.className = 'display-3 fw-bold mb-0 text-primary';
-                alertBadge.className = 'alert alert-success py-3 fw-bold mb-0';
-                alertBadge.innerHTML = '<i class="bi bi-check-circle-fill"></i> Hoạt động ổn định';
-                
-                // Đổi màu đường line về xanh
-                livePowerChartObj.data.datasets[0].borderColor = '#0d6efd';
-                livePowerChartObj.data.datasets[0].backgroundColor = 'rgba(13, 110, 253, 0.1)';
+            if(alertBadge) {
+                if (wattThucTe >= POWER_THRESHOLD) {
+                    valDisplay.className = 'display-3 fw-bold mb-0 text-danger animate-flicker';
+                    alertBadge.className = 'alert alert-danger py-3 fw-bold mb-0 animate-flicker';
+                    alertBadge.innerHTML = `<i class="bi bi-exclamation-triangle-fill"></i> PHÁT HIỆN QUÁ TẢI THỰC TẾ: ${wattThucTe} W!`;
+                } else {
+                    valDisplay.className = 'display-3 fw-bold mb-0 text-primary';
+                    alertBadge.className = 'alert alert-success py-3 fw-bold mb-0';
+                    alertBadge.innerHTML = `<i class="bi bi-check-circle-fill"></i> Vận hành an toàn. Điện tiêu thụ: <b class="text-dark">${kwhTieuThu}</b> kWh`;
+                }
             }
-
-        }, 1000); // 1 giây lấy mẫu 1 lần
-    }
+        })
+        .subscribe();
+}
 
     // Hàm Tự động tải danh sách Máy khi sếp chọn Phòng (Thay thế dữ liệu tĩnh)
     async function updateLiveMachineFilter() {
