@@ -2614,9 +2614,14 @@ function startRealtimeTracking() {
     document.getElementById('chart-energy-title').innerText = `Giám sát năng lượng thực tế: ${machineName}`;
     document.getElementById('chart-status').innerHTML = `<span class="spinner-grow spinner-grow-sm text-success" style="width: 8px; height: 8px;"></span> <b class="text-success">ĐANG LIÊN KẾT ĐỒNG HỒ...</b>`;
     
-    // Reset sạch sẽ mảng dữ liệu cũ trên biểu đồ đường
-    chartDataPoints = [];
-    chartLabels = [];
+    // (Đoạn này nằm bên trong hàm startRealtimeTracking)
+    // Xóa sạch mảng lưu trữ biểu đồ cũ và MỒI SẴN MỘT ĐIỂM 0 (Bước Fix lỗi)
+    const bayGioInit = new Date().toLocaleTimeString('vi-VN', { hour12: false });
+    chartLabels = [bayGioInit];
+    chartDataPoints = [0]; 
+    if(livePowerChartObj) livePowerChartObj.update();
+    
+    // Ngắt kênh đăng ký cũ nếu người dùng chuyển đổi...
     
     // Ngắt kênh kết nối cũ nếu sếp chuyển đổi chọn xem máy khác
     if (supabaseSubscriptionObj) _supabase.removeChannel(supabaseSubscriptionObj);
