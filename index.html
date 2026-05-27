@@ -4534,22 +4534,47 @@ async function saveBookingThreshold(bookingId) {
     }
 }
 
-// Hàm Ngắt điện khẩn cấp (Giữ nguyên logic của sếp)
-function emergencyStop(bookingId, machineName) {
-    Swal.fire({
+// Hàm Ngắt điện khẩn cấp (Đã tích hợp API đóng ngắt thật)
+async function emergencyStop(bookingId, machineName) {
+    const result = await Swal.fire({
         title: 'NGẮT ĐIỆN KHẨN CẤP?',
-        text: `Lệnh dừng khẩn cấp sẽ gửi tới tụ điện của: ${machineName}`,
+        text: `Lệnh dừng khẩn cấp sẽ gửi tới tủ điện của: ${machineName}`,
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#d33',
         cancelButtonColor: '#6c757d',
         confirmButtonText: 'NGẮT ĐIỆN NGAY'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            Swal.fire('Đã ngắt điện!', `Hệ thống đã dập cầu dao máy ${machineName}.`, 'success');
-            // Sau này sếp có thể chèn API _supabase điều khiển chân Relay KC868 vào đây
-        }
     });
+
+    if (result.isConfirmed) {
+        Swal.fire({ title: 'Đang truyền lệnh ngắt điện...', didOpen: () => Swal.showLoading() });
+
+        // 1. TẮT NGUỒN THỰC TẾ: Đẩy trạng thái power_status = false lên bảng machines
+        const { error: machineErr } = await _supabase
+            .from('machines')
+            .update({ power_status: false })
+            .ilike('machine_name', `%${machineName}%`); 
+
+        // 2. CẬP NHẬT BIÊN BẢN: Đánh dấu ca thực hành này là bị lỗi và ghi chú lại lý do
+        const { error: bookingErr } = await _supabase
+            .from('bookings')
+            .update({ 
+                machine_condition: 'Hư hỏng',
+                condition_note: 'Hệ thống AI tự động ngắt điện khẩn cấp do vượt ngưỡng an toàn!'
+            })
+            .eq('id', bookingId);
+
+        // Xử lý báo lỗi nếu mất mạng
+        if (machineErr) {
+            return Swal.fire('Lỗi kết nối', 'Không thể truyền lệnh tới máy chủ: ' + machineErr.message, 'error');
+        }
+
+        // Báo thành công
+        Swal.fire('Đã ngắt điện!', `Hệ thống đã dập cầu dao máy ${machineName}.`, 'success');
+        
+        // (Tuỳ chọn) Sếp có thể gọi hàm tải lại giao diện ở đây để bảng hiển thị chớp đỏ
+        // loadAnomalyData(); 
+    }
 }   
     
     // KÍCH HOẠT VẼ GIAO DIỆN GIÁM SÁT NGAY KHI TẢI TRANG
