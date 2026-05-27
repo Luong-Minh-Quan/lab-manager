@@ -16,6 +16,10 @@
     <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
 
     <style>
+        /* Hiệu ứng click chọn giờ trên Lịch Trống */
+        .slot-selectable { cursor: pointer; transition: all 0.2s; }
+        .slot-selectable:hover { background-color: #e0f0ff !important; box-shadow: inset 0 0 5px rgba(13,110,253,0.3); }
+        .slot-selected { background-color: #0d6efd !important; border-color: #0b5ed7 !important; box-shadow: inset 0 0 8px rgba(0,0,0,0.3); }
         /* Hiệu ứng Sơ đồ khối (Dành riêng cho trang Danh mục Khoa) */
         .system-node { position: relative; padding-left: 30px; margin-bottom: 15px; }
         .system-node::before {
@@ -974,7 +978,7 @@
     <div id="departments-view" class="view-section hidden">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h3 class="fw-bold text-university m-0"><i class="bi bi-diagram-3-fill"></i> Kiến trúc Hệ thống Phòng Thí Nghiệm</h3>
-            <span class="badge bg-danger px-3 py-2 fs-6 shadow-sm"><i class="bi bi-shield-check"></i> Quản lý bởi Khoa Cơ Khí</span>
+            <span class="badge bg-danger px-3 py-2 fs-6 shadow-sm"><i class="bi bi-shield-check"></i> Quản lý bởi Đại học Bách khoa</span>
         </div>
 
         <div class="row g-4 mb-4">
@@ -1078,11 +1082,11 @@
         <div class="alert alert-secondary border-0 shadow-sm d-flex align-items-center">
             <i class="bi bi-info-circle-fill text-university fs-4 me-3"></i>
             <div>
-                <strong>Lưu ý:</strong> Cấu trúc trên được phân nhóm dựa theo chuyên môn kỹ thuật để thuận tiện cho việc tra cứu. Mọi hoạt động quản lý nhân sự, cấp phát vật tư và xét duyệt lịch đều quy về <b>Ban Chủ nhiệm Khoa Cơ Khí</b>.
+                <strong>Lưu ý:</strong> Cấu trúc trên được phân nhóm dựa theo chuyên môn kỹ thuật để thuận tiện cho việc tra cứu. Mọi hoạt động quản lý nhân sự, cấp phát vật tư và xét duyệt lịch đều quy về <b>Ban Chủ nhiệm Khoa</b>.
             </div>
         </div>
     </div>
-    
+
     <div id="user-guide-view" class="view-section hidden">
         <h3 class="fw-bold mb-4 text-university"><i class="bi bi-book-half"></i> Sổ tay Hướng dẫn sử dụng Hệ thống</h3>
         
@@ -1397,11 +1401,15 @@
                 <input type="date" id="grid-date" class="form-control border-primary" onchange="loadScheduleGrid()">
             </div>
             <div class="col-md-6 text-md-end mt-3 mt-md-0">
-                <div class="d-inline-flex gap-3 small fw-bold bg-white px-3 py-2 rounded shadow-sm border">
+                <div class="d-inline-flex gap-3 small fw-bold bg-white px-3 py-2 rounded shadow-sm border align-items-center">
+                    <div><span style="display:inline-block; width:16px; height:16px; background:#0d6efd; vertical-align:sub; margin-right:5px; border-radius: 2px;"></span> Đang chọn</div>
                     <div><span style="display:inline-block; width:16px; height:16px; background:#fff; border:1px solid #ccc; vertical-align:sub; margin-right:5px;"></span> Trống</div>
                     <div><span style="display:inline-block; width:16px; height:16px; background:#ff4d4d; border:1px solid #cc0000; vertical-align:sub; margin-right:5px;"></span> Đã đặt</div>
                     <div><span style="display:inline-block; width:16px; height:16px; background:#6c757d; vertical-align:sub; margin-right:5px;"></span> Bảo trì</div>
                 </div>
+                <button id="btn-grid-book" class="btn btn-primary fw-bold ms-3 hidden shadow" onclick="proceedToBookFromGrid()">
+                    <i class="bi bi-calendar-plus"></i> Đặt lịch (<span id="grid-book-count">0</span> phút)
+                </button>
             </div>
         </div>
 
@@ -2172,7 +2180,7 @@
 
     // 4. LUỒNG ĐĂNG KÝ VÀ CHỐNG TRÙNG LỊCH (BOOKING)
     // Mở Form đăng ký
-    function openBookingModal(roomCode, machineName) {
+    function openBookingModal(roomCode, machineName, presetDate = null, presetStart = null, presetEnd = null) {
         if (!bookingModalInstance) {
             const modalElement = document.getElementById('bookingModal');
             if (!modalElement) return Swal.fire('Lỗi', 'Không tìm thấy Form đăng ký!', 'error');
@@ -2181,8 +2189,12 @@
         document.getElementById('modal-machine-name').innerText = machineName;
         document.getElementById('book-room').value = roomCode;
         document.getElementById('book-name').value = currentUserProfile.full_name || '';
-        document.getElementById('book-date').value = new Date().toISOString().split('T')[0];
-        document.getElementById('book-note').value = ''; // Xóa trắng ô ghi chú mỗi lần mở lại
+        document.getElementById('book-note').value = '';
+        
+        // NẾU CÓ TRUYỀN GIỜ TỪ LỊCH TRỐNG THÌ ĐIỀN VÀO, NẾU KHÔNG THÌ LẤY NGÀY HÔM NAY
+        document.getElementById('book-date').value = presetDate || new Date().toISOString().split('T')[0];
+        document.getElementById('book-start').value = presetStart || '';
+        document.getElementById('book-end').value = presetEnd || '';
         
         bookingModalInstance.show();
     }
@@ -2524,7 +2536,8 @@
         // Gọi hàm vẽ lưới
         loadScheduleGrid();
     }
-
+    let currentSelectedMachine = null;
+    let selectedTimeSlots = [];
     // 2. Hàm xử lý logic: Vẽ bảng và tô màu ô
     async function loadScheduleGrid() {
         const roomCode = document.getElementById('grid-room-select').value;
@@ -2533,6 +2546,9 @@
         const thead = document.getElementById('grid-header');
         
         if (!roomCode || !date) return;
+        currentSelectedMachine = null;
+        selectedTimeSlots = [];
+        document.getElementById('btn-grid-book').classList.add('hidden');
         tbody.innerHTML = `
             <tr id="loading-spinner">
                 <td colspan="100%" class="text-center py-5">
@@ -2609,15 +2625,19 @@
 
                 // Tô màu theo trạng thái
                 if (isBooked) {
-                    bodyHtml += `<td style="background-color: #ff4d4d; border-color: #e60000;"></td>`; // Đỏ (Đã đặt)
+                    bodyHtml += `<td style="background-color: #ff4d4d; border-color: #e60000;"></td>`; 
                 } else {
-                    bodyHtml += `<td style="background-color: #ffffff; cursor: crosshair;" title="Trống lúc ${slot}"></td>`; // Trắng (Trống)
+                    // +++ SỬA Ở ĐÂY: Thêm class và sự kiện onclick vào ô Trống +++
+                    bodyHtml += `<td class="slot-selectable" style="background-color: #ffffff;" 
+                                     title="Trống lúc ${slot} - Bấm để chọn" 
+                                     onclick="toggleSlotSelection(this, '${m.machine_name}', '${slot}')"></td>`; 
                 }
             });
             bodyHtml += '</tr>';
         });
         
         tbody.innerHTML = bodyHtml || '<tr><td colspan="100%" class="p-4">Phòng này hiện chưa có thiết bị.</td></tr>';
+
     }
 
     // 7. DUYỆT ĐƠN VÀ GỬI EMAIL (EmailJS)
@@ -4992,6 +5012,76 @@ function addTerminalLog(message, type = 'info') {
     
     // Tự động cuộn xuống dòng mới nhất
     terminal.scrollTop = terminal.scrollHeight;
+}
+// ==============================================
+// TÍNH NĂNG CHỌN GIỜ TRỰC TIẾP TRÊN LỊCH TRỐNG
+// ==============================================
+function toggleSlotSelection(cellElement, machineName, timeSlot) {
+    // Nếu sinh viên click sang máy khác -> Cảnh báo và xóa vùng chọn cũ
+    if (currentSelectedMachine && currentSelectedMachine !== machineName) {
+        document.querySelectorAll('.slot-selected').forEach(el => {
+            el.classList.remove('slot-selected');
+            el.style.backgroundColor = '#ffffff'; // Xóa màu xanh
+        });
+        selectedTimeSlots = [];
+    }
+    
+    currentSelectedMachine = machineName;
+
+    const index = selectedTimeSlots.indexOf(timeSlot);
+    if (index === -1) {
+        // Chọn ô mới
+        selectedTimeSlots.push(timeSlot);
+        cellElement.classList.add('slot-selected');
+        cellElement.style.backgroundColor = ''; // Để css lớp class lo màu
+    } else {
+        // Bỏ chọn ô
+        selectedTimeSlots.splice(index, 1);
+        cellElement.classList.remove('slot-selected');
+        cellElement.style.backgroundColor = '#ffffff';
+        if (selectedTimeSlots.length === 0) currentSelectedMachine = null;
+    }
+
+    // Hiển thị nút "Đặt lịch ngay"
+    const btn = document.getElementById('btn-grid-book');
+    if (selectedTimeSlots.length > 0) {
+        btn.classList.remove('hidden');
+        document.getElementById('grid-book-count').innerText = selectedTimeSlots.length * 30; // Tính phút
+    } else {
+        btn.classList.add('hidden');
+    }
+}
+
+function proceedToBookFromGrid() {
+    if (selectedTimeSlots.length === 0) return;
+
+    // Sắp xếp các giờ từ bé đến lớn (VD: 14:00, 14:30)
+    selectedTimeSlots.sort();
+
+    // Lấy giờ bắt đầu và giờ của ô cuối cùng
+    const startStr = selectedTimeSlots[0];
+    const lastSlot = selectedTimeSlots[selectedTimeSlots.length - 1];
+
+    // Thuật toán kiểm tra tính liền kề (Không cho chọn 14:00 rồi nhảy cóc 16:00)
+    const sMins = parseInt(startStr.split(':')[0]) * 60 + parseInt(startStr.split(':')[1]);
+    const eMins = parseInt(lastSlot.split(':')[0]) * 60 + parseInt(lastSlot.split(':')[1]);
+    
+    if ( ((eMins - sMins) / 30) + 1 !== selectedTimeSlots.length ) {
+        return Swal.fire('Thao tác sai', 'Vui lòng chọn các khung giờ liền kề nhau để đăng ký chung một ca!', 'warning');
+    }
+
+    // Tính toán giờ kết thúc thực tế (Giờ ô cuối + 30 phút)
+    let [h, m] = lastSlot.split(':').map(Number);
+    m += 30;
+    if (m >= 60) { h += 1; m -= 60; }
+    const endStr = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+
+    // Lấy dữ liệu Phòng và Ngày để truyền sang Modal
+    const roomCode = document.getElementById('grid-room-select').value;
+    const date = document.getElementById('grid-date').value;
+
+    // Kích hoạt Modal Đặt lịch (Đã sửa ở bước 3 để nhận Data)
+    openBookingModal(roomCode, currentSelectedMachine, date, startStr, endStr);
 }
 </script>
 </body>
