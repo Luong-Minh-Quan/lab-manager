@@ -4575,11 +4575,7 @@ async function emergencyStop(bookingId, machineName) {
     }
 }        
     
-    // KÍCH HOẠT VẼ GIAO DIỆN GIÁM SÁT NGAY KHI TẢI TRANG
-    document.addEventListener('DOMContentLoaded', () => {
-        initAnomalyDashboard();
-    });
-
+ 
     // 1. Hàm khởi tạo màn hình
     async function loadConsumablesView() {
         showView('consumables-view');
