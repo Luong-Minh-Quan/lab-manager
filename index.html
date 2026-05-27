@@ -257,6 +257,11 @@
                 <button id="btn-auth" class="btn btn-sm btn-outline-light" onclick="showView('auth-view')">Đăng nhập</button>
             </div>
             <li class="nav-item ms-2 d-flex align-items-center">
+                <button class="btn btn-sm btn-warning fw-bold text-dark" onclick="testGeminiAI()">
+                    <i class="bi bi-robot"></i> Test AI
+                </button>
+            </li>
+            <li class="nav-item ms-2 d-flex align-items-center">
                 <button id="theme-toggle" class="btn btn-sm btn-outline-warning rounded-circle" style="width: 32px; height: 32px; padding: 0;" title="Chuyển chế độ giao diện">
                     <i id="theme-icon" class="bi bi-moon-stars-fill"></i>
                 </button>
@@ -5082,6 +5087,42 @@ function proceedToBookFromGrid() {
 
     // Kích hoạt Modal Đặt lịch (Đã sửa ở bước 3 để nhận Data)
     openBookingModal(roomCode, currentSelectedMachine, date, startStr, endStr);
+}
+// ==========================================
+// KẾT NỐI GEMINI AI QUA VERCEL BACKEND
+// ==========================================
+async function testGeminiAI() {
+    Swal.fire({ title: 'Đang gửi tín hiệu cho AI...', didOpen: () => Swal.showLoading() });
+    
+    try {
+        // Đây chính là đường link Vercel sếp vừa tạo xong
+        const VERCEL_API_URL = 'https://dut-lab-ai-backend.vercel.app/api/chat'; 
+        
+        const response = await fetch(VERCEL_API_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                promptText: "Hãy đóng vai trợ lý chuyên gia của PTN Khoa Cơ Khí Đại học Bách Khoa, chào mừng tôi bằng một câu thật ngầu và ngắn gọn."
+            })
+        });
+
+        const data = await response.json();
+        
+        if (data.success) {
+            Swal.fire({
+                title: 'Gemini AI trả lời:', 
+                text: data.result, 
+                icon: 'success',
+                confirmButtonColor: '#003366'
+            });
+        } else {
+            Swal.fire('Lỗi API', data.error, 'error');
+        }
+    } catch (err) {
+        Swal.fire('Lỗi kết nối', 'Không thể gọi được Vercel: ' + err.message, 'error');
+    }
 }
 </script>
 </body>
