@@ -1521,7 +1521,14 @@
     </div>
     
     <div id="monitor-door-view" class="view-section hidden">
-        <h3 class="fw-bold mb-4 text-university"><i class="bi bi-door-open-fill text-danger"></i> Điều khiển Cửa & Thiết bị (Real-time)</h3>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h3 class="fw-bold text-university m-0"><i class="bi bi-door-open-fill text-danger"></i> Điều khiển Cửa & Thiết bị </h3>
+            
+            <div class="input-group shadow-sm" style="max-width: 350px;">
+                <span class="input-group-text bg-white border-danger text-danger"><i class="bi bi-search"></i></span>
+                <input type="text" id="search-remote" class="form-control border-danger" placeholder="Tìm tên máy, phòng..." onkeyup="filterTableData('search-remote', 'remote-control-list')">
+            </div>
+        </div>
         <div class="row">
             <div class="col-md-7">
                 <div class="card shadow-sm border-0">
@@ -4660,15 +4667,21 @@ async function loadRemoteControlView() {
     showView('monitor-door-view');
     const tbody = document.getElementById('remote-control-list');
     
-    // Lấy dữ liệu Phòng (Cửa) và Máy (Nguồn điện)
+    // Lấy dữ liệu Phòng (Cửa) và Máy (Nguồn điện) - Bổ sung lấy thêm room_id của máy
     const [roomsRes, machinesRes] = await Promise.all([
         _supabase.from('rooms').select('id, room_code, room_name, door_status').eq('status', 'active'),
-        _supabase.from('machines').select('id, machine_name, power_status').eq('status', 'available')
+        _supabase.from('machines').select('id, machine_name, power_status, room_id').eq('status', 'available')
     ]);
 
     if (roomsRes.error || machinesRes.error) {
         return addTerminalLog("Lỗi truy xuất cơ sở dữ liệu!", "error");
     }
+
+    // Tạo một từ điển (Map) để tra cứu mã phòng nhanh từ room_id
+    const roomMap = {};
+    roomsRes.data.forEach(r => {
+        roomMap[r.id] = r.room_code;
+    });
 
     let html = '';
 
