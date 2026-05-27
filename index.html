@@ -4709,11 +4709,13 @@ async function loadRemoteControlView() {
         const btn = isBatDien 
             ? `<button class="btn btn-secondary btn-sm fw-bold px-3 w-100" onclick="toggleRemoteDevice('machine', '${machine.id}', false, '${machine.machine_name}')"><i class="bi bi-power"></i> NGẮT ĐIỆN</button>`
             : `<button class="btn btn-warning btn-sm fw-bold px-3 w-100 text-dark" onclick="toggleRemoteDevice('machine', '${machine.id}', true, '${machine.machine_name}')"><i class="bi bi-lightning-charge"></i> CẤP ĐIỆN</button>`;
-        // Lấy mã phòng từ Map (Nếu có), tạo thành thẻ nhãn Badge cực gọn
+        
+        // Lấy mã phòng từ Map
         const roomCodeTag = roomMap[machine.room_id] ? `<span class="badge bg-light text-primary border ms-2">${roomMap[machine.room_id]}</span>` : '';
+        
         html += `
             <tr>
-                <td class="text-start ps-4 fw-bold"><i class="bi bi-cpu"></i> ${machine.machine_name}</td>
+                <td class="text-start ps-4 fw-bold"><i class="bi bi-cpu"></i> ${machine.machine_name} ${roomCodeTag}</td>
                 <td>${badge}</td>
                 <td style="width: 140px;">${btn}</td>
             </tr>
