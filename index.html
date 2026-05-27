@@ -4382,9 +4382,7 @@ function startRealtimeTracking() {
         machine.maxV = newV;
         Swal.fire({ icon: 'success', title: 'Đã cập nhật ngưỡng an toàn cho ' + machine.name, timer: 1500, showConfirmButton: false });
     }
-
-
-     // Khởi tạo màn hình khi bấm vào Menu
+    // Khởi tạo màn hình khi bấm vào Menu
 async function initAnomalyDashboard() {
     showView('anomaly-monitor-view');
     // Mặc định chọn ngày hôm nay khi vừa mở
@@ -4575,7 +4573,7 @@ async function emergencyStop(bookingId, machineName) {
         // (Tuỳ chọn) Sếp có thể gọi hàm tải lại giao diện ở đây để bảng hiển thị chớp đỏ
         // loadAnomalyData(); 
     }
-}   
+}        
     
     // KÍCH HOẠT VẼ GIAO DIỆN GIÁM SÁT NGAY KHI TẢI TRANG
     document.addEventListener('DOMContentLoaded', () => {
