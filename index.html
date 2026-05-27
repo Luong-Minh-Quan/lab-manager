@@ -16,6 +16,20 @@
     <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
 
     <style>
+        /* Hiệu ứng Sơ đồ khối (Dành riêng cho trang Danh mục Khoa) */
+        .system-node { position: relative; padding-left: 30px; margin-bottom: 15px; }
+        .system-node::before {
+            content: ''; position: absolute; left: 0; top: 12px; width: 20px; height: 2px;
+            background-color: #003366; transition: width 0.3s;
+        }
+        .system-node::after {
+            content: ''; position: absolute; left: -5px; top: 7px; width: 12px; height: 12px;
+            background-color: white; border: 3px solid #cc0000; border-radius: 50%; z-index: 1;
+            box-shadow: 0 0 5px rgba(204, 0, 0, 0.5);
+        }
+        .system-node:hover::before { width: 25px; background-color: #cc0000; }
+        .system-node:hover { transform: translateX(5px); transition: all 0.3s ease; }
+        .system-spine { border-left: 2px dashed #003366; margin-left: 20px; padding-top: 10px; padding-bottom: 10px; }
         body { font-family: 'Inter', system-ui, sans-serif; }
         .bg-university { background-color: #003366; color: white; }
         .text-university { color: #003366; }
@@ -958,27 +972,117 @@
     </div>
 
     <div id="departments-view" class="view-section hidden">
-        <h3 class="fw-bold mb-4 text-university"><i class="bi bi-diagram-3-fill"></i> Cơ cấu Quản lý Phòng Thí Nghiệm</h3>
-        <div class="row g-4">
-            <div class="col-md-6">
-                <div class="card shadow-sm border-0 h-100">
-                    <div class="card-header bg-dark text-white fw-bold"><i class="bi bi-gear-fill"></i> Quản lý bởi Khoa Cơ Khí</div>
-                    <div class="card-body text-muted small">
-                        Hệ thống gồm 13 phòng thí nghiệm và xưởng phục vụ đào tạo và nghiên cứu khoa học. Được phân công phụ trách bởi các cán bộ giảng viên thuộc khoa.
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h3 class="fw-bold text-university m-0"><i class="bi bi-diagram-3-fill"></i> Kiến trúc Hệ thống Phòng Thí Nghiệm</h3>
+            <span class="badge bg-danger px-3 py-2 fs-6 shadow-sm"><i class="bi bi-shield-check"></i> Quản lý bởi Khoa Cơ Khí</span>
+        </div>
+
+        <div class="row g-4 mb-4">
+            <div class="col-md-4">
+                <div class="card shadow-sm border-0 h-100 border-top border-4 border-primary bg-light">
+                    <div class="card-header bg-transparent border-0 pt-4 pb-0 text-center">
+                        <div class="d-inline-block bg-primary text-white rounded-circle p-3 mb-3 shadow-sm">
+                            <i class="bi bi-cpu fs-3"></i>
+                        </div>
+                        <h5 class="fw-bold text-primary">Tổ Tự động hóa & Cơ điện tử</h5>
+                        <small class="text-muted">Nhóm PTN Trọng điểm Mạng lưới IoT & Robot</small>
+                    </div>
+                    <div class="card-body">
+                        <div class="system-spine">
+                            <div class="system-node">
+                                <div class="fw-bold text-dark">PTN SMC Automation</div>
+                                <span class="badge bg-primary mt-1">M201</span>
+                            </div>
+                            <div class="system-node">
+                                <div class="fw-bold text-dark">PTN Vi điều khiển & Nhúng</div>
+                                <span class="badge bg-primary mt-1">M201</span>
+                            </div>
+                            <div class="system-node">
+                                <div class="fw-bold text-dark">PTN Điều khiển tự động</div>
+                                <span class="badge bg-primary mt-1">M102</span>
+                            </div>
+                            <div class="system-node mb-0">
+                                <div class="fw-bold text-dark">PTN Kỹ thuật xung số</div>
+                                <span class="badge bg-primary mt-1">M207</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div class="col-md-6">
-                <div class="card shadow-sm border-0 h-100">
-                    <div class="card-header bg-danger text-white fw-bold"><i class="bi bi-star-fill"></i> Dự án PTN Trọng Điểm</div>
-                    <div class="card-body text-muted small">
-                        Hệ thống gồm 8 phòng thí nghiệm trọng điểm (IoT, Kiểm tra Đo lường, Khoa học Vật liệu, Khuôn mẫu, Robot, Sản xuất tự động, Thủy khí...).
+            <div class="col-md-4">
+                <div class="card shadow-sm border-0 h-100 border-top border-4 border-danger bg-light">
+                    <div class="card-header bg-transparent border-0 pt-4 pb-0 text-center">
+                        <div class="d-inline-block bg-danger text-white rounded-circle p-3 mb-3 shadow-sm">
+                            <i class="bi bi-gear-wide-connected fs-3"></i>
+                        </div>
+                        <h5 class="fw-bold text-danger">Tổ Gia công & Chế tạo</h5>
+                        <small class="text-muted">Nhóm PTN & Xưởng Thực hành Cốt lõi</small>
+                    </div>
+                    <div class="card-body">
+                        <div class="system-spine" style="border-left-color: #cc0000;">
+                            <div class="system-node">
+                                <div class="fw-bold text-dark">PTN CNC</div>
+                                <span class="badge bg-danger mt-1">M204, M104, M106</span>
+                            </div>
+                            <div class="system-node">
+                                <div class="fw-bold text-dark">PTN Chế tạo máy</div>
+                                <span class="badge bg-danger mt-1">M206</span>
+                            </div>
+                            <div class="system-node">
+                                <div class="fw-bold text-dark">PTN Hàn & Gia công áp lực</div>
+                                <span class="badge bg-danger mt-1">K106</span>
+                            </div>
+                            <div class="system-node">
+                                <div class="fw-bold text-dark">PTN Lắp ráp máy bay</div>
+                                <span class="badge bg-danger mt-1">K102</span>
+                            </div>
+                            <div class="system-node mb-0">
+                                <div class="fw-bold text-dark">PTN Đúc & Xưởng Cơ khí</div>
+                                <span class="badge bg-danger mt-1">Xưởng Đúc</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card shadow-sm border-0 h-100 border-top border-4 border-success bg-light">
+                    <div class="card-header bg-transparent border-0 pt-4 pb-0 text-center">
+                        <div class="d-inline-block bg-success text-white rounded-circle p-3 mb-3 shadow-sm">
+                            <i class="bi bi-speedometer2 fs-3"></i>
+                        </div>
+                        <h5 class="fw-bold text-success">Tổ Đo lường & Mô phỏng</h5>
+                        <small class="text-muted">Nhóm PTN Phân tích Dữ liệu & Vật liệu</small>
+                    </div>
+                    <div class="card-body">
+                        <div class="system-spine" style="border-left-color: #198754;">
+                            <div class="system-node">
+                                <div class="fw-bold text-dark">PTN Đo lường & Xử lý số liệu</div>
+                                <span class="badge bg-success mt-1">M101</span>
+                            </div>
+                            <div class="system-node">
+                                <div class="fw-bold text-dark">PTN Kim loại học</div>
+                                <span class="badge bg-success mt-1">Tầng 2 Xưởng Đúc</span>
+                            </div>
+                            <div class="system-node mb-0">
+                                <div class="fw-bold text-dark">PTN Mô phỏng và Lập trình</div>
+                                <span class="badge bg-success mt-1">M202</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
+        
+        <div class="alert alert-secondary border-0 shadow-sm d-flex align-items-center">
+            <i class="bi bi-info-circle-fill text-university fs-4 me-3"></i>
+            <div>
+                <strong>Lưu ý:</strong> Cấu trúc trên được phân nhóm dựa theo chuyên môn kỹ thuật để thuận tiện cho việc tra cứu. Mọi hoạt động quản lý nhân sự, cấp phát vật tư và xét duyệt lịch đều quy về <b>Ban Chủ nhiệm Khoa Cơ Khí</b>.
+            </div>
+        </div>
     </div>
+    
     <div id="user-guide-view" class="view-section hidden">
         <h3 class="fw-bold mb-4 text-university"><i class="bi bi-book-half"></i> Sổ tay Hướng dẫn sử dụng Hệ thống</h3>
         
