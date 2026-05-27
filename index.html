@@ -2187,6 +2187,23 @@
             Swal.fire('Lỗi Database', error.message, 'error');
         } else {
             bookingModalInstance.hide();
+            const ADMIN_TEMPLATE_ID = "template_dp1q3qc"; 
+            
+            const templateParams = {
+                sv_name: currentUserProfile.full_name,
+                sv_email: currentUserProfile.email,
+                machine: machineFullName,
+                date: date,
+                start_time: start,
+                end_time: end,
+                purpose: purpose,
+                note: note || 'Không có ghi chú'
+            };
+
+            // Bắn email chạy ngầm, không dùng await để tránh làm chậm màn hình của sinh viên
+            emailjs.send(EMAILJS_SERVICE_ID, ADMIN_TEMPLATE_ID, templateParams)
+                .then(() => console.log("Đã gửi email thông báo cho Admin."))
+                .catch((err) => console.error("Lỗi gửi email Admin:", err));
             Swal.fire('Thành công', 'Đã gửi yêu cầu đăng ký!', 'success');
             loadHistoryView('upcoming');
         }
