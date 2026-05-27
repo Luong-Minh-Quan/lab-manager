@@ -3610,29 +3610,32 @@ function startRealtimeTracking() {
         }).join('') || '<tr><td colspan="6" class="p-4 text-muted">Không có nhật ký ra vào nào trong khoảng thời gian này.</td></tr>';
     }
 
-    // 2. HÀM GIẢ LẬP QUÉT MÃ QR (Demo cho thầy cô)
-    // Sau này ESP32 sẽ gọi API tương tự như thế này để mở cửa
-    async function simulateQRScan(bookingId, action) {
-        Swal.fire({ title: `Đang xử lý ${action}...`, didOpen: () => Swal.showLoading() });
-        
-        const now = new Date().toISOString();
-        let updateData = {};
+    // 2.HÀM XÁC NHẬN RA VÀO 
+async function simulateQRScan(bookingId, action) {
+    Swal.fire({ title: `Đang xử lý ${action}...`, didOpen: () => Swal.showLoading() });
+    
+    const now = new Date().toISOString();
+    let updateData = {};
 
-        if (action === 'checkin') {
-            updateData = { actual_start: now, checkin_status: 'in_progress' };
-        } else {
-            // Khi check-out, ta lấy ngẫu nhiên số điện năng tiêu thụ từ 0.5 - 2.5 kWh để demo
-            const fakeEnergy = (Math.random() * 2 + 0.5).toFixed(2);
-            updateData = { actual_end: now, checkin_status: 'completed', energy_consumed: fakeEnergy };
-        }
-
-        const { error } = await _supabase.from('bookings').update(updateData).eq('id', bookingId);
-        
-        if (!error) {
-            Swal.fire('Thành công', `Đã ghi nhận ${action} thực tế!`, 'success');
-            loadHistoryView(); // Cập nhật lại nút bấm ở trang lịch sử
-        }
+    if (action === 'checkin') {
+        updateData = { actual_start: now, checkin_status: 'in_progress' };
+    } else {
+        // TẮT GIẢ LẬP: Xóa bỏ hoàn toàn hàm Math.random().
+        // Nút bấm trên Web giờ chỉ làm đúng nhiệm vụ ghi nhận giờ Checkout.
+        updateData = { 
+            actual_end: now, 
+            checkin_status: 'completed' 
+            // KHÔNG can thiệp vào cột energy_consumed ở đây nữa
+        };
     }
+
+    const { error } = await _supabase.from('bookings').update(updateData).eq('id', bookingId);
+    
+    if (!error) {
+        Swal.fire('Thành công', `Đã ghi nhận ${action} thực tế!`, 'success');
+        loadHistoryView(); // Cập nhật lại giao diện
+    }
+}
     // Hàm tự động cập nhật danh sách phòng vào các bộ lọc Dropdown
     // Hàm tự động cập nhật danh sách phòng vào CÁC bộ lọc
     // HÀM TỰ ĐỘNG TẢI DANH SÁCH PTN VÀO CÁC DROPDOWN
