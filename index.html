@@ -4184,27 +4184,39 @@ async function simulateQRScan(bookingId, action) {
         loadMaintenanceSchedule(); // Load lại bảng này
         loadHomeNotices(); // Ra lệnh cho trang chủ cập nhật thông báo ngầm
     }
-    // Hàm xử lý gửi báo cáo lỗi Website
-    function submitWebBugReport() {
-        const category = document.getElementById('bug-category').value;
-        const desc = document.getElementById('bug-description').value;
+    
+    
+    // Hàm xử lý gửi báo cáo lỗi Website (LƯU VÀO SUPABASE)
+async function submitWebBugReport() {
+    const category = document.getElementById('bug-category').value;
+    const desc = document.getElementById('bug-description').value;
 
-        if (!desc.trim()) {
-            return Swal.fire('Lỗi', 'Vui lòng nhập mô tả chi tiết sự cố!', 'error');
-        }
-
-        Swal.fire({ title: 'Đang gửi báo cáo...', didOpen: () => Swal.showLoading() });
-
-        // Giả lập thời gian gửi dữ liệu 1 giây
-        setTimeout(() => {
-            document.getElementById('bug-report-form').reset(); // Xóa trắng form
-            Swal.fire(
-                'Đã tiếp nhận!', 
-                `Cảm ơn bạn đã báo lỗi phần <b>${category}</b>. Đội ngũ IT sẽ kiểm tra và khắc phục sớm nhất.`, 
-                'success'
-            );
-        }, 1000);
+    if (!desc.trim()) {
+        return Swal.fire('Lỗi', 'Vui lòng nhập mô tả chi tiết sự cố!', 'error');
     }
+
+    Swal.fire({ title: 'Đang gửi báo cáo...', didOpen: () => Swal.showLoading() });
+
+    // Gửi dữ liệu vào bảng feedbacks với type là 'web_bug'
+    const { error } = await _supabase.from('feedbacks').insert([{
+        user_id: currentUserProfile ? currentUserProfile.id : null,
+        user_name: currentUserProfile ? currentUserProfile.full_name : 'Khách vãng lai',
+        type: 'web_bug',
+        target_info: category, // Mượn cột này để lưu phân loại lỗi
+        content: desc
+    }]);
+
+    if (error) {
+        Swal.fire('Lỗi', error.message, 'error');
+    } else {
+        document.getElementById('bug-report-form').reset(); // Xóa trắng form
+        Swal.fire(
+            'Đã tiếp nhận!', 
+            `Cảm ơn bạn đã báo lỗi phần <b>${category}</b>. Đội ngũ IT sẽ kiểm tra và khắc phục sớm nhất.`, 
+            'success'
+        );
+    }
+}
     // "BẮT TÍN HIỆU" KHI NGƯỜI DÙNG BẤM LINK TỪ EMAIL
     // --- HÀM TỰ ĐỘNG BẮT LINK KHÔI PHỤC MẬT KHẨU ---
     // Chúng ta dùng "Cảm biến kép" để đảm bảo link email luôn hoạt động
