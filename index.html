@@ -5089,22 +5089,23 @@ function proceedToBookFromGrid() {
     openBookingModal(roomCode, currentSelectedMachine, date, startStr, endStr);
 }
 // ==========================================
-// KẾT NỐI GEMINI AI QUA VERCEL BACKEND
+// KẾT NỐI GEMINI AI QUA LOCAL
 // ==========================================
 async function testGeminiAI() {
     Swal.fire({ title: 'Đang gửi tín hiệu cho AI...', didOpen: () => Swal.showLoading() });
     
     try {
-        // Đây chính là đường link Vercel sếp vừa tạo xong
-        const VERCEL_API_URL = 'http://127.0.0.1:3000/api/chat'; 
+        // 1. ĐỔI TÊN BIẾN THÀNH LOCAL_API_URL CHO CHUẨN
+        const LOCAL_API_URL = 'http://127.0.0.1:3000/api/chat'; 
         
-        const response = await fetch(VERCEL_API_URL, {
+        // 2. GỌI TÊN BIẾN MỚI Ở DÒNG FETCH NÀY
+        const response = await fetch(LOCAL_API_URL, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                promptText: "Hãy đóng vai trợ lý chuyên gia của PTN Đại học Bách Khoa, chào mừng tôi bằng một câu thật ngầu và ngắn gọn."
+                promptText: "Hãy đóng vai trợ lý chuyên gia của PTN Khoa Cơ Khí Đại học Bách Khoa, chào mừng tôi bằng một câu thật ngầu và ngắn gọn."
             })
         });
 
