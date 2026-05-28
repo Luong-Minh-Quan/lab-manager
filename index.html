@@ -5089,41 +5089,100 @@ function proceedToBookFromGrid() {
     openBookingModal(roomCode, currentSelectedMachine, date, startStr, endStr);
 }
 // ==========================================
-// KẾT NỐI GEMINI AI QUA LOCAL
 async function testGeminiAI() {
-    Swal.fire({ title: 'Đang kết nối thẳng tới Google...', didOpen: () => Swal.showLoading() });
-    
+    // 1. MỞ KHUNG CHAT ĐỂ SINH VIÊN NHẬP CÂU HỎI
+    const { value: userQuestion } = await Swal.fire({
+        title: 'Trợ lý AI Phòng Thí Nghiệm',
+        input: 'textarea',
+        inputLabel: 'Bạn cần tư vấn thiết bị, tra cứu lịch hay hỏi nội quy?',
+        inputPlaceholder: 'VD: Em muốn gia công chi tiết nhôm thì dùng máy nào? Chiều nay máy đó có trống không?',
+        showCancelButton: true,
+        confirmButtonText: '<i class="bi bi-send-fill"></i> Hỏi AI',
+        cancelButtonText: 'Đóng',
+        confirmButtonColor: '#003366'
+    });
+
+    // Nếu người dùng bấm Đóng hoặc không nhập gì thì bỏ qua
+    if (!userQuestion) return;
+
+    Swal.fire({ title: 'Đang quét dữ liệu xưởng thực tế...', didOpen: () => Swal.showLoading() });
+
     try {
-        // Gắn thẳng API Key và Model 2.5 vào đây (Không qua bất kỳ máy chủ trung gian nào)
-        const API_KEY = "AIzaSyAxr2NzauD3w8SiBSm1kltA0h9B5ZsklBU"; 
-        const MODEL = "gemini-2.5-flash"; 
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${API_KEY}`;
+        // ====================================================
+        // 2. BƯỚC RAG: RÚT TRÍCH DỮ LIỆU THỰC TẾ TỪ SUPABASE
+        // ====================================================
+        const today = new Date().toISOString().split('T')[0];
+
+        // Lấy danh sách máy đang sẵn sàng (kèm mô tả)
+        const { data: machines } = await _supabase.from('machines').select('machine_name, technical_specs').eq('status', 'available');
         
-        const response = await fetch(url, {
+        // Lấy danh sách lịch đã bị người khác đặt trong ngày hôm nay
+        const { data: bookings } = await _supabase.from('bookings').select('machine_name, start_time, end_time').eq('booking_date', today).eq('status', 'approved');
+
+        // Lắp ráp dữ liệu thành một văn bản cho AI "đọc"
+        let contextData = `--- DỮ LIỆU THỰC TẾ NGÀY HÔM NAY (${today}) ---\n`;
+        contextData += `1. CÁC MÁY ĐANG HOẠT ĐỘNG (Chỉ được khuyên dùng các máy này):\n`;
+        if (machines && machines.length > 0) {
+            machines.forEach(m => contextData += `- ${m.machine_name}: ${m.technical_specs || 'Máy tiêu chuẩn'}\n`);
+        } else {
+            contextData += `- Hiện tại tất cả các máy đều đang bảo trì.\n`;
+        }
+
+        contextData += `\n2. LỊCH ĐÃ CÓ NGƯỜI ĐẶT (Các giờ này KHÔNG THỂ đặt nữa):\n`;
+        if (bookings && bookings.length > 0) {
+            bookings.forEach(b => contextData += `- Của máy ${b.machine_name}: bị kẹt lịch từ ${b.start_time.substring(0,5)} đến ${b.end_time.substring(0,5)}\n`);
+        } else {
+            contextData += `- Tin vui: Hôm nay xưởng đang trống hoàn toàn, chưa có ai đặt lịch.\n`;
+        }
+
+        // ====================================================
+        // 3. TẠO MEGA-PROMPT GỬI LÊN CLOUD
+        // ====================================================
+        const megaPrompt = `
+            Bạn là Trợ lý AI chuyên gia của PTN Khoa Cơ Khí Đại học Bách Khoa.
+            Nhiệm vụ của bạn là tư vấn cho sinh viên dựa trên DỮ LIỆU THỰC TẾ mà hệ thống vừa quét được bên dưới.
+
+            QUY TẮC TRẢ LỜI QUAN TRỌNG:
+            - Dựa vào đặc tính gia công sinh viên hỏi (nhôm, thép, tiện, phay...), hãy chọn ra 1-2 máy phù hợp nhất trong danh sách.
+            - Phân tích lịch trống: Khung giờ xưởng mở cửa là Sáng (07:30-11:30) và Chiều (13:30-21:00). Dựa vào lịch đã kẹt, hãy gợi ý cho sinh viên một khung giờ trống cụ thể.
+            - Giọng điệu chuyên nghiệp nhưng gần gũi, xưng "mình" gọi "bạn".
+            - LUÔN LUÔN nhắc nhở 1 quy tắc an toàn lao động ngắn gọn ở cuối (VD: Đeo kính, mặc áo bảo hộ, không đeo găng tay khi quay...).
+            - Không được tự bịa ra tên máy không có trong danh sách.
+
+            ${contextData}
+
+            CÂU HỎI CỦA SINH VIÊN: "${userQuestion}"
+        `;
+
+        // ====================================================
+        // 4. GỌI API RENDER (BACKEND CỦA SẾP)
+        // ====================================================
+        const CLOUD_API_URL = 'https://lab-ai-backend.onrender.com/api/chat'; 
+        const response = await fetch(CLOUD_API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                contents: [{
-                    parts: [{ text: "Hãy đóng vai trợ lý chuyên gia của PTN Khoa Cơ Khí Đại học Bách Khoa, chào mừng tôi bằng một câu thật ngầu và ngắn gọn." }]
-                }]
-            })
+            body: JSON.stringify({ promptText: megaPrompt })
         });
 
         const data = await response.json();
         
-        if (data.error) {
-            Swal.fire('Lỗi API của Google', data.error.message, 'error');
-        } else {
-            const textResult = data.candidates[0].content.parts[0].text;
+        if (data.success) {
+            // Định dạng lại kết quả cho đẹp (biến \n thành thẻ xuống dòng html, in đậm chữ)
+            let formattedResult = data.result.replace(/\n/g, '<br>');
+            formattedResult = formattedResult.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
+
             Swal.fire({
-                title: 'Trợ lý AI PTN:', 
-                text: textResult, 
-                icon: 'success',
-                confirmButtonColor: '#003366'
+                title: '<div class="text-primary"><i class="bi bi-robot"></i> Trợ lý PTN</div>', 
+                html: `<div style="text-align: left; font-size: 0.95rem; line-height: 1.6; background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #0d6efd;">${formattedResult}</div>`, 
+                width: '650px',
+                confirmButtonColor: '#003366',
+                confirmButtonText: 'Đã rõ, Cảm ơn!'
             });
+        } else {
+            Swal.fire('Lỗi AI', data.error, 'error');
         }
     } catch (err) {
-        Swal.fire('Lỗi', 'Lỗi cục bộ: ' + err.message, 'error');
+        Swal.fire('Lỗi kết nối', 'Không thể gọi Cloud Backend: ' + err.message, 'error');
     }
 }
 </script>
