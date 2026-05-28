@@ -14,8 +14,33 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
+        .ai-fab {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 65px;
+    height: 65px;
+    border-radius: 50%;
+    background-color: #003366; /* Màu xanh Bách Khoa */
+    color: white;
+    border: none;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    cursor: pointer;
+    z-index: 9999; /* Đảm bảo nút luôn nằm trên cùng */
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.ai-fab:hover {
+    transform: scale(1.1);
+    background-color: #004080;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+}
         /* Hiệu ứng click chọn giờ trên Lịch Trống */
         .slot-selectable { cursor: pointer; transition: all 0.2s; }
         .slot-selectable:hover { background-color: #e0f0ff !important; box-shadow: inset 0 0 5px rgba(13,110,253,0.3); }
@@ -222,7 +247,7 @@
                         <li><a class="dropdown-item fw-bold text-danger" href="#" onclick="loadMaintenanceReports()"><i class="bi bi-wrench-adjustable"></i> Quản lý bảo trì & Hư hỏng</a></li>
                         <li><a class="dropdown-item" href="#" onclick="loadLabStats()"><i class="bi bi-graph-up"></i> Thống kê tình trạng PTN</a></li>
                         <li><a class="dropdown-item" href="#" onclick="loadUsageStats()"><i class="bi bi-pie-chart"></i> Thống kê lượt sử dụng</a></li>
-                        
+                                                
                     </ul>
                 </li>
 
@@ -256,6 +281,7 @@
                 <span id="user-info-display" class="me-3 fw-semibold"><i class="bi bi-person-circle"></i> Vui lòng đăng nhập</span>
                 <button id="btn-auth" class="btn btn-sm btn-outline-light" onclick="showView('auth-view')">Đăng nhập</button>
             </div>
+            
             <li class="nav-item ms-2 d-flex align-items-center">
                 <button id="theme-toggle" class="btn btn-sm btn-outline-warning rounded-circle" style="width: 32px; height: 32px; padding: 0;" title="Chuyển chế độ giao diện">
                     <i id="theme-icon" class="bi bi-moon-stars-fill"></i>
@@ -1875,6 +1901,10 @@
         </div>
     </div>
 </div>
+<!-- Nút nổi AI -->
+<button class="ai-fab" onclick="testGeminiAI()" title="Trợ lý AI PTN">
+    <i class="bi bi-robot" style="font-size: 28px;"></i>
+</button>
 
 <script>
     // 1. CẤU HÌNH API
@@ -1970,6 +2000,7 @@
         loadLatestWarnings();
         fetchRoomsData(); 
         refreshRoomFilters();
+        let optionsHtml = '';
 
         // 2. Kiểm tra xem người dùng đã đăng nhập chưa
         const { data: { user } } = await _supabase.auth.getUser();
@@ -4768,61 +4799,67 @@ async function emergencyStop(bookingId, machineName) {
 
     // 3. Hàm lưu từng dòng (Giống như bấm Ctrl+S trong Excel)
     async function saveConsumableRow(id, roomCode) {
-        const month = document.getElementById('consumable-month-picker').value;
-        const name = document.getElementById(`name-${id}`).value;
-        const date = document.getElementById(`date-${id}`).value;
-        const stock = document.getElementById(`stock-${id}`).value;
+    const month = document.getElementById('consumable-month-picker').value;
+    const name = document.getElementById(`name-${id}`).value;
+    const date = document.getElementById(`date-${id}`).value;
+    const stock = document.getElementById(`stock-${id}`).value;
 
-        const dataObj = {
-            room_code: roomCode,
-            material_name: name,
-            replacement_date: date || null,
-            stock_remaining: parseInt(stock) || 0,
-            report_month: month
-        };
+    if (!month) return Swal.fire('Lỗi', 'Vui lòng chọn tháng trước khi lưu!', 'warning');
 
-        let result;
-        if (id.startsWith('new-')) {
-            result = await _supabase.from('consumables').insert([dataObj]);
-        } else {
-            result = await _supabase.from('consumables').update(dataObj).eq('id', id);
-        }
+    Swal.fire({ title: 'Đang lưu...', didOpen: () => Swal.showLoading() });
 
-        if (!result.error) {
-            Swal.fire({ icon: 'success', title: 'Đã lưu!', timer: 800, showConfirmButton: false, position: 'top-end' });
-            loadConsumablesData(); // Tải lại để cập nhật ID thật
-        }
+    const dataObj = {
+        room_code: roomCode,
+        material_name: name || '',
+        replacement_date: date || null,
+        stock_remaining: parseInt(stock) || 0,
+        report_month: month
+    };
+
+    let result;
+    // Kiểm tra xem đây là bản ghi mới hay bản ghi cũ
+    if (String(id).startsWith('new-')) {
+        result = await _supabase.from('consumables').insert([dataObj]);
+    } else {
+        result = await _supabase.from('consumables').update(dataObj).eq('id', id);
     }
+
+    if (result.error) {
+        Swal.fire('Lỗi lưu dữ liệu', result.error.message, 'error');
+    } else {
+        Swal.fire({ icon: 'success', title: 'Đã lưu thành công!', timer: 1000, showConfirmButton: false });
+        // Load lại dữ liệu để lấy ID thật từ Supabase (giúp lần lưu sau không bị lỗi)
+        loadConsumablesData(); 
+    }
+}
 
     // 4. Hàm Xuất Excel "Xịn"
     function exportConsumablesExcel() {
-        const month = document.getElementById('consumable-month-picker').value;
-        const wb = XLSX.utils.table_to_book(document.getElementById('table-consumables'));
-        XLSX.writeFile(wb, `Bao_Cao_Vat_Tu_Thang_${month}.xlsx`);
-    }
-    // ==========================================
-    // HÀM TÌM KIẾM ĐA NĂNG CHO MỌI BẢNG DỮ LIỆU
-    // ==========================================
-    function filterTableData(inputId, tbodyId) {
-        const input = document.getElementById(inputId);
-        const filter = input.value.toLowerCase(); // Chuyển chữ gõ vào thành chữ thường
-        const tbody = document.getElementById(tbodyId);
-        const rows = tbody.getElementsByTagName('tr');
+    const month = document.getElementById('consumable-month-picker').value;
+    const table = document.getElementById('table-consumables');
+    const rows = table.querySelectorAll('tbody tr');
+    let excelData = [];
 
-        for (let i = 0; i < rows.length; i++) {
-            // Quét toàn bộ nội dung text của cả cái hàng đó
-            const rowText = rows[i].textContent.toLowerCase(); 
-            
-            // Bỏ qua dòng thông báo "Đang tải dữ liệu..." hoặc "Không có dữ liệu"
-            if (rows[i].cells.length === 1) continue; 
+    rows.forEach(row => {
+        const roomName = row.cells[0].innerText;
+        const name = row.cells[1].querySelector('input').value;
+        const date = row.cells[2].querySelector('input').value;
+        const stock = row.cells[3].querySelector('input').value;
 
-            // Nếu tìm thấy chữ thì hiện, không thì ẩn
-            if (rowText.includes(filter)) {
-                rows[i].style.display = '';
-            } else {
-                rows[i].style.display = 'none';
-            }
-        }
+        excelData.push({
+            "Phòng": roomName,
+            "Vật tư": name,
+            "Ngày thay thế": date,
+            "Số lượng còn lại": stock
+        });
+    });
+
+    if (excelData.length === 0) return Swal.fire('Thông báo', 'Không có dữ liệu!', 'info');
+
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(excelData);
+    XLSX.utils.book_append_sheet(wb, ws, "VatTu");
+    XLSX.writeFile(wb, `Bao_Cao_Vat_Tu_${month}.xlsx`);
     }
     // HÀM HỦY LỊCH DÀNH CHO SINH VIÊN
     function cancelBooking(id) {
@@ -5082,6 +5119,98 @@ function proceedToBookFromGrid() {
 
     // Kích hoạt Modal Đặt lịch (Đã sửa ở bước 3 để nhận Data)
     openBookingModal(roomCode, currentSelectedMachine, date, startStr, endStr);
+}
+// ==========================================
+async function testGeminiAI() {
+    const { value: userQuestion } = await Swal.fire({
+        title: 'Trợ lý AI Phòng Thí Nghiệm',
+        input: 'textarea',
+        inputLabel: 'Bạn cần tư vấn thiết bị, tra cứu lịch hay hỏi nội quy?',
+        inputPlaceholder: 'VD: Em muốn gia công chi tiết nhôm thì dùng máy nào? Chiều nay máy đó có trống không?',
+        showCancelButton: true,
+        confirmButtonText: '<i class="bi bi-send-fill"></i> Hỏi AI',
+        cancelButtonText: 'Đóng',
+        confirmButtonColor: '#003366'
+        
+    });
+
+    if (!userQuestion) return;
+
+    Swal.fire({ title: 'Đang quét dữ liệu xưởng thực tế...', didOpen: () => Swal.showLoading() });
+
+    try {
+        // 1. LẤY THỜI GIAN THỰC TẾ
+        const now = new Date();
+        const today = now.toISOString().split('T')[0];
+        const currentTime = now.toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'});
+
+        // 2. MÓC DỮ LIỆU TỪ SUPABASE
+        const { data: machines } = await _supabase.from('machines').select('machine_name, technical_specs').eq('status', 'available');
+        const { data: bookings } = await _supabase.from('bookings').select('machine_name, start_time, end_time').eq('booking_date', today).eq('status', 'approved');
+
+        // KHAI BÁO BIẾN CONTEXT DATA (Đã sửa lỗi not defined)
+        let contextData = `--- DỮ LIỆU THỰC TẾ NGÀY HÔM NAY (${today}) ---\n`;
+        contextData += `1. CÁC MÁY ĐANG HOẠT ĐỘNG:\n`;
+        if (machines && machines.length > 0) {
+            machines.forEach(m => contextData += `- ${m.machine_name}: ${m.technical_specs || 'Máy tiêu chuẩn'}\n`);
+        } else {
+            contextData += `- Hiện tại tất cả các máy đều đang bảo trì.\n`;
+        }
+
+        contextData += `\n2. LỊCH ĐÃ CÓ NGƯỜI ĐẶT TRONG HÔM NAY:\n`;
+        if (bookings && bookings.length > 0) {
+            bookings.forEach(b => contextData += `- Máy ${b.machine_name}: bị kẹt từ ${b.start_time.substring(0,5)} đến ${b.end_time.substring(0,5)}\n`);
+        } else {
+            contextData += `- Tin vui: Hôm nay xưởng đang trống hoàn toàn.\n`;
+        }
+
+        // 3. MEGA-PROMPT SIÊU NGHIÊM NGẶT
+        const megaPrompt = `
+            Bạn là Trợ lý AI chuyên gia của PTN Khoa Cơ Khí Đại học Bách Khoa.
+            
+            THÔNG TIN THỜI GIAN THỰC TẾ:
+            - Ngày hôm nay: ${today}
+            - BÂY GIỜ CHÍNH XÁC LÀ: ${currentTime}
+
+            DỮ LIỆU PTN HIỆN TẠI:
+            ${contextData}
+
+            QUY TẮC TRẢ LỜI NGHIÊM NGẶT:
+            1. Phạm vi: Chỉ trả lời các vấn đề liên quan đến gia công, cơ khí, lịch trực, thiết bị và nội quy xưởng. Nếu sinh viên hỏi ngoài lề (ví dụ: làm thơ, viết code, thời tiết, giải trí...), hãy từ chối lịch sự và lái câu chuyện về xưởng cơ khí.
+            2. Tư vấn máy: Dựa vào câu hỏi, gợi ý đúng máy có trong danh sách đang hoạt động. KHÔNG TỰ BỊA tên máy không tồn tại.
+            3. QUẢN LÝ THỜI GIAN: Giờ xưởng mở cửa là Sáng (07:30-11:30), Chiều (13:30-21:00). BÂY GIỜ LÀ ${currentTime}. TUYỆT ĐỐI KHÔNG gợi ý sinh viên đến vào những khung giờ đã trôi qua. Nếu hiện tại đã quá 21:00, hãy báo xưởng đã đóng cửa và mời quay lại vào ngày mai.
+            4. An toàn: Luôn kết thúc bằng một nhắc nhở an toàn lao động cơ khí.
+            5. Giọng điệu: Chuyên nghiệp, ngắn gọn, xưng "mình" và gọi "bạn".
+
+            CÂU HỎI CỦA SINH VIÊN: "${userQuestion}"
+        `;
+
+        // 4. GỬI LÊN CLOUD
+        const CLOUD_API_URL = 'https://lab-ai-backend.onrender.com/api/chat'; 
+        const response = await fetch(CLOUD_API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ promptText: megaPrompt })
+        });
+
+        const data = await response.json();
+        
+        if (data.success) {
+            let formattedResult = data.result.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
+
+            Swal.fire({
+                title: '<div class="text-primary"><i class="bi bi-robot"></i> Trợ lý PTN</div>', 
+                html: `<div style="text-align: left; font-size: 0.95rem; line-height: 1.6; background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #0d6efd;">${formattedResult}</div>`, 
+                width: '650px',
+                confirmButtonColor: '#003366',
+                confirmButtonText: 'Đã rõ, Cảm ơn!'
+            });
+        } else {
+            Swal.fire('Lỗi AI', data.error, 'error');
+        }
+    } catch (err) {
+        Swal.fire('Lỗi kết nối', 'Không thể gọi Cloud Backend: ' + err.message, 'error');
+    }
 }
 </script>
 </body>
