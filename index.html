@@ -5090,39 +5090,40 @@ function proceedToBookFromGrid() {
 }
 // ==========================================
 // KẾT NỐI GEMINI AI QUA LOCAL
-// ==========================================
 async function testGeminiAI() {
-    Swal.fire({ title: 'Đang gửi tín hiệu cho AI...', didOpen: () => Swal.showLoading() });
+    Swal.fire({ title: 'Đang kết nối thẳng tới Google...', didOpen: () => Swal.showLoading() });
     
     try {
-        // 1. ĐỔI TÊN BIẾN THÀNH LOCAL_API_URL CHO CHUẨN
-        const LOCAL_API_URL = 'http://127.0.0.1:3000/api/chat'; 
+        // Gắn thẳng API Key và Model 2.5 vào đây (Không qua bất kỳ máy chủ trung gian nào)
+        const API_KEY = "AIzaSyAxr2NzauD3w8SiBSm1kltA0h9B5ZsklBU"; 
+        const MODEL = "gemini-2.5-flash"; 
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${API_KEY}`;
         
-        // 2. GỌI TÊN BIẾN MỚI Ở DÒNG FETCH NÀY
-        const response = await fetch(LOCAL_API_URL, {
+        const response = await fetch(url, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                promptText: "Hãy đóng vai trợ lý chuyên gia của PTN Khoa Cơ Khí Đại học Bách Khoa, chào mừng tôi bằng một câu thật ngầu và ngắn gọn."
+                contents: [{
+                    parts: [{ text: "Hãy đóng vai trợ lý chuyên gia của PTN Khoa Cơ Khí Đại học Bách Khoa, chào mừng tôi bằng một câu thật ngầu và ngắn gọn." }]
+                }]
             })
         });
 
         const data = await response.json();
         
-        if (data.success) {
+        if (data.error) {
+            Swal.fire('Lỗi API của Google', data.error.message, 'error');
+        } else {
+            const textResult = data.candidates[0].content.parts[0].text;
             Swal.fire({
-                title: 'Gemini AI trả lời:', 
-                text: data.result, 
+                title: 'Trợ lý AI PTN:', 
+                text: textResult, 
                 icon: 'success',
                 confirmButtonColor: '#003366'
             });
-        } else {
-            Swal.fire('Lỗi API', data.error, 'error');
         }
     } catch (err) {
-        Swal.fire('Lỗi kết nối', 'Không thể gọi được Vercel: ' + err.message, 'error');
+        Swal.fire('Lỗi', 'Lỗi cục bộ: ' + err.message, 'error');
     }
 }
 </script>
