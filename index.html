@@ -224,11 +224,12 @@
                 <li class="nav-item dropdown role-level-2 hidden">
                     <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown"><i class="bi bi-broadcast"></i> Giám sát</a>
                     <ul class="dropdown-menu">
-                        <li><a class="dropdown-item fw-bold text-primary" href="#" onclick="showView('monitor-energy-view')"><i class="bi bi-lightning-charge"></i> Theo dõi điện năng</a></li>
-                        
+                        <li>
+                            <a class="dropdown-item fw-bold text-primary" href="#" onclick="showView('unified-power-view'); loadUnifiedPowerData();">
+                                <i class="bi bi-activity"></i> Điện năng & Cảnh báo
+                            </a>
+                        </li>
                         <li><a class="dropdown-item fw-bold text-danger" href="#" onclick="loadRemoteControlView()"><i class="bi bi-door-open"></i> Mở cửa từ xa</a></li>
-                        
-                        <li><a class="dropdown-item text-danger fw-bold" href="#" onclick="initAnomalyDashboard()"><i class="bi bi-exclamation-triangle-fill"></i> Cảnh báo bất thường</a></li>
                     </ul>
                 </li>
 
@@ -455,35 +456,148 @@
     </div>
     <div id="consumables-view" class="view-section hidden">
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h3 class="fw-bold text-university m-0"><i class="bi bi-box-seam-fill text-success"></i> Quản lý Vật tư tiêu hao</h3>
-            <div class="d-flex gap-2">
-                <input type="month" id="consumable-month-picker" class="form-control form-control-sm" style="width: 160px;" onchange="loadConsumablesData()">
-                <button class="btn btn-sm btn-success fw-bold" onclick="exportConsumablesExcel()">
-                    <i class="bi bi-file-earmark-excel"></i> Xuất Excel
+            <h3 class="fw-bold text-university m-0"><i class="bi bi-box-seam-fill text-success"></i> Sổ Nhật Ký Vật Tư Tiêu Hao</h3>
+            
+            <div class="dropdown">
+                <button class="btn btn-success fw-bold dropdown-toggle shadow-sm" type="button" data-bs-toggle="dropdown">
+                    <i class="bi bi-file-earmark-excel"></i> Xuất Excel báo cáo
+                </button>
+                <ul class="dropdown-menu shadow">
+                    <li><a class="dropdown-item fw-bold text-success" href="#" onclick="exportConsumablesAdvanced('month')"><i class="bi bi-calendar-month"></i> Theo tháng đang xem</a></li>
+                    <li><a class="dropdown-item text-primary" href="#" onclick="exportConsumablesAdvanced('year')"><i class="bi bi-calendar3"></i> Toàn bộ năm nay</a></li>
+                    <li><a class="dropdown-item text-warning-emphasis" href="#" onclick="exportConsumablesAdvanced('room')"><i class="bi bi-door-open"></i> Theo phòng đang chọn</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item text-danger" href="#" onclick="exportConsumablesAdvanced('all')"><i class="bi bi-database"></i> Xuất tất cả dữ liệu</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="row g-3 mb-4">
+            <div class="col-md-3">
+                <div class="card border-0 border-start border-4 border-success shadow-sm h-100">
+                    <div class="card-body py-3">
+                        <div class="text-muted small fw-bold text-uppercase mb-1">Tổng lượt nhập kỳ này</div>
+                        <h4 class="fw-bold text-success mb-0" id="con-kpi-total">0</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 border-start border-4 border-primary shadow-sm h-100">
+                    <div class="card-body py-3">
+                        <div class="text-muted small fw-bold text-uppercase mb-1">Số phòng có dữ liệu</div>
+                        <h4 class="fw-bold text-primary mb-0" id="con-kpi-rooms">0</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 border-start border-4 border-warning shadow-sm h-100">
+                    <div class="card-body py-3">
+                        <div class="text-muted small fw-bold text-uppercase mb-1">Tồn kho thấp (< 5)</div>
+                        <h4 class="fw-bold text-warning mb-0" id="con-kpi-low">0</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 border-start border-4 border-danger shadow-sm h-100">
+                    <div class="card-body py-3">
+                        <div class="text-muted small fw-bold text-uppercase mb-1">Cần thay thế sớm</div>
+                        <h4 class="fw-bold text-danger mb-0" id="con-kpi-due">0</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm border-0 mb-4 bg-light">
+            <div class="card-body d-flex flex-wrap justify-content-between align-items-center py-3">
+                <div class="d-flex gap-2 align-items-center">
+                    <span class="fw-bold text-primary"><i class="bi bi-funnel-fill"></i> Bộ lọc:</span>
+                    <select id="filter-consumable-room" class="form-select form-select-sm border-primary" style="width: 200px;" onchange="loadConsumablesData()">
+                        <option value="all">Tất cả phòng</option>
+                    </select>
+                    <input type="month" id="filter-consumable-month" class="form-control form-control-sm border-primary" style="width: 150px;" onchange="loadConsumablesData()">
+                </div>
+                <button class="btn btn-primary fw-bold shadow-sm mt-3 mt-md-0" onclick="openAddConsumableModal()">
+                    <i class="bi bi-plus-circle-fill"></i> Thêm nhật ký mới
                 </button>
             </div>
         </div>
 
         <div class="card shadow-sm border-0">
             <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-bordered align-middle text-center mb-0" id="table-consumables">
-                        <thead class="table-light">
-                            <tr class="small text-uppercase">
-                                <th style="width: 200px;">Phòng Thí Nghiệm</th>
-                                <th>Tên vật tư thay thế</th>
-                                <th style="width: 180px;">Ngày thay thế</th>
-                                <th style="width: 150px;">Số lượng còn lại</th>
-                                <th style="width: 100px;">Lưu</th>
+                <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                    <table class="table table-hover align-middle text-center mb-0 small">
+                        <thead class="table-light" style="position: sticky; top: 0; z-index: 1;">
+                            <tr class="text-uppercase">
+                                <th>Ngày thay thế</th>
+                                <th class="text-start ps-4">Phòng / Xưởng</th>
+                                <th>Tên vật tư</th>
+                                <th>Đơn vị</th>
+                                <th>SL Đã dùng</th>
+                                <th>Tồn kho</th>
+                                <th>Tình trạng</th>
+                                <th>Ghi chú</th>
+                                <th>Người nhập</th>
+                                <th>Thao tác</th>
                             </tr>
                         </thead>
-                        <tbody id="consumables-list">
-                            </tbody>
+                        <tbody id="consumables-list"></tbody>
                     </table>
                 </div>
             </div>
         </div>
-        <p class="small text-muted mt-3 fst-italic">* Chú ý: Tên phòng được lấy tự động từ danh sách PTN đã phê duyệt. Các ô khác cho phép nhập tay như Excel.</p>
+    </div>
+
+    <div class="modal fade" id="addConsumableModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-journal-plus"></i> Ghi sổ nhật ký vật tư</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info small border-0 mb-4">
+                        <i class="bi bi-info-circle-fill me-2"></i> Mỗi lần bấm <b>Lưu</b> sẽ tạo ra một dòng nhật ký mới. Tuyệt đối không ghi đè dữ liệu cũ.
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small">Phòng thí nghiệm <span class="text-danger">*</span></label>
+                            <select id="new-con-room" class="form-select border-primary"></select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small">Kỳ báo cáo (Tháng) <span class="text-danger">*</span></label>
+                            <input type="month" id="new-con-month" class="form-control border-primary">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small">Tên vật tư / Linh kiện <span class="text-danger">*</span></label>
+                            <input type="text" id="new-con-name" class="form-control border-primary" placeholder="VD: Mũi khoan, Dầu nhớt...">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold small">Đơn vị tính</label>
+                            <input type="text" id="new-con-unit" class="form-control" placeholder="VD: cái, kg, lít...">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold small">Ngày thay thế/nhập</label>
+                            <input type="date" id="new-con-date" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small">Số lượng đã dùng trong kỳ</label>
+                            <input type="number" id="new-con-used" class="form-control" value="0" min="0">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-danger">Số lượng tồn kho còn lại</label>
+                            <input type="number" id="new-con-stock" class="form-control border-danger" value="0" min="0">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-bold small">Ghi chú thêm</label>
+                            <textarea id="new-con-note" class="form-control" rows="2" placeholder="VD: Đã đặt mua thêm, sắp hết hạn..."></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-primary fw-bold px-4" onclick="saveNewConsumable()"><i class="bi bi-cloud-arrow-up-fill"></i> Lưu vào nhật ký</button>
+                </div>
+            </div>
+        </div>
     </div>
     <div id="admin-notice-view" class="view-section hidden">
         <h3 class="fw-bold mb-4 text-primary"><i class="bi bi-megaphone"></i> Quản lý Thông báo Trang chủ</h3>
@@ -1595,67 +1709,123 @@
             </div>
         </div>
     </div>
-    <div id="monitor-energy-view" class="view-section hidden">
-        <h3 class="fw-bold mb-4 text-warning"><i class="bi bi-activity"></i> Giám sát Điện năng Chi tiết (Realtime)</h3>
+    <div id="unified-power-view" class="view-section hidden">
+        <style>
+            .pwr-badge { font-size: 0.75rem; padding: 4px 12px; border-radius: 20px; font-weight: 600; }
+            .badge-live { background: #EAF3DE; color: #3B6D11; }
+            .badge-err { background: #FCEBEB; color: #A32D2D; }
+            .kpi-label { font-size: 0.75rem; color: #6c757d; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; margin-bottom: 4px; }
+            .kpi-val { font-size: 1.6rem; font-weight: 700; color: #212529; line-height: 1.2; }
+            .kpi-sub { font-size: 0.7rem; color: #6c757d; margin-top: 4px; }
+            .machine-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #dee2e6; }
+            .machine-item:last-child { border-bottom: none; }
+            .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 8px; }
+            .dot-on { background: #198754; box-shadow: 0 0 6px #198754; }
+            .dot-off { background: #adb5bd; }
+            .alert-item { display: flex; align-items: flex-start; gap: 12px; padding: 12px 0; border-bottom: 1px solid #dee2e6; }
+            .alert-item:last-child { border-bottom: none; }
+            .alert-icon { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 1.2rem; }
+            .icon-ai { background: #FCEBEB; color: #dc3545; }
+            .icon-sv { background: #FAEEDA; color: #fd7e14; }
+        </style>
 
-        <div class="row g-3 mb-4 align-items-end">
-            <div class="col-md-3">
-                <label class="form-label fw-bold small text-muted mb-1">Phòng PTN</label>
-                <select id="live-room-filter" class="form-select border-warning" onchange="updateLiveMachineFilter()">
-                    <option value="K101">K101 - PTN Cơ Khí</option>
-                    <option value="C102">C102 - PTN Tự Động Hóa</option>
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+            <h3 class="fw-bold text-university m-0 d-flex align-items-center gap-2">
+                <i class="bi bi-activity text-primary"></i> Giám sát điện năng & Cảnh báo
+            </h3>
+            <div class="d-flex align-items-center gap-3">
+                <select class="form-select form-select-sm border-primary fw-bold" id="power-room-filter" style="width: 180px;" onchange="loadUnifiedPowerData()">
+                    <option value="ALL">Tất cả thiết bị</option>
                 </select>
-            </div>
-            <div class="col-md-3">
-                <label class="form-label fw-bold small text-muted mb-1">Máy / Thiết bị</label>
-                <select id="live-machine-filter" class="form-select border-warning" onchange="updateLiveShiftFilter()">
-                    <option value="Máy phay CNC 01">Máy phay CNC 01</option>
-                    <option value="Máy phay CNC 02">Máy phay CNC 02</option>
-                </select>
-            </div>
-            <div class="col-md-4">
-                <label class="form-label fw-bold small text-muted mb-1">Ca thực hành (Hôm nay)</label>
-                <select id="live-shift-filter" class="form-select border-warning">
-                    <option value="">Vui lòng chọn máy trước...</option>
-                </select>
-            </div>
-            <div class="col-md-2">
-                 <button class="btn btn-warning w-100 fw-bold" onclick="startRealtimeTracking()"><i class="bi bi-play-circle-fill"></i> Theo dõi ngay</button>
+                <span class="pwr-badge badge-live border border-success"><i class="bi bi-record-circle-fill pulse"></i> Real-time</span>
             </div>
         </div>
 
-        <div class="row g-4">
-            <div class="col-md-8">
-                <div class="card shadow-sm border-0 p-3 h-100">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h6 class="fw-bold text-muted mb-0" id="chart-energy-title">Công suất theo thời gian thực (W)</h6>
-                        <span class="badge bg-success" id="chart-status"><span class="spinner-grow spinner-grow-sm" style="width: 8px; height: 8px;"></span> Đang chờ lệnh...</span>
+        <div class="row g-3 mb-4">
+            <div class="col-md-3">
+                <div class="card shadow-sm border-0 h-100"><div class="card-body">
+                    <div class="kpi-label"><i class="bi bi-lightning-fill text-warning"></i> Tổng công suất</div>
+                    <div class="kpi-val" id="upwr-kpi-watt">0.0 <span class="fs-6 fw-normal text-muted">kW</span></div>
+                    <div class="kpi-sub" id="upwr-kpi-active">0 máy đang chạy</div>
+                </div></div>
+            </div>
+            <div class="col-md-3">
+                <div class="card shadow-sm border-0 h-100"><div class="card-body">
+                    <div class="kpi-label"><i class="bi bi-battery-charging text-success"></i> Điện năng hôm nay</div>
+                    <div class="kpi-val text-success" id="upwr-kpi-kwh">0.0 <span class="fs-6 fw-normal text-muted">kWh</span></div>
+                    <div class="kpi-sub">Dữ liệu từ lúc 00:00</div>
+                </div></div>
+            </div>
+            <div class="col-md-3">
+                <div class="card shadow-sm border-0 h-100"><div class="card-body">
+                    <div class="kpi-label"><i class="bi bi-exclamation-triangle-fill text-danger"></i> Cảnh báo hệ thống</div>
+                    <div class="kpi-val text-danger" id="upwr-kpi-alert">0</div>
+                    <div class="kpi-sub">Sự cố chờ xử lý</div>
+                </div></div>
+            </div>
+            <div class="col-md-3">
+                <div class="card shadow-sm border-0 h-100"><div class="card-body">
+                    <div class="kpi-label"><i class="bi bi-cash-coin text-primary"></i> Chi phí ước tính</div>
+                    <div class="kpi-val" id="upwr-kpi-cost">0 <span class="fs-6 fw-normal text-muted">VNĐ</span></div>
+                    <div class="kpi-sub">Tạm tính 2,500đ/kWh</div>
+                </div></div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="fw-bold text-muted m-0"><i class="bi bi-graph-up"></i> Biểu đồ đa chỉ số: Điện áp (V) — Dòng điện (A) — Công suất (W)</h6>
+                    <span class="pwr-badge badge-live">Cập nhật liên tục</span>
+                </div>
+                <div class="d-flex gap-3 mb-3 small fw-bold text-muted">
+                    <span><span style="display:inline-block;width:20px;height:3px;background:#0d6efd;vertical-align:middle;margin-right:5px;"></span> Điện áp (V)</span>
+                    <span><span style="display:inline-block;width:20px;height:0;border-top:3px dashed #198754;vertical-align:middle;margin-right:5px;"></span> Dòng điện (A)</span>
+                    <span><span style="display:inline-block;width:20px;height:12px;background:rgba(25,135,84,0.15);border:1px solid #198754;vertical-align:middle;margin-right:5px;"></span> Công suất (W)</span>
+                </div>
+                <div style="height: 250px;"><canvas id="chartMulti"></canvas></div>
+            </div>
+        </div>
+
+        <div class="row g-4 mb-4">
+            <div class="col-md-6">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-body">
+                        <h6 class="fw-bold text-muted mb-3"><i class="bi bi-bar-chart-steps"></i> Xếp hạng tiêu thụ thiết bị (kWh)</h6>
+                        <div style="height: 200px;"><canvas id="chartRank"></canvas></div>
                     </div>
-                    <canvas id="livePowerChart" style="max-height: 350px;"></canvas>
                 </div>
             </div>
             
-            <div class="col-md-4">
-                <div class="card shadow-sm border-0 h-100 border-start border-4 border-danger">
-                    <div class="card-header bg-white fw-bold text-danger"><i class="bi bi-shield-exclamation"></i> Thông số & Cảnh báo</div>
-                    <div class="card-body d-flex flex-column justify-content-center text-center p-3">
-                        <h1 class="display-3 fw-bold mb-0 text-dark" id="live-power-val" style="transition: color 0.3s;">0</h1>
-                        <p class="text-muted fw-bold mb-3">Công suất (W)</p>
+            <div class="col-md-6">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-body">
+                        <h6 class="fw-bold text-muted mb-3"><i class="bi bi-list-check"></i> Trạng thái thiết bị đang hoạt động</h6>
+                        <div style="max-height: 200px; overflow-y: auto;" id="upwr-machine-list">
+                            <div class="text-center text-muted py-4">Đang tải dữ liệu...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-                        <div class="row border-top border-bottom py-2 mb-3">
-                            <div class="col-6 border-end">
-                                <div class="small text-muted">Điện áp (V)</div>
-                                <div id="live-voltage-val" class="fs-4 fw-bold text-primary">0.0</div>
-                            </div>
-                            <div class="col-6">
-                                <div class="small text-muted">Dòng điện (A)</div>
-                                <div id="live-current-val" class="fs-4 fw-bold text-danger">0.00</div>
-                            </div>
+            <div class="col-md-6">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-body d-flex flex-column">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="fw-bold text-danger m-0"><i class="bi bi-exclamation-triangle-fill"></i> Cảnh báo bất thường</h6>
+                            <span class="pwr-badge badge-err" id="upwr-alert-count">0 lỗi</span>
                         </div>
-                        
-                        <div id="live-alert-badge" class="alert alert-secondary py-3 fw-bold mb-0" style="font-size: 0.9rem;">
-                            Hệ thống đang ở trạng thái nghỉ.
-                        </div>
+                        <div style="flex-grow: 1; overflow-y: auto; max-height: 250px;" id="upwr-alert-list">
+                            </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-body">
+                        <h6 class="fw-bold text-muted mb-3"><i class="bi bi-graph-up-arrow"></i> Xu hướng tiêu thụ 7 ngày qua (kWh)</h6>
+                        <div style="height: 200px;"><canvas id="chartTrend"></canvas></div>
                     </div>
                 </div>
             </div>
@@ -3828,6 +3998,14 @@ async function simulateQRScan(bookingId, action) {
         if (feedbackRoomSelect) {
             feedbackRoomSelect.innerHTML = optionsLiveHtml;
         }
+        // Đổ dữ liệu vào trang Giám sát Điện năng & Cảnh báo (Unified Power View)
+        const powerFilter = document.getElementById('power-room-filter');
+        if (powerFilter) {
+            let powerHtml = '<option value="ALL">Tất cả thiết bị</option>';
+            powerHtml += '<option value="ACTIVE_ONLY" class="text-success fw-bold"> Máy đang hoạt động</option>';
+            
+            powerFilter.innerHTML = powerHtml;
+        }
     }
     let energyChartObj = null;
 
@@ -4745,122 +4923,275 @@ async function emergencyStop(bookingId, machineName) {
     }
 }        
     
- 
-    // 1. Hàm khởi tạo màn hình
+// =========================================================================
+    // MODULE: QUẢN LÝ VẬT TƯ TIÊU HAO (LOGBOOK - SỔ NHẬT KÝ)
+    // =========================================================================
+
+    let addConsumableModalInstance = null;
+
+    // 1. KHỞI TẠO MÀN HÌNH (Gắn mặc định ngày tháng và tải dropdown phòng)
     async function loadConsumablesView() {
         showView('consumables-view');
-        // Đặt tháng mặc định là tháng hiện tại
+        
         const now = new Date();
         const monthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-        document.getElementById('consumable-month-picker').value = monthStr;
+        
+        // Đặt tháng mặc định
+        document.getElementById('filter-consumable-month').value = monthStr;
+
+        // Tải danh sách phòng PTN
+        const { data: rooms } = await _supabase.from('rooms').select('room_code, room_name').eq('status', 'active');
+        let filterOpts = '<option value="all">Tất cả phòng</option>';
+        let modalOpts = '<option value="">-- Chọn phòng PTN --</option>';
+        
+        if(rooms) {
+            rooms.forEach(r => {
+                const opt = `<option value="${r.room_code}">${r.room_code} - ${r.room_name}</option>`;
+                filterOpts += opt;
+                modalOpts += opt;
+            });
+        }
+        document.getElementById('filter-consumable-room').innerHTML = filterOpts;
+        document.getElementById('new-con-room').innerHTML = modalOpts;
+
         loadConsumablesData();
     }
 
-    // 2. Tải dữ liệu từ Supabase và vẽ bảng Excel
+    // 2. TẢI DỮ LIỆU, ÁP DỤNG BỘ LỌC KÉP & TÍNH TOÁN KPI
     async function loadConsumablesData() {
-        const month = document.getElementById('consumable-month-picker').value;
+        const monthVal = document.getElementById('filter-consumable-month').value;
+        const roomVal = document.getElementById('filter-consumable-room').value;
         const tbody = document.getElementById('consumables-list');
-        tbody.innerHTML = `
-            <tr id="loading-spinner">
-                <td colspan="100%" class="text-center py-5">
-                    <div class="spinner-border text-success" style="width: 3rem; height: 3rem;" role="status"></div>
-                    <div class="mt-3 text-success fw-bold small">ĐANG ĐỒNG BỘ DỮ LIỆU VẬT TƯ...</div>
-                </td>
-            </tr>
-        `;
 
-        // Lấy danh sách 21 phòng đã có trong hệ thống 
-        const { data: rooms } = await _supabase.from('rooms').select('room_code, room_name').eq('status', 'active');
-        // Lấy dữ liệu vật tư của tháng được chọn
-        const { data: records } = await _supabase.from('consumables').select('*').eq('report_month', month);
+        tbody.innerHTML = `<tr><td colspan="10" class="text-center py-5"><div class="spinner-border text-primary"></div><div class="mt-2 fw-bold text-muted small">ĐANG TẢI SỔ NHẬT KÝ...</div></td></tr>`;
 
+        // Truy vấn dữ liệu cơ bản từ Supabase (Mới nhất xếp trên cùng)
+        let query = _supabase.from('consumables').select('*').order('created_at', { ascending: false });
+        
+        // Tối ưu hóa: Nếu chọn phòng cụ thể, lọc luôn từ Server cho nhẹ
+        if (roomVal !== 'all') query = query.eq('room_code', roomVal);
+        // Lọc theo tháng
+        if (monthVal) query = query.eq('report_month', monthVal);
+
+        const { data, error } = await query;
+        if (error || !data) return tbody.innerHTML = `<tr><td colspan="10" class="p-4 text-danger">Lỗi kết nối CSDL: ${error?.message}</td></tr>`;
+
+        // TÍNH TOÁN KPI CARDS
+        const totalEntries = data.length;
+        const uniqueRooms = new Set(data.map(d => d.room_code)).size;
+        const lowStockCount = data.filter(d => (d.stock_remaining || 0) < 5).length;
+        
+        const todayStr = new Date().toISOString().split('T')[0];
+        const expiredCount = data.filter(d => d.replacement_date && d.replacement_date <= todayStr).length;
+
+        document.getElementById('con-kpi-total').innerText = totalEntries;
+        document.getElementById('con-kpi-rooms').innerText = uniqueRooms;
+        document.getElementById('con-kpi-low').innerText = lowStockCount;
+        document.getElementById('con-kpi-due').innerText = expiredCount;
+
+        // VẼ BẢNG
         let html = '';
-        rooms.forEach(r => {
-            // Tìm xem phòng này đã có dòng dữ liệu nào trong tháng này chưa
-            const record = records ? records.find(rec => rec.room_code === r.room_code) : null;
-            const id = record ? record.id : 'new-' + r.room_code;
+        data.forEach(item => {
+            const stock = item.stock_remaining || 0;
             
+            // Xử lý màu sắc Tồn kho
+            let stockBadge = '';
+            if (stock < 5) stockBadge = `<span class="badge bg-danger fs-6">${stock}</span>`;
+            else if (stock <= 9) stockBadge = `<span class="badge bg-warning text-dark fs-6">${stock}</span>`;
+            else stockBadge = `<span class="badge bg-success fs-6">${stock}</span>`;
+
+            // Xử lý màu sắc Tình trạng (Hạn thay thế)
+            let dateBadge = `<span class="badge bg-success-subtle text-success border border-success">Mới cấp</span>`;
+            if (item.replacement_date && item.replacement_date <= todayStr) {
+                dateBadge = `<span class="badge bg-danger-subtle text-danger border border-danger">Đến hạn/Đã dùng</span>`;
+            }
+
+            const repDate = item.replacement_date ? new Date(item.replacement_date).toLocaleDateString('vi-VN') : '--';
+            const creator = item.created_by || 'Khuyết danh';
+
             html += `
                 <tr>
-                    <td class="text-start ps-3 bg-light fw-bold small">${r.room_code} - ${r.room_name}</td>
-                    <td class="p-0"><input type="text" id="name-${id}" class="form-control form-control-sm border-0 text-center" value="${record ? record.material_name || '' : ''}" placeholder="..."></td>
-                    <td class="p-0"><input type="date" id="date-${id}" class="form-control form-control-sm border-0 text-center" value="${record ? record.replacement_date || '' : ''}"></td>
-                    <td class="p-0"><input type="number" id="stock-${id}" class="form-control form-control-sm border-0 text-center" value="${record ? record.stock_remaining || 0 : 0}"></td>
+                    <td class="fw-bold text-primary">${repDate}</td>
+                    <td class="text-start ps-4 fw-bold text-dark">${item.room_code}</td>
+                    <td>${item.material_name}</td>
+                    <td>${item.unit || '-'}</td>
+                    <td>${item.quantity_used || 0}</td>
+                    <td>${stockBadge}</td>
+                    <td>${dateBadge}</td>
+                    <td class="text-start"><small class="text-muted">${item.note || ''}</small></td>
+                    <td><small>${creator}</small></td>
                     <td>
-                        <button class="btn btn-sm btn-link p-0 text-primary" onclick="saveConsumableRow('${id}', '${r.room_code}')">
-                            <i class="bi bi-cloud-arrow-up-fill fs-5"></i>
-                        </button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteConsumable('${item.id}')" title="Xóa dòng nhập sai"><i class="bi bi-trash"></i></button>
                     </td>
                 </tr>
             `;
         });
-        tbody.innerHTML = html;
+
+        tbody.innerHTML = html || '<tr><td colspan="10" class="p-4 text-muted fst-italic">Kỳ này chưa có phát sinh nhập/xuất vật tư nào.</td></tr>';
     }
 
-    // 3. Hàm lưu từng dòng (Giống như bấm Ctrl+S trong Excel)
-    async function saveConsumableRow(id, roomCode) {
-    const month = document.getElementById('consumable-month-picker').value;
-    const name = document.getElementById(`name-${id}`).value;
-    const date = document.getElementById(`date-${id}`).value;
-    const stock = document.getElementById(`stock-${id}`).value;
+    // 3. MỞ MODAL THÊM MỚI
+    function openAddConsumableModal() {
+        if (!addConsumableModalInstance) {
+            addConsumableModalInstance = new bootstrap.Modal(document.getElementById('addConsumableModal'));
+        }
+        
+        // Reset dữ liệu trong form
+        document.getElementById('new-con-room').value = '';
+        document.getElementById('new-con-name').value = '';
+        document.getElementById('new-con-unit').value = '';
+        document.getElementById('new-con-used').value = 0;
+        document.getElementById('new-con-stock').value = 0;
+        document.getElementById('new-con-note').value = '';
+        
+        // Đồng bộ tháng và ngày
+        const filterMonth = document.getElementById('filter-consumable-month').value;
+        const now = new Date();
+        document.getElementById('new-con-month').value = filterMonth || `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        document.getElementById('new-con-date').value = now.toISOString().split('T')[0];
 
-    if (!month) return Swal.fire('Lỗi', 'Vui lòng chọn tháng trước khi lưu!', 'warning');
-
-    Swal.fire({ title: 'Đang lưu...', didOpen: () => Swal.showLoading() });
-
-    const dataObj = {
-        room_code: roomCode,
-        material_name: name || '',
-        replacement_date: date || null,
-        stock_remaining: parseInt(stock) || 0,
-        report_month: month
-    };
-
-    let result;
-    // Kiểm tra xem đây là bản ghi mới hay bản ghi cũ
-    if (String(id).startsWith('new-')) {
-        result = await _supabase.from('consumables').insert([dataObj]);
-    } else {
-        result = await _supabase.from('consumables').update(dataObj).eq('id', id);
+        addConsumableModalInstance.show();
     }
 
-    if (result.error) {
-        Swal.fire('Lỗi lưu dữ liệu', result.error.message, 'error');
-    } else {
-        Swal.fire({ icon: 'success', title: 'Đã lưu thành công!', timer: 1000, showConfirmButton: false });
-        // Load lại dữ liệu để lấy ID thật từ Supabase (giúp lần lưu sau không bị lỗi)
-        loadConsumablesData(); 
+    // 4. LƯU BẢN GHI VÀO NHẬT KÝ (INSERT)
+    async function saveNewConsumable() {
+        const room = document.getElementById('new-con-room').value;
+        const month = document.getElementById('new-con-month').value;
+        const name = document.getElementById('new-con-name').value.trim();
+        
+        if (!room || !month || !name) {
+            return Swal.fire('Cảnh báo', 'Vui lòng điền đủ Phòng, Kỳ báo cáo và Tên vật tư!', 'warning');
+        }
+
+        Swal.fire({ title: 'Đang ghi sổ...', didOpen: () => Swal.showLoading() });
+
+        const dataObj = {
+            room_code: room,
+            report_month: month,
+            material_name: name,
+            unit: document.getElementById('new-con-unit').value.trim() || '',
+            quantity_used: parseInt(document.getElementById('new-con-used').value) || 0,
+            stock_remaining: parseInt(document.getElementById('new-con-stock').value) || 0,
+            replacement_date: document.getElementById('new-con-date').value || null,
+            note: document.getElementById('new-con-note').value.trim() || '',
+            created_by: currentUserProfile ? currentUserProfile.full_name : 'Quản trị viên'
+        };
+
+        const { error } = await _supabase.from('consumables').insert([dataObj]);
+
+        if (error) {
+            Swal.fire('Lỗi Database', error.message, 'error');
+        } else {
+            Swal.fire({ icon: 'success', title: 'Đã lưu vào nhật ký!', timer: 1500, showConfirmButton: false });
+            addConsumableModalInstance.hide();
+            // Cập nhật lại bộ lọc tháng cho khớp với cái vừa lưu và load lại bảng
+            document.getElementById('filter-consumable-month').value = month;
+            loadConsumablesData();
+        }
     }
-}
 
-    // 4. Hàm Xuất Excel "Xịn"
-    function exportConsumablesExcel() {
-    const month = document.getElementById('consumable-month-picker').value;
-    const table = document.getElementById('table-consumables');
-    const rows = table.querySelectorAll('tbody tr');
-    let excelData = [];
+    // 5. XÓA BẢN GHI (Cho phép xóa nếu nhập sai)
+    async function deleteConsumable(id) {
+        if (!confirm("Bạn có chắc chắn muốn xóa bản ghi này khỏi nhật ký?")) return;
+        
+        Swal.fire({ title: 'Đang xóa...', didOpen: () => Swal.showLoading() });
+        const { error } = await _supabase.from('consumables').delete().eq('id', id);
+        
+        if (error) Swal.fire('Lỗi', error.message, 'error');
+        else {
+            Swal.fire({ icon: 'success', title: 'Đã xóa!', timer: 1000, showConfirmButton: false });
+            loadConsumablesData();
+        }
+    }
 
-    rows.forEach(row => {
-        const roomName = row.cells[0].innerText;
-        const name = row.cells[1].querySelector('input').value;
-        const date = row.cells[2].querySelector('input').value;
-        const stock = row.cells[3].querySelector('input').value;
+    // 6. XUẤT EXCEL CAO CẤP (4 CHẾ ĐỘ - 2 SHEETS)
+    async function exportConsumablesAdvanced(mode) {
+        Swal.fire({ title: 'Đang trích xuất dữ liệu...', didOpen: () => Swal.showLoading() });
 
-        excelData.push({
-            "Phòng": roomName,
-            "Vật tư": name,
-            "Ngày thay thế": date,
-            "Số lượng còn lại": stock
+        const filterMonth = document.getElementById('filter-consumable-month').value;
+        const filterRoom = document.getElementById('filter-consumable-room').value;
+        const currentYear = filterMonth ? filterMonth.split('-')[0] : String(new Date().getFullYear());
+
+        let query = _supabase.from('consumables').select('*').order('created_at', { ascending: false });
+        let fileName = 'Bao_Cao_Vat_Tu';
+
+        // Lọc dữ liệu theo 4 chế độ
+        if (mode === 'month') {
+            if (filterMonth) query = query.eq('report_month', filterMonth);
+            if (filterRoom !== 'all') query = query.eq('room_code', filterRoom);
+            fileName += `_Thang_${filterMonth || 'TatCa'}`;
+        } else if (mode === 'year') {
+            query = query.like('report_month', `${currentYear}-%`);
+            if (filterRoom !== 'all') query = query.eq('room_code', filterRoom);
+            fileName += `_Nam_${currentYear}`;
+        } else if (mode === 'room') {
+            if (filterRoom === 'all') return Swal.fire('Chú ý', 'Vui lòng chọn 1 phòng ở Bộ lọc kép để xuất báo cáo riêng cho phòng đó.', 'warning');
+            query = query.eq('room_code', filterRoom);
+            fileName += `_Phong_${filterRoom}`;
+        } else if (mode === 'all') {
+            fileName += `_ToanBoDuLieu`;
+        }
+
+        const { data, error } = await query;
+        if (error || !data || data.length === 0) {
+            return Swal.fire('Thông báo', 'Không có dữ liệu trong khoảng thời gian/phòng bạn đã chọn để xuất.', 'info');
+        }
+
+        // SHEET 1: CHI TIẾT NHẬT KÝ
+        const sheet1Data = data.map(r => ({
+            "Ngày thay thế/nhập": r.replacement_date ? new Date(r.replacement_date).toLocaleDateString('vi-VN') : '',
+            "Mã Phòng": r.room_code,
+            "Tên Vật tư": r.material_name,
+            "Đơn vị": r.unit || '',
+            "SL Đã dùng": r.quantity_used || 0,
+            "Tồn kho còn lại": r.stock_remaining || 0,
+            "Ghi chú": r.note || '',
+            "Người nhập": r.created_by || '',
+            "Giờ nhập hệ thống": r.created_at ? new Date(r.created_at).toLocaleString('vi-VN') : ''
+        }));
+
+        // SHEET 2: TỔNG HỢP KPI THEO PHÒNG
+        const roomStats = {};
+        data.forEach(r => {
+            if (!roomStats[r.room_code]) {
+                roomStats[r.room_code] = { count: 0, totalUsed: 0, minStock: 999999, items: new Set() };
+            }
+            roomStats[r.room_code].count++;
+            roomStats[r.room_code].totalUsed += (r.quantity_used || 0);
+            roomStats[r.room_code].items.add(r.material_name);
+            if ((r.stock_remaining || 0) < roomStats[r.room_code].minStock) {
+                roomStats[r.room_code].minStock = (r.stock_remaining || 0);
+            }
         });
-    });
 
-    if (excelData.length === 0) return Swal.fire('Thông báo', 'Không có dữ liệu!', 'info');
+        const sheet2Data = Object.keys(roomStats).map(roomCode => ({
+            "Mã Phòng": roomCode,
+            "Số lượt nhập nhật ký": roomStats[roomCode].count,
+            "Số loại mặt hàng": roomStats[roomCode].items.size,
+            "Tổng số lượng vật tư đã hao hụt": roomStats[roomCode].totalUsed,
+            "Mức tồn kho thấp nhất ghi nhận": roomStats[roomCode].minStock === 999999 ? 0 : roomStats[roomCode].minStock
+        }));
 
-    const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.json_to_sheet(excelData);
-    XLSX.utils.book_append_sheet(wb, ws, "VatTu");
-    XLSX.writeFile(wb, `Bao_Cao_Vat_Tu_${month}.xlsx`);
-    }
+        // TẠO FILE EXCEL VỚI SHEETJS
+        const wb = XLSX.utils.book_new();
+        
+        const ws1 = XLSX.utils.json_to_sheet(sheet1Data);
+        ws1['!cols'] = [{wch: 18}, {wch: 15}, {wch: 30}, {wch: 10}, {wch: 15}, {wch: 15}, {wch: 25}, {wch: 20}, {wch: 22}]; 
+        XLSX.utils.book_append_sheet(wb, ws1, 'Nhat_Ky_Chi_Tiet');
+
+        const ws2 = XLSX.utils.json_to_sheet(sheet2Data);
+        ws2['!cols'] = [{wch: 15}, {wch: 25}, {wch: 20}, {wch: 35}, {wch: 35}];
+        XLSX.utils.book_append_sheet(wb, ws2, 'Thong_Ke_Tieu_Hao');
+
+        XLSX.writeFile(wb, `${fileName}.xlsx`);
+        Swal.fire('Thành công', 'Đã tải xuống file Excel chuyên sâu (gồm 2 Sheet).', 'success');
+    } 
+    
+
+    
+    
+
+    
     // HÀM HỦY LỊCH DÀNH CHO SINH VIÊN
     function cancelBooking(id) {
         Swal.fire({
@@ -5120,7 +5451,259 @@ function proceedToBookFromGrid() {
     // Kích hoạt Modal Đặt lịch (Đã sửa ở bước 3 để nhận Data)
     openBookingModal(roomCode, currentSelectedMachine, date, startStr, endStr);
 }
-// ==========================================
+let unifiedChartInstance = null;
+
+// BIẾN TOÀN CỤC CHỨA BIỂU ĐỒ (Để xóa cái cũ trước khi vẽ cái mới)
+// BIẾN TOÀN CỤC CHỨA BIỂU ĐỒ (Khai báo 1 lần ở ngoài cùng)
+let mChartMulti = null;
+    let mChartRank = null;
+    let mChartTrend = null;
+    let livePowerInterval = null; // Biến lưu bộ đếm thời gian 5s
+
+    async function loadUnifiedPowerData() {
+        // Lấy giá trị bộ lọc (Bây giờ chỉ còn "Tất cả" và "Đang hoạt động")
+        const filterEl = document.getElementById('power-room-filter');
+        const filter = filterEl ? filterEl.value : 'ALL';
+
+        // ========================================================
+        // HÀM LÕI CHUYÊN LẤY DỮ LIỆU VÀ VẼ (Được gọi lại mỗi 5s)
+        // ========================================================
+        const fetchAndRender = async () => {
+            // 1. TẢI DỮ LIỆU LIVE (V, A, W) TỪ BẢNG MACHINES
+            let powerQuery = _supabase.from('machines').select('*');
+            if (filter === 'ACTIVE_ONLY') {
+                powerQuery = powerQuery.eq('power_status', true); 
+            } else if (filter !== 'ALL') {
+                powerQuery = powerQuery.eq('room_code', filter); // Vẫn giữ logic phòng phòng hờ sau này sếp muốn dùng lại
+            }
+            const { data: machinesData } = await powerQuery;
+
+            // 2. TẢI KWH CỘNG DỒN HÔM NAY TỪ BẢNG BOOKINGS
+            const nowLocal = new Date();
+            const todayStr = `${nowLocal.getFullYear()}-${String(nowLocal.getMonth() + 1).padStart(2, '0')}-${String(nowLocal.getDate()).padStart(2, '0')}`;
+            
+            const { data: bookingsToday } = await _supabase.from('bookings')
+                .select('machine_name, energy_consumed')
+                .eq('booking_date', todayStr)
+                .in('status', ['approved', 'completed']); // Lấy các ca đã duyệt hoặc hoàn thành
+
+            // 3. TẢI DỮ LIỆU 7 NGÀY QUA ĐỂ VẼ TREND
+            const past7Days = new Date();
+            past7Days.setDate(past7Days.getDate() - 6);
+            const startDateStr = `${past7Days.getFullYear()}-${String(past7Days.getMonth() + 1).padStart(2, '0')}-${String(past7Days.getDate()).padStart(2, '0')}`;
+            
+            const { data: trendData } = await _supabase.from('bookings')
+                .select('booking_date, energy_consumed')
+                .gte('booking_date', startDateStr)
+                .in('status', ['approved', 'completed']);
+
+            // 4. LẤY DANH SÁCH CẢNH BÁO
+            const { data: alertData } = await _supabase.from('bookings')
+                .select('machine_name, condition_note, created_at, full_name')
+                .eq('machine_condition', 'Hư hỏng')
+                .order('created_at', { ascending: false }).limit(6);
+
+            if(!machinesData) return;
+
+            // --- SẮP XẾP: MÁY ĐANG CHẠY LÊN ĐẦU ---
+            machinesData.sort((a, b) => (a.power_status === b.power_status ? 0 : a.power_status ? -1 : 1));
+
+            // ========================================================
+            // XỬ LÝ SỐ LIỆU & TÍNH TOÁN KPI
+            // ========================================================
+            let totalW = 0, activeCount = 0, totalKwhToday = 0;
+            let machineNames = [], vols = [], amps = [], watts = [];
+            const rankMap = {};  
+
+            // Dữ liệu Đa chỉ số (Từ machines)
+            machinesData.forEach(m => {
+                const exactName = m.machine_name.includes(' - ') ? m.machine_name.split(' - ')[1] : m.machine_name;
+                const w = m.live_watt || 0; 
+                
+                if(m.power_status) { activeCount++; totalW += w; }
+                
+                machineNames.push(exactName);
+                vols.push(m.live_voltage || 0);
+                amps.push(m.live_current || 0);
+                watts.push(w);
+            });
+
+            // Dữ liệu Điện năng hôm nay (Từ bookings)
+            if (bookingsToday) {
+                bookingsToday.forEach(b => {
+                    const kwh = parseFloat(b.energy_consumed || 0);
+                    const exactName = b.machine_name.includes(' - ') ? b.machine_name.split(' - ')[1] : b.machine_name;
+                    rankMap[exactName] = (rankMap[exactName] || 0) + kwh;
+                    totalKwhToday += kwh; 
+                });
+            }
+
+            // GẮN SỐ LIỆU LÊN 4 THẺ KPI CARDS
+            document.getElementById('upwr-kpi-watt').innerHTML = `${(totalW / 1000).toFixed(2)} <span class="fs-6 fw-normal text-muted">kW</span>`;
+            document.getElementById('upwr-kpi-active').innerText = `${activeCount} máy đang chạy`;
+            document.getElementById('upwr-kpi-kwh').innerHTML = `${totalKwhToday.toFixed(2)} <span class="fs-6 fw-normal text-muted">kWh</span>`;
+            document.getElementById('upwr-kpi-cost').innerHTML = `${(totalKwhToday * 2500).toLocaleString('vi-VN')} <span class="fs-6 fw-normal text-muted">VNĐ</span>`;
+            document.getElementById('upwr-kpi-alert').innerText = alertData ? alertData.length : 0;
+            document.getElementById('upwr-alert-count').innerText = `${alertData ? alertData.length : 0} lỗi`;
+
+            // ========================================================
+            // VẼ 3 BIỂU ĐỒ (Dùng .update() để không bị giật lag mỗi 5s)
+            // ========================================================
+            
+            // 1. BIỂU ĐỒ ĐA CHỈ SỐ (MULTI-AXIS: V, A, W)
+            if(!mChartMulti) {
+                mChartMulti = new Chart(document.getElementById('chartMulti'), {
+                    type: 'bar',
+                    data: { labels: machineNames, datasets: [
+                        { type: 'line', label: 'Điện áp (V)', data: vols, yAxisID: 'yV', borderColor: '#0d6efd', backgroundColor: 'transparent', borderWidth: 2, pointRadius: 3, tension: 0.3 },
+                        { type: 'line', label: 'Dòng điện (A)', data: amps, yAxisID: 'yA', borderColor: '#198754', backgroundColor: 'transparent', borderWidth: 2, pointRadius: 3, borderDash: [5, 3], tension: 0.3 },
+                        { type: 'bar', label: 'Công suất (W)', data: watts, yAxisID: 'yW', backgroundColor: 'rgba(25, 135, 84, 0.15)', borderColor: '#198754', borderWidth: 1 }
+                    ]},
+                    options: {
+                        responsive: true, maintainAspectRatio: false, animation: { duration: 0 }, 
+                        interaction: { mode: 'index', intersect: false },
+                        plugins: { legend: { display: false } },
+                        scales: { 
+                            x: { grid: { display: false }, ticks: { font: { size: 11 } } }, 
+                            yV: { type: 'linear', position: 'left', title: { display: true, text: 'Vôn (V)', font: { size: 10 } } }, 
+                            yA: { type: 'linear', position: 'right', title: { display: true, text: 'Ampe (A)', font: { size: 10 } }, grid: { display: false } }, 
+                            yW: { display: false } 
+                        }
+                    }
+                });
+            } else {
+                mChartMulti.data.labels = machineNames;
+                mChartMulti.data.datasets[0].data = vols;
+                mChartMulti.data.datasets[1].data = amps;
+                mChartMulti.data.datasets[2].data = watts;
+                mChartMulti.update();
+            }
+
+            // 2. BIỂU ĐỒ XẾP HẠNG THIẾT BỊ (HORIZONTAL BAR)
+            let topMachines = Object.keys(rankMap).map(name => ({ name: name, kwh: rankMap[name] })).sort((a, b) => b.kwh - a.kwh).slice(0, 5);
+            const colors = ['#0d6efd', '#198754', '#fd7e14', '#6c757d', '#6f42c1', '#dc3545'];
+            
+            if(!mChartRank) {
+                mChartRank = new Chart(document.getElementById('chartRank'), {
+                    type: 'bar',
+                    data: {
+                        labels: topMachines.map(m => m.name),
+                        datasets: [{ data: topMachines.map(m => m.kwh.toFixed(2)), backgroundColor: topMachines.map((_, i) => colors[i % colors.length]), borderRadius: 4, barThickness: 16 }]
+                    },
+                    options: { animation: { duration: 0 }, indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { color: 'rgba(0,0,0,0.05)' } }, y: { grid: { display: false } } } }
+                });
+            } else {
+                mChartRank.data.labels = topMachines.map(m => m.name);
+                mChartRank.data.datasets[0].data = topMachines.map(m => m.kwh.toFixed(2));
+                mChartRank.data.datasets[0].backgroundColor = topMachines.map((_, i) => colors[i % colors.length]);
+                mChartRank.update();
+            }
+
+            // 3. BIỂU ĐỒ XU HƯỚNG 7 NGÀY (LINE CHART)
+            const trendMap = {};
+            for(let i=0; i<7; i++) {
+                let d = new Date(); d.setDate(d.getDate() - i);
+                trendMap[d.toISOString().split('T')[0]] = 0; 
+            }
+            if (trendData) {
+                trendData.forEach(b => {
+                    const dateKey = b.booking_date.split('T')[0];
+                    if (trendMap[dateKey] !== undefined) trendMap[dateKey] += parseFloat(b.energy_consumed || 0);
+                });
+            }
+            const sortedDates = Object.keys(trendMap).sort(); 
+            const chartLabels = sortedDates.map(d => d.substring(5)); 
+            const chartValues = sortedDates.map(d => trendMap[d]);
+
+            if(!mChartTrend) {
+                mChartTrend = new Chart(document.getElementById('chartTrend'), {
+                    type: 'line',
+                    data: {
+                        labels: chartLabels,
+                        datasets: [{ data: chartValues.map(v => v.toFixed(1)), borderColor: '#0d6efd', backgroundColor: 'rgba(13, 110, 253, 0.1)', borderWidth: 2, pointRadius: 4, pointBackgroundColor: '#0d6efd', fill: true, tension: 0.4 }]
+                    },
+                    options: { animation: { duration: 0 }, responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { grid: { color: 'rgba(0,0,0,0.05)' }, beginAtZero: true } } }
+                });
+            } else {
+                mChartTrend.data.labels = chartLabels;
+                mChartTrend.data.datasets[0].data = chartValues.map(v => v.toFixed(1));
+                mChartTrend.update();
+            }
+
+            // ========================================================
+            // RENDER DANH SÁCH MÁY ĐANG CHẠY & DANH SÁCH CẢNH BÁO
+            // ========================================================
+            
+            // Render Máy đang chạy
+            document.getElementById('upwr-machine-list').innerHTML = machinesData.map(m => {
+                const exactName = m.machine_name.includes(' - ') ? m.machine_name.split(' - ')[1] : m.machine_name;
+                if(m.power_status) {
+                    return `
+                        <div class="machine-item">
+                            <div class="fw-bold text-dark"><span class="dot dot-on"></span>${exactName}</div>
+                            <div class="d-flex gap-3 small text-muted">
+                                <span><b class="text-dark">${m.live_voltage || 0}</b>V</span>
+                                <span><b class="text-dark">${m.live_current || 0}</b>A</span>
+                                <span><b class="text-dark">${((m.live_watt || 0) / 1000).toFixed(2)}</b>kW</span>
+                            </div>
+                        </div>`;
+                } else {
+                    return `
+                        <div class="machine-item">
+                            <div class="text-muted"><span class="dot dot-off"></span>${exactName}</div>
+                            <div class="small text-muted fst-italic">Đang tắt</div>
+                        </div>`;
+                }
+            }).join('');
+            
+            // Render Cảnh báo đầy đủ chi tiết
+            const alertListEl = document.getElementById('upwr-alert-list');
+            if (alertData && alertData.length > 0) {
+                alertListEl.innerHTML = alertData.map(alert => {
+                    const timeStr = new Date(alert.created_at).toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'});
+                    const isAutoStop = alert.condition_note && alert.condition_note.toLowerCase().includes('tự động');
+                    const exactName = alert.machine_name.includes(' - ') ? alert.machine_name.split(' - ')[1] : alert.machine_name;
+                    
+                    return `
+                        <div class="alert-item">
+                            <div class="alert-icon ${isAutoStop ? 'icon-ai' : 'icon-sv'}">
+                                <i class="bi ${isAutoStop ? 'bi-robot' : 'bi-person-fill'}"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="fw-bold ${isAutoStop ? 'text-danger' : 'text-warning text-dark'}">${exactName}</div>
+                                <div class="small text-muted mt-1" style="line-height:1.2">${isAutoStop ? alert.condition_note : `<b>${alert.full_name}</b> báo: ${alert.condition_note}`}</div>
+                            </div>
+                            <div class="small text-muted text-nowrap">${timeStr}</div>
+                        </div>
+                    `;
+                }).join('');
+            } else {
+                alertListEl.innerHTML = `
+                    <div class="text-center py-4">
+                        <i class="bi bi-shield-check text-success fs-1"></i>
+                        <div class="text-success fw-bold mt-2">Hệ thống an toàn</div>
+                        <div class="text-muted small">Không phát hiện bất thường</div>
+                    </div>`;
+            }
+        };
+
+        // 1. Chạy ngay lập tức lần đầu tiên
+        await fetchAndRender();
+
+        // 2. Dọn dẹp Interval cũ (nếu có) để không bị chạy chồng chéo
+        if (livePowerInterval) clearInterval(livePowerInterval);
+
+        // 3. Khởi tạo vòng lặp 5 giây
+        livePowerInterval = setInterval(() => {
+            // Nếu người dùng đang đứng ở đúng trang này thì mới update, nếu chuyển trang khác thì tắt
+            if (currentView === 'unified-power-view') {
+                fetchAndRender();
+            } else {
+                clearInterval(livePowerInterval); 
+            }
+        }, 5000); 
+    }
+// CHẾ ĐỘ AI CHO TRANG WEB==========================================
 async function testGeminiAI() {
     const { value: userQuestion } = await Swal.fire({
         title: 'Trợ lý AI Phòng Thí Nghiệm',
