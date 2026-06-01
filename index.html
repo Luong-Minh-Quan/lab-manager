@@ -4123,18 +4123,21 @@ async function simulateQRScan(bookingId, action) {
     async function loadEnergyStats() {
         showView('energy-stats-view');
 
-        // 1. TỰ ĐỘNG KHỞI TẠO DROPDOWN NĂM TỪ 2026 ĐẾN HIỆN TẠI
+        // 1. TỰ ĐỘNG KHỞI TẠO DROPDOWN NĂM (GỐC 2026 + 2 NĂM DỰ PHÒNG TƯƠNG LAI)
         const yearSel = document.getElementById('filter-energy-year');
         if (yearSel.options.length === 0) {
-            const currentY = new Date().getFullYear();
-            // Lấy năm hiện tại + 1 để dự phòng, lùi về 2026
-            for (let y = Math.max(currentY, 2026); y >= 2026; y--) {
+            // Lấy năm hiện tại của hệ thống (Ví dụ: 2026)
+            const currentY = new Date().getFullYear(); 
+            
+            // Bắt đầu từ (năm hiện tại + 2) lùi dần về năm gốc là 2026
+            for (let y = currentY + 2; y >= 2026; y--) {
                 const opt = document.createElement('option');
                 opt.value = y;
                 opt.textContent = `Năm ${y}`;
                 yearSel.appendChild(opt);
             }
-            yearSel.value = currentY; // Chọn năm nay làm mặc định
+            
+            yearSel.value = currentY; // Chọn năm hiện tại làm mặc định
         }
 
         const yearFilter  = yearSel.value;
