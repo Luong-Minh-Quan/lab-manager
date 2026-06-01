@@ -735,86 +735,161 @@
         </div>
     </div>
     <div id="energy-stats-view" class="view-section hidden">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h3 class="fw-bold text-warning-emphasis m-0"><i class="bi bi-receipt"></i> Báo cáo Chi phí & Phân tích Điện năng</h3>
-            <div class="d-flex gap-2">
-                <select id="filter-energy-room" class="form-select form-select-sm border-warning" onchange="loadEnergyStats()">
+        <div class="d-flex flex-wrap gap-2 align-items-center justify-content-between mb-4">
+            <h3 class="fw-bold text-warning-emphasis m-0">
+                <i class="bi bi-receipt-cutoff"></i> Báo cáo Chi phí & Phân tích Điện năng
+            </h3>
+            <div class="d-flex flex-wrap gap-2 align-items-center">
+                <select id="filter-energy-room" class="form-select form-select-sm border-warning" style="min-width:190px" onchange="loadEnergyStats()">
                     <option value="all">Tất cả phòng / xưởng</option>
                 </select>
-                <select id="filter-energy-year" class="form-select form-select-sm border-warning" onchange="loadEnergyStats()">
-                    <option value="2026">Năm 2026</option>
-                    <option value="2025">Năm 2025</option>
+                <select id="filter-energy-year" class="form-select form-select-sm border-warning" style="min-width:130px" onchange="loadEnergyStats()">
                 </select>
-                <button class="btn btn-sm btn-warning fw-bold text-dark shadow-sm" onclick="exportData('energy')">
-                    <i class="bi bi-file-earmark-excel"></i> Xuất File Hóa Đơn
-                </button>
+                <select id="filter-energy-month" class="form-select form-select-sm border-warning" style="min-width:130px" onchange="loadEnergyStats()">
+                    <option value="all">Tất cả tháng</option>
+                    <option value="01">Tháng 1</option><option value="02">Tháng 2</option>
+                    <option value="03">Tháng 3</option><option value="04">Tháng 4</option>
+                    <option value="05">Tháng 5</option><option value="06">Tháng 6</option>
+                    <option value="07">Tháng 7</option><option value="08">Tháng 8</option>
+                    <option value="09">Tháng 9</option><option value="10">Tháng 10</option>
+                    <option value="11">Tháng 11</option><option value="12">Tháng 12</option>
+                </select>
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-warning fw-bold text-dark shadow-sm dropdown-toggle" data-bs-toggle="dropdown">
+                        <i class="bi bi-file-earmark-excel-fill"></i> Xuất Excel
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow border-0">
+                        <li><a class="dropdown-item" href="#" onclick="exportEnergyExcel('detail')"><i class="bi bi-table me-2 text-warning"></i>Bảng kê chi tiết từng ca</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="exportEnergyExcel('monthly')"><i class="bi bi-calendar-month me-2 text-primary"></i>Thống kê theo tháng</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="exportEnergyExcel('room')"><i class="bi bi-building me-2 text-success"></i>Thống kê theo phòng</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item fw-bold" href="#" onclick="exportEnergyExcel('full')"><i class="bi bi-database-fill-down me-2 text-danger"></i>Xuất toàn bộ (3 sheet)</a></li>
+                    </ul>
+                </div>
             </div>
         </div>
     
         <div class="row g-3 mb-4">
-            <div class="col-md-4">
+            <div class="col-6 col-md">
                 <div class="card shadow-sm border-0 border-start border-4 border-danger h-100">
-                    <div class="card-body">
-                        <div class="text-muted small fw-bold text-uppercase mb-1">Tổng chi phí dự kiến</div>
-                        <h3 class="fw-bold text-danger mb-0" id="fin-kpi-cost">0 <small class="fs-6 text-muted">VNĐ</small></h3>
+                    <div class="card-body py-3 px-3">
+                        <div class="text-muted small fw-bold text-uppercase mb-1">Tổng chi phí</div>
+                        <h4 class="fw-bold text-danger mb-0" id="fin-kpi-cost">— <small class="fs-6 fw-normal text-muted">VNĐ</small></h4>
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
+            <div class="col-6 col-md">
                 <div class="card shadow-sm border-0 border-start border-4 border-primary h-100">
-                    <div class="card-body">
-                        <div class="text-muted small fw-bold text-uppercase mb-1">Tổng sản lượng tiêu thụ</div>
-                        <h3 class="fw-bold text-primary mb-0" id="fin-kpi-kwh">0.0 <small class="fs-6 text-muted">kWh</small></h3>
+                    <div class="card-body py-3 px-3">
+                        <div class="text-muted small fw-bold text-uppercase mb-1">Tổng sản lượng</div>
+                        <h4 class="fw-bold text-primary mb-0" id="fin-kpi-kwh">— <small class="fs-6 fw-normal text-muted">kWh</small></h4>
                     </div>
                 </div>
             </div>
-            <div class="col-md-5">
+            <div class="col-6 col-md">
+                <div class="card shadow-sm border-0 border-start border-4 border-success h-100">
+                    <div class="card-body py-3 px-3">
+                        <div class="text-muted small fw-bold text-uppercase mb-1">Số ca ghi nhận</div>
+                        <h4 class="fw-bold text-success mb-0" id="fin-kpi-sessions">—</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md">
+                <div class="card shadow-sm border-0 border-start border-4 border-info h-100">
+                    <div class="card-body py-3 px-3">
+                        <div class="text-muted small fw-bold text-uppercase mb-1">Bình quân / ca</div>
+                        <h4 class="fw-bold text-info mb-0" id="fin-kpi-avg">— <small class="fs-6 fw-normal text-muted">kWh</small></h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12 col-md-4">
                 <div class="card shadow-sm border-0 bg-warning-subtle h-100">
-                    <div class="card-body d-flex align-items-center">
-                        <div class="w-100">
-                            <div class="text-warning-emphasis small fw-bold text-uppercase mb-1"><i class="bi bi-search"></i> Phân tích Ngân sách</div>
-                            <div class="small fw-bold text-dark" id="fin-kpi-insight">Đang phân tích dữ liệu...</div>
+                    <div class="card-body py-3 px-3 d-flex align-items-center gap-3">
+                        <i class="bi bi-lightbulb-fill text-warning fs-3 flex-shrink-0"></i>
+                        <div>
+                            <div class="text-warning-emphasis small fw-bold text-uppercase mb-1">Phân tích ngân sách</div>
+                            <div class="small fw-bold text-dark lh-sm" id="fin-kpi-insight">Đang phân tích...</div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     
-        <div class="row g-4 mb-4">
-            <div class="col-md-8">
-                <div class="card shadow-sm border-0 p-3 h-100">
-                    <h6 class="fw-bold text-muted mb-3"><i class="bi bi-bar-chart-line-fill text-primary"></i> Tổng mức tiêu thụ theo 12 tháng (kWh)</h6>
-                    <div style="height: 280px;"><canvas id="chartFinYear"></canvas></div>
+        <div class="row g-3 mb-4">
+            <div class="col-md-7">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                        <span class="fw-bold small text-muted"><i class="bi bi-bar-chart-line-fill text-primary me-1"></i>Tổng điện năng theo tháng (kWh)</span>
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle" id="fin-chart-year-label">—</span>
+                    </div>
+                    <div class="card-body p-3"><div style="height:230px"><canvas id="chartFinYear"></canvas></div></div>
                 </div>
             </div>
-            <div class="col-md-4">
-                <div class="card shadow-sm border-0 p-3 h-100">
-                    <h6 class="fw-bold text-muted mb-3"><i class="bi bi-pie-chart-fill text-warning"></i> Tỉ trọng chi phí theo Phòng ban</h6>
-                    <div style="height: 280px;"><canvas id="chartFinRoom"></canvas></div>
+            <div class="col-md-5">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-header bg-white border-bottom py-3">
+                        <span class="fw-bold small text-muted"><i class="bi bi-pie-chart-fill text-warning me-1"></i>Tỉ trọng chi phí theo phòng</span>
+                    </div>
+                    <div class="card-body p-3 d-flex align-items-center justify-content-center">
+                        <div style="height:230px;width:100%"><canvas id="chartFinRoom"></canvas></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    
+        <div class="row g-3 mb-4">
+            <div class="col-md-6">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-header bg-white border-bottom py-3">
+                        <span class="fw-bold small text-muted"><i class="bi bi-trophy-fill text-danger me-1"></i>Top thiết bị tiêu thụ nhiều nhất (kWh)</span>
+                    </div>
+                    <div class="card-body p-3"><div style="height:200px"><canvas id="chartFinTopMachines"></canvas></div></div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                        <span class="fw-bold small text-muted"><i class="bi bi-graph-up-arrow text-success me-1"></i>Xu hướng chi phí theo tháng (VNĐ)</span>
+                    </div>
+                    <div class="card-body p-3"><div style="height:200px"><canvas id="chartFinCostTrend"></canvas></div></div>
                 </div>
             </div>
         </div>
     
         <div class="card shadow-sm border-0 border-top border-4 border-warning">
-            <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
-                <h6 class="fw-bold m-0 text-muted">Bảng kê chi tiết từng ca thực hành</h6>
+            <div class="card-header bg-white d-flex flex-wrap gap-2 align-items-center justify-content-between py-3">
+                <span class="fw-bold text-warning-emphasis"><i class="bi bi-list-columns-reverse"></i> Bảng kê chi tiết từng ca thực hành</span>
+                <div class="d-flex gap-2 align-items-center">
+                    <div class="input-group input-group-sm" style="width:220px">
+                        <span class="input-group-text bg-white border-warning-subtle"><i class="bi bi-search text-warning"></i></span>
+                        <input type="text" id="fin-search" class="form-control border-warning-subtle" placeholder="Tên SV, máy, mã..." oninput="filterEnergyTable()">
+                    </div>
+                    <span class="badge bg-warning text-dark rounded-pill" id="fin-table-count">0 bản ghi</span>
+                </div>
             </div>
             <div class="card-body p-0">
-                <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
-                    <table class="table table-hover align-middle text-center mb-0 small">
-                        <thead class="table-light" style="position: sticky; top: 0; z-index: 1;">
+                <div class="table-responsive" style="max-height:420px;overflow-y:auto">
+                    <table class="table table-hover align-middle text-center mb-0 small" id="table-energy-detail">
+                        <thead class="table-light" style="position:sticky;top:0;z-index:1">
                             <tr>
-                                <th>Mã Hóa đơn</th>
-                                <th>Ngày thực hành</th>
-                                <th class="text-start ps-4">Thiết bị & Phòng</th>
+                                <th class="text-start ps-3">Mã ca</th>
+                                <th>Ngày TH</th>
+                                <th class="text-start ps-2">Thiết bị & Phòng</th>
                                 <th>Đại diện SV</th>
-                                <th>Sản lượng (kWh)</th>
-                                <th>Thành tiền (Tạm tính)</th>
+                                <th>Khung giờ</th>
+                                <th>Điện năng (kWh)</th>
+                                <th>Thành tiền (VNĐ)</th>
+                                <th>Đơn giá (đ/kWh)</th>
                             </tr>
                         </thead>
                         <tbody id="energy-stats-list"></tbody>
                     </table>
                 </div>
+            </div>
+            <div class="card-footer bg-white border-top d-flex flex-wrap gap-4 py-2 px-3">
+                <span class="small text-muted">Tổng cộng (đang hiển thị):</span>
+                <span class="small fw-bold text-primary"><i class="bi bi-lightning-charge-fill me-1"></i><span id="fin-foot-kwh">0.0</span> kWh</span>
+                <span class="small fw-bold text-danger"><i class="bi bi-cash-coin me-1"></i><span id="fin-foot-cost">0</span> VNĐ</span>
             </div>
         </div>
     </div>
@@ -4035,117 +4110,367 @@ async function simulateQRScan(bookingId, action) {
     let energyTrendChartObj = null;
 
     // BIẾN LƯU TRỮ BIỂU ĐỒ BÁO CÁO TÀI CHÍNH
-    let finYearChartObj = null;
-    let finRoomChartObj = null;
+    // ============================================================
+    // MODULE BÁO CÁO CHI PHÍ ĐIỆN - Phiên bản chuẩn ERP
+    // ============================================================
+    let finYearChartObj       = null;
+    let finRoomChartObj       = null;
+    let finTopMachinesChart   = null;
+    let finCostTrendChart     = null;
+    let _finCurrentData       = [];   // Cache để lọc bảng và xuất Excel
+    const FIN_UNIT_PRICE      = 2500; // Đơn giá điện: 2,500đ/kWh
 
     async function loadEnergyStats() {
         showView('energy-stats-view');
 
-        const yearFilter = document.getElementById('filter-energy-year').value;
-        const roomFilter = document.getElementById('filter-energy-room').value;
+        // 1. TỰ ĐỘNG KHỞI TẠO DROPDOWN NĂM TỪ 2025 ĐẾN HIỆN TẠI
+        const yearSel = document.getElementById('filter-energy-year');
+        if (yearSel.options.length === 0) {
+            const currentY = new Date().getFullYear();
+            // Lấy năm hiện tại + 1 để dự phòng, lùi về 2025
+            for (let y = Math.max(currentY, 2025); y >= 2025; y--) {
+                const opt = document.createElement('option');
+                opt.value = y;
+                opt.textContent = `Năm ${y}`;
+                yearSel.appendChild(opt);
+            }
+            yearSel.value = currentY; // Chọn năm nay làm mặc định
+        }
 
-        // Tải dữ liệu các ca đã hoàn thành và có tiêu thụ điện
+        const yearFilter  = yearSel.value;
+        const roomFilter  = document.getElementById('filter-energy-room').value;
+        const monthFilter = document.getElementById('filter-energy-month').value;
+
+        // 2. NẠP DANH SÁCH PHÒNG VÀO DROPDOWN (Chỉ chạy 1 lần)
+        const roomSel = document.getElementById('filter-energy-room');
+        if (roomSel.options.length <= 1) {
+            const { data: rooms } = await _supabase.from('rooms').select('room_code,room_name').eq('status','active').order('room_code');
+            if (rooms) {
+                rooms.forEach(r => {
+                    const opt = document.createElement('option');
+                    opt.value = r.room_code;
+                    opt.textContent = `${r.room_code} — ${r.room_name}`;
+                    roomSel.appendChild(opt);
+                });
+            }
+        }
+
+        // 3. HIỂN THỊ LOADING VÀ LẤY DỮ LIỆU
+        document.getElementById('energy-stats-list').innerHTML = `<tr><td colspan="8" class="text-center py-5"><div class="spinner-border text-warning" style="width:2.5rem;height:2.5rem"></div><div class="mt-3 text-warning fw-bold small">Đang tổng hợp dữ liệu...</div></td></tr>`;
+
         let query = _supabase.from('bookings').select('*').gt('energy_consumed', 0).in('status', ['approved', 'completed']);
         if (roomFilter !== 'all') query = query.ilike('machine_name', `${roomFilter}%`);
 
-        const { data, error } = await query;
-        if (error || !data) return;
+        const { data: allData, error } = await query;
+        if (error) {
+            return document.getElementById('energy-stats-list').innerHTML = `<tr><td colspan="8" class="text-center text-danger py-4">Lỗi tải dữ liệu: ${error.message}</td></tr>`;
+        }
 
-        // LỌC DỮ LIỆU THEO NĂM (Và chỉ lấy những ngày trong quá khứ)
+        // 4. LỌC THEO NĂM, THÁNG VÀ LOẠI BỎ CÁC CA Ở TƯƠNG LAI
         const now = new Date();
-        const currentMins = now.getHours() * 60 + now.getMinutes();
         const todayStr = now.toISOString().split('T')[0];
+        const currentMins = now.getHours() * 60 + now.getMinutes();
 
-        let validData = data.filter(b => {
-            const dbDate = b.booking_date.split('T')[0];
-            const dbYear = dbDate.split('-')[0];
+        const validData = (allData || []).filter(b => {
+            const dbDate  = b.booking_date.split('T')[0];
+            const dbYear  = dbDate.split('-')[0];
+            const dbMonth = dbDate.split('-')[1];
             
-            if (dbYear !== yearFilter) return false; // Không thuộc năm đang lọc
-            if (dbDate > todayStr) return false;     // Tương lai
-            if (dbDate === todayStr && parseInt(b.end_time.split(':')[0]) * 60 + parseInt(b.end_time.split(':')[1]) > currentMins) return false; // Đang chạy
-            
+            if (dbYear !== yearFilter) return false;
+            if (monthFilter !== 'all' && dbMonth !== monthFilter) return false;
+            if (dbDate > todayStr) return false;
+            if (dbDate === todayStr && b.end_time) {
+                const endMins = parseInt(b.end_time.split(':')[0]) * 60 + parseInt(b.end_time.split(':')[1]);
+                if (endMins > currentMins) return false;
+            }
             return true;
         });
 
-        // BỘ NHỚ LƯU TRỮ ĐỂ VẼ BIỂU ĐỒ
+        _finCurrentData = validData;
+
+        // 5. TÍNH TOÁN DỮ LIỆU ĐỂ VẼ BIỂU ĐỒ VÀ KPI
         let totalKwh = 0;
-        let monthlyData = new Array(12).fill(0); // Mảng 12 tháng
-        let roomCostData = {}; // Tỉ trọng theo phòng
+        const monthlyKwh = new Array(12).fill(0);
+        const roomCostData = {};
+        const machineKwh = {};
 
         validData.forEach(b => {
             const kwh = parseFloat(b.energy_consumed) || 0;
-            const monthIndex = parseInt(b.booking_date.split('-')[1]) - 1; // 0 -> 11
-            const roomCode = b.machine_name.split(' - ')[0];
+            const monthIndex = parseInt(b.booking_date.split('-')[1]) - 1;
+            const roomCode = b.machine_name ? b.machine_name.split(' - ')[0] : 'Khác';
+            const machineName = b.machine_name || 'Không rõ';
 
             totalKwh += kwh;
-            monthlyData[monthIndex] += kwh;
-            roomCostData[roomCode] = (roomCostData[roomCode] || 0) + kwh;
+            monthlyKwh[monthIndex] += kwh;
+            roomCostData[roomCode]  = (roomCostData[roomCode]  || 0) + kwh;
+            machineKwh[machineName] = (machineKwh[machineName] || 0) + kwh;
         });
 
-        const totalCost = totalKwh * 2500; // Đơn giá giả định 2500đ/kWh
+        const totalCost = totalKwh * FIN_UNIT_PRICE;
+        const totalSessions = validData.length;
+        const avgKwh = totalSessions > 0 ? totalKwh / totalSessions : 0;
 
-        // ĐỔ SỐ LÊN KPI
-        document.getElementById('fin-kpi-cost').innerHTML = `${totalCost.toLocaleString('vi-VN')} <small class="fs-6 text-muted">VNĐ</small>`;
-        document.getElementById('fin-kpi-kwh').innerHTML = `${totalKwh.toFixed(1)} <small class="fs-6 text-muted">kWh</small>`;
+        // 6. GẮN SỐ LIỆU LÊN GIAO DIỆN
+        document.getElementById('fin-kpi-cost').innerHTML = `${totalCost.toLocaleString('vi-VN')} <small class="fs-6 fw-normal text-muted">VNĐ</small>`;
+        document.getElementById('fin-kpi-kwh').innerHTML = `${totalKwh.toFixed(1)} <small class="fs-6 fw-normal text-muted">kWh</small>`;
+        document.getElementById('fin-kpi-sessions').textContent = `${totalSessions} ca`;
+        document.getElementById('fin-kpi-avg').innerHTML = `${avgKwh.toFixed(2)} <small class="fs-6 fw-normal text-muted">kWh</small>`;
+        document.getElementById('fin-chart-year-label').textContent = `Năm ${yearFilter}`;
 
-        // TÌM PHÒNG TỐN NHẤT ĐỂ PHÂN TÍCH
-        let topRoom = "--", topKwh = 0;
+        // Trích xuất AI Insight: Phòng tiêu thụ điện cao nhất
+        let topRoom = '--', topKwh = 0;
         for (const [room, kwh] of Object.entries(roomCostData)) {
             if (kwh > topKwh) { topKwh = kwh; topRoom = room; }
         }
         
-        let insightHtml = `<span class="text-muted">Không có dữ liệu tiêu thụ để phân tích.</span>`;
+        let insightHtml = '<span class="text-muted">Không có dữ liệu tiêu thụ để phân tích.</span>';
         if (totalKwh > 0) {
-            const percent = ((topKwh / totalKwh) * 100).toFixed(1);
-            insightHtml = `Xưởng <b class="text-danger">${topRoom}</b> đang chiếm <b class="text-danger">${percent}%</b> tổng ngân sách điện toàn khoa. Đề nghị rà soát định mức thực hành của xưởng này.`;
+            const pct = ((topKwh / totalKwh) * 100).toFixed(1);
+            insightHtml = `Xưởng <b class="text-danger">${topRoom}</b> chiếm <b class="text-danger">${pct}%</b> tổng ngân sách điện. Chi phí tạm tính: <b>${(topKwh * FIN_UNIT_PRICE).toLocaleString('vi-VN')} VNĐ</b>.`;
         }
         document.getElementById('fin-kpi-insight').innerHTML = insightHtml;
 
-        // VẼ BIỂU ĐỒ CỘT (12 THÁNG)
+        // 7. VẼ CÁC BIỂU ĐỒ BẰNG CHART.JS
+        // 7.1 Biểu đồ Cột 12 Tháng
         if (finYearChartObj) finYearChartObj.destroy();
         finYearChartObj = new Chart(document.getElementById('chartFinYear'), {
             type: 'bar',
             data: {
                 labels: ['T1','T2','T3','T4','T5','T6','T7','T8','T9','T10','T11','T12'],
                 datasets: [{
-                    label: 'Sản lượng (kWh)',
-                    data: monthlyData.map(v => v.toFixed(1)),
-                    backgroundColor: '#0d6efd',
-                    borderRadius: 4
+                    label: 'Điện năng (kWh)',
+                    data: monthlyKwh.map(v => parseFloat(v.toFixed(2))),
+                    backgroundColor: monthlyKwh.map(v => v === Math.max(...monthlyKwh) && v > 0 ? '#dc3545' : '#0d6efd'),
+                    borderRadius: 5
                 }]
             },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+            options: {
+                responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => `${ctx.parsed.y} kWh — ${(ctx.parsed.y * FIN_UNIT_PRICE).toLocaleString('vi-VN')} VNĐ` } } },
+                scales: { y: { beginAtZero: true, ticks: { font: { size: 11 } } }, x: { ticks: { font: { size: 11 } } } }
+            }
         });
 
-        // VẼ BIỂU ĐỒ TRÒN (TỈ TRỌNG THEO PHÒNG)
-        const pieColors = ['#ffc107', '#198754', '#dc3545', '#0dcaf0', '#6f42c1', '#6c757d'];
+        // 7.2 Biểu đồ Tròn (Tỉ trọng Phòng)
+        const pieColors = ['#ffc107','#198754','#dc3545','#0dcaf0','#6f42c1','#6c757d','#0d6efd','#fd7e14'];
         if (finRoomChartObj) finRoomChartObj.destroy();
+        const roomLabels = Object.keys(roomCostData);
+        const roomVals   = Object.values(roomCostData).map(v => parseFloat(v.toFixed(2)));
         finRoomChartObj = new Chart(document.getElementById('chartFinRoom'), {
             type: 'doughnut',
             data: {
-                labels: Object.keys(roomCostData),
-                datasets: [{
-                    data: Object.values(roomCostData).map(v => v.toFixed(1)),
-                    backgroundColor: pieColors
-                }]
+                labels: roomLabels,
+                datasets: [{ data: roomVals, backgroundColor: pieColors.slice(0, roomLabels.length), borderWidth: 2 }]
             },
-            options: { responsive: true, maintainAspectRatio: false, cutout: '65%', plugins: { legend: { position: 'right' } } }
+            options: {
+                responsive: true, maintainAspectRatio: false, cutout: '62%',
+                plugins: {
+                    legend: { position: 'right', labels: { font: { size: 11 }, boxWidth: 14 } },
+                    tooltip: { callbacks: { label: ctx => {
+                        const pct = ((ctx.parsed / roomVals.reduce((a,b) => a+b, 0)) * 100).toFixed(1);
+                        return `${ctx.label}: ${ctx.parsed} kWh (${pct}%)`;
+                    }}}
+                }
+            }
         });
 
-        // ĐỔ DỮ LIỆU BẢNG KÊ CHI TIẾT
-        const tbody = document.getElementById('energy-stats-list');
-        tbody.innerHTML = validData.sort((a,b) => new Date(b.booking_date) - new Date(a.booking_date))
-            .map(b => `
-            <tr>
-                <td class="text-primary fw-bold">#HD${b.id.substring(0,6).toUpperCase()}</td>
-                <td>${new Date(b.booking_date).toLocaleDateString('vi-VN')}</td>
-                <td class="text-start ps-4 fw-bold text-dark">${b.machine_name}</td>
-                <td>${b.full_name}</td>
-                <td class="text-success fw-bold">${parseFloat(b.energy_consumed).toFixed(2)}</td>
-                <td class="text-danger fw-bold">${(parseFloat(b.energy_consumed) * 2500).toLocaleString('vi-VN')} ₫</td>
-            </tr>
-        `).join('') || '<tr><td colspan="6" class="p-4 text-muted">Không có dữ liệu hóa đơn nào trong thời gian này.</td></tr>';
+        // 7.3 Biểu đồ Cột Ngang (Top Thiết Bị)
+        const sortedMachines = Object.entries(machineKwh).sort((a,b) => b[1]-a[1]).slice(0,5);
+        const machineLabels  = sortedMachines.map(e => e[0].length > 22 ? e[0].substring(0,22)+'…' : e[0]);
+        const machineVals    = sortedMachines.map(e => parseFloat(e[1].toFixed(2)));
+        if (finTopMachinesChart) finTopMachinesChart.destroy();
+        finTopMachinesChart = new Chart(document.getElementById('chartFinTopMachines'), {
+            type: 'bar',
+            data: {
+                labels: machineLabels,
+                datasets: [{
+                    label: 'kWh', data: machineVals, backgroundColor: ['#dc3545','#fd7e14','#ffc107','#0d6efd','#198754'], borderRadius: 4
+                }]
+            },
+            options: {
+                indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => `${ctx.parsed.x} kWh — ${(ctx.parsed.x * FIN_UNIT_PRICE).toLocaleString('vi-VN')} VNĐ` } } },
+                scales: { x: { beginAtZero: true, ticks: { font: { size: 10 } } }, y: { ticks: { font: { size: 10 } } } }
+            }
+        });
+
+        // 7.4 Biểu đồ Đường (Xu Hướng Chi Phí theo tháng)
+        const costByMonth = monthlyKwh.map(v => Math.round(v * FIN_UNIT_PRICE));
+        if (finCostTrendChart) finCostTrendChart.destroy();
+        finCostTrendChart = new Chart(document.getElementById('chartFinCostTrend'), {
+            type: 'line',
+            data: {
+                labels: ['T1','T2','T3','T4','T5','T6','T7','T8','T9','T10','T11','T12'],
+                datasets: [{
+                    label: 'Chi phí (VNĐ)', data: costByMonth, borderColor: '#198754', backgroundColor: 'rgba(25,135,84,0.08)',
+                    borderWidth: 2, pointRadius: 4, pointBackgroundColor: '#198754', fill: true, tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => `${ctx.parsed.y.toLocaleString('vi-VN')} VNĐ` } } },
+                scales: {
+                    y: { beginAtZero: true, ticks: { font: { size: 10 }, callback: v => `${(v/1000).toFixed(0)}K` } },
+                    x: { ticks: { font: { size: 10 } } }
+                }
+            }
+        });
+
+        // 8. ĐỔ DỮ LIỆU BẢNG KÊ CHI TIẾT
+        _finRenderTable(validData);
     }
+
+    function _finRenderTable(data) {
+        const tbody = document.getElementById('energy-stats-list');
+        const searchTerm = (document.getElementById('fin-search').value || '').toLowerCase();
+        
+        let filtered = searchTerm
+            ? data.filter(b => (b.full_name||'').toLowerCase().includes(searchTerm) || (b.machine_name||'').toLowerCase().includes(searchTerm) || (b.id||'').toLowerCase().includes(searchTerm))
+            : data;
+
+        filtered = filtered.sort((a,b) => new Date(b.booking_date) - new Date(a.booking_date));
+        document.getElementById('fin-table-count').textContent = `${filtered.length} bản ghi`;
+
+        let totalKwhShown = 0, totalCostShown = 0;
+        filtered.forEach(b => {
+            const kwh = parseFloat(b.energy_consumed) || 0;
+            totalKwhShown  += kwh;
+            totalCostShown += kwh * FIN_UNIT_PRICE;
+        });
+
+        document.getElementById('fin-foot-kwh').textContent  = totalKwhShown.toFixed(2);
+        document.getElementById('fin-foot-cost').textContent = Math.round(totalCostShown).toLocaleString('vi-VN');
+
+        if (filtered.length === 0) {
+            return tbody.innerHTML = `<tr><td colspan="8" class="text-center py-5 text-muted"><i class="bi bi-inbox fs-2 d-block mb-2"></i>Không có hóa đơn nào phù hợp.</td></tr>`;
+        }
+
+        tbody.innerHTML = filtered.map(b => {
+            const kwh = parseFloat(b.energy_consumed) || 0;
+            const cost = kwh * FIN_UNIT_PRICE;
+            const dateStr = new Date(b.booking_date).toLocaleDateString('vi-VN');
+            const timeStr = `${(b.start_time||'--').substring(0,5)} – ${(b.end_time||'--').substring(0,5)}`;
+            const shortId = `#HD${(b.id||'').substring(0,6).toUpperCase()}`;
+            
+            return `
+                <tr>
+                    <td class="text-start ps-3 fw-bold text-primary small">${shortId}</td>
+                    <td>${dateStr}</td>
+                    <td class="text-start ps-2 fw-bold text-dark">${b.machine_name || '—'}</td>
+                    <td>${b.full_name || '—'}</td>
+                    <td class="text-muted small">${timeStr}</td>
+                    <td class="fw-bold text-success">${kwh.toFixed(3)}</td>
+                    <td class="fw-bold text-danger">${Math.round(cost).toLocaleString('vi-VN')} ₫</td>
+                    <td class="text-muted small">${FIN_UNIT_PRICE.toLocaleString('vi-VN')}</td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    function filterEnergyTable() {
+        _finRenderTable(_finCurrentData);
+    }
+
+    async function exportEnergyExcel(mode = 'full') {
+        Swal.fire({ title: 'Đang chuẩn bị file Excel...', didOpen: () => Swal.showLoading() });
+
+        const now = new Date();
+        const yearFilter = document.getElementById('filter-energy-year').value;
+        const data = _finCurrentData;
+
+        if (!data || data.length === 0) {
+            return Swal.fire({ icon: 'info', title: 'Không có dữ liệu', text: 'Vui lòng tải dữ liệu trước khi xuất.' });
+        }
+
+        const wb = XLSX.utils.book_new();
+
+        // Sheet 1: Chi tiết từng ca
+        if (mode === 'detail' || mode === 'full') {
+            const detailRows = data.slice().sort((a,b) => new Date(b.booking_date) - new Date(a.booking_date)).map(b => ({
+                'Mã ca'            : `#HD${(b.id||'').substring(0,6).toUpperCase()}`,
+                'Ngày thực hành'   : new Date(b.booking_date).toLocaleDateString('vi-VN'),
+                'Thiết bị & Phòng' : b.machine_name || '',
+                'Đại diện SV'      : b.full_name || '',
+                'Khung giờ'        : `${(b.start_time||'').substring(0,5)} - ${(b.end_time||'').substring(0,5)}`,
+                'Điện năng (kWh)'  : parseFloat((parseFloat(b.energy_consumed)||0).toFixed(3)),
+                'Đơn giá (đ/kWh)'  : FIN_UNIT_PRICE,
+                'Thành tiền (VNĐ)' : Math.round((parseFloat(b.energy_consumed)||0) * FIN_UNIT_PRICE)
+            }));
+            const ws1 = XLSX.utils.json_to_sheet(detailRows);
+            ws1['!cols'] = [{wch:14},{wch:14},{wch:28},{wch:20},{wch:14},{wch:15},{wch:15},{wch:18}];
+            XLSX.utils.book_append_sheet(wb, ws1, 'Chi tiet tung ca');
+            
+            if (mode === 'detail') {
+                XLSX.writeFile(wb, `BaoCao_ChiTiet_${yearFilter}_${now.getDate()}${String(now.getMonth()+1).padStart(2,'0')}.xlsx`);
+                return Swal.fire({ icon:'success', title:'Xuất thành công!', html:`<small>${detailRows.length} bản ghi</small>`, timer:1800, showConfirmButton:false });
+            }
+        }
+
+        // Sheet 2: Thống kê theo tháng
+        if (mode === 'monthly' || mode === 'full') {
+            const monthlyAgg = {};
+            data.forEach(b => {
+                const m = b.booking_date.split('-')[1];
+                if (!monthlyAgg[m]) monthlyAgg[m] = { soLuotCa: 0, tongKwh: 0 };
+                monthlyAgg[m].soLuotCa++;
+                monthlyAgg[m].tongKwh += parseFloat(b.energy_consumed) || 0;
+            });
+            const monthRows = Object.keys(monthlyAgg).sort().map(m => {
+                const kwh = monthlyAgg[m].tongKwh;
+                return {
+                    'Tháng'           : `Tháng ${parseInt(m)}`,
+                    'Số lượt ca'      : monthlyAgg[m].soLuotCa,
+                    'Tổng kWh'        : parseFloat(kwh.toFixed(2)),
+                    'Chi phí (VNĐ)'   : Math.round(kwh * FIN_UNIT_PRICE),
+                    'Bình quân/ca kWh': parseFloat((kwh / monthlyAgg[m].soLuotCa).toFixed(3))
+                };
+            });
+            const ws2 = XLSX.utils.json_to_sheet(monthRows);
+            ws2['!cols'] = [{wch:12},{wch:14},{wch:12},{wch:18},{wch:18}];
+            XLSX.utils.book_append_sheet(wb, ws2, 'Thong ke theo thang');
+            
+            if (mode === 'monthly') {
+                XLSX.writeFile(wb, `BaoCao_TheoThang_${yearFilter}.xlsx`);
+                return Swal.fire({ icon:'success', title:'Xuất thành công!', timer:1800, showConfirmButton:false });
+            }
+        }
+
+        // Sheet 3: Thống kê theo phòng
+        if (mode === 'room' || mode === 'full') {
+            const roomAgg = {};
+            data.forEach(b => {
+                const room = b.machine_name ? b.machine_name.split(' - ')[0] : 'Khác';
+                if (!roomAgg[room]) roomAgg[room] = { soLuotCa: 0, tongKwh: 0 };
+                roomAgg[room].soLuotCa++;
+                roomAgg[room].tongKwh += parseFloat(b.energy_consumed) || 0;
+            });
+            const totalAllKwh = data.reduce((s,b) => s + (parseFloat(b.energy_consumed)||0), 0);
+            const roomRows = Object.keys(roomAgg).sort().map(room => {
+                const kwh = roomAgg[room].tongKwh;
+                return {
+                    'Phòng / Xưởng' : room,
+                    'Số lượt ca'    : roomAgg[room].soLuotCa,
+                    'Tổng kWh'      : parseFloat(kwh.toFixed(2)),
+                    'Tỉ trọng (%)'  : parseFloat(((kwh/totalAllKwh)*100).toFixed(1)),
+                    'Chi phí (VNĐ)' : Math.round(kwh * FIN_UNIT_PRICE)
+                };
+            });
+            const ws3 = XLSX.utils.json_to_sheet(roomRows);
+            ws3['!cols'] = [{wch:18},{wch:14},{wch:12},{wch:14},{wch:18}];
+            XLSX.utils.book_append_sheet(wb, ws3, 'Thong ke theo phong');
+            
+            if (mode === 'room') {
+                XLSX.writeFile(wb, `BaoCao_TheoPhong_${yearFilter}.xlsx`);
+                return Swal.fire({ icon:'success', title:'Xuất thành công!', timer:1800, showConfirmButton:false });
+            }
+        }
+
+        // Xuất full
+        const dd = String(now.getDate()).padStart(2,'0');
+        const mm = String(now.getMonth()+1).padStart(2,'0');
+        XLSX.writeFile(wb, `BaoCao_DienNang_Full_${yearFilter}_${dd}${mm}.xlsx`);
+        Swal.fire({ icon: 'success', title: 'Xuất thành công!', html: '<small class="text-muted">3 sheet: Chi tiết · Theo tháng · Theo phòng</small>', timer: 2000, showConfirmButton: false });
+    }
+    
     let editAccountModalInstance = null;
     // 1. Tải danh sách tài khoản
     async function loadAdminAccounts() {
