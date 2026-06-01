@@ -220,7 +220,7 @@
                         <li><a class="dropdown-item" href="#" onclick="showView('departments-view')"><i class="bi bi-diagram-3"></i> Danh mục khoa / bộ môn</a></li>
                         <li><a class="dropdown-item" href="#" onclick="loadMaintenanceSchedule()"><i class="bi bi-calendar-check"></i> Danh mục lịch bảo trì</a></li>
                         <li class="nav-item role-level-2 hidden">
-                            <a class="dropdown-item fw-bold text-success" href="#" onclick="loadConsumablesView()">
+                            <a class="dropdown-item" href="#" onclick="loadConsumablesView()">
                                 <i class="bi bi-box-seam"></i> Danh mục vật tư tiêu hao
                             </a>
                         </li>
@@ -243,9 +243,9 @@
                 <li class="nav-item dropdown role-level-2 hidden">
                     <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown"><i class="bi bi-hdd-network"></i> Quản lý Vận hành</a>
                     <ul class="dropdown-menu">
-                        <li><a class="dropdown-item fw-bold text-primary" href="#" onclick="openAddResourceModal()"><i class="bi bi-plus-circle"></i> Thêm mới Phòng & Thiết bị</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="openAddResourceModal()"><i class="bi bi-plus-circle"></i> Thêm mới Phòng & Thiết bị</a></li>
                         <li><a class="dropdown-item" href="#" onclick="loadUsageLogs()"><i class="bi bi-clock-history"></i> Nhật ký Check-in / Check-out</a></li>
-                        <li><a class="dropdown-item fw-bold text-warning-emphasis" href="#" onclick="loadEnergyStats()"></i> Báo cáo Chi phí Hóa đơn điện</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="loadEnergyStats()"></i> Báo cáo Chi phí Hóa đơn điện</a></li>
                     </ul>
                 </li>
 
@@ -253,18 +253,18 @@
                     <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown"><i class="bi bi-broadcast"></i> Giám sát</a>
                     <ul class="dropdown-menu">
                         <li>
-                            <a class="dropdown-item fw-bold text-primary" href="#" onclick="showView('unified-power-view'); loadUnifiedPowerData();">
+                            <a class="dropdown-item" href="#" onclick="showView('unified-power-view'); loadUnifiedPowerData();">
                                 <i class="bi bi-activity"></i> Điện năng & Cảnh báo
                             </a>
                         </li>
-                        <li><a class="dropdown-item fw-bold text-danger" href="#" onclick="loadRemoteControlView()"><i class="bi bi-door-open"></i> Mở cửa từ xa</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="loadRemoteControlView()"><i class="bi bi-door-open"></i> Mở cửa từ xa</a></li>
                     </ul>
                 </li>
 
                 <li class="nav-item dropdown role-only-student hidden">
                     <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">Báo cáo & Phản hồi</a>
                     <ul class="dropdown-menu">
-                        <li><a class="dropdown-item fw-bold text-danger" href="#" onclick="loadHistoryView()"><i class="bi bi-tools"></i> Báo cáo hư hỏng máy</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="loadHistoryView()"><i class="bi bi-tools"></i> Báo cáo hư hỏng máy</a></li>
                         <li><a class="dropdown-item" href="#" onclick="openFeedbackModal('labConditionModal')"><i class="bi bi-chat-left-dots"></i> Báo cáo tình trạng PTN</a></li>
                         <li><a class="dropdown-item" href="#" onclick="openFeedbackModal('studentUsageModal')"><i class="bi bi-person-exclamation"></i> Báo cáo sinh viên sử dụng</a></li>
                     </ul>
@@ -273,7 +273,7 @@
                 <li class="nav-item dropdown role-level-2 hidden">
                     <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">Báo cáo & Thống kê</a>
                     <ul class="dropdown-menu">
-                        <li><a class="dropdown-item fw-bold text-danger" href="#" onclick="loadMaintenanceReports()"><i class="bi bi-wrench-adjustable"></i> Quản lý bảo trì & Hư hỏng</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="loadMaintenanceReports()"><i class="bi bi-wrench-adjustable"></i> Quản lý bảo trì & Hư hỏng</a></li>
                         <li><a class="dropdown-item" href="#" onclick="loadLabStats()"><i class="bi bi-graph-up"></i> Thống kê tình trạng PTN</a></li>
                         <li><a class="dropdown-item" href="#" onclick="loadUsageStats()"><i class="bi bi-pie-chart"></i> Thống kê lượt sử dụng</a></li>
                                                 
@@ -283,9 +283,9 @@
                 <li class="nav-item dropdown role-level-3 hidden">
                     <a class="nav-link dropdown-toggle text-warning" href="#" data-bs-toggle="dropdown"><i class="bi bi-gear-fill"></i> Quản trị</a>
                     <ul class="dropdown-menu">
-                        <li><a class="dropdown-item fw-bold text-dark" href="#" onclick="loadAdminAccounts()"><i class="bi bi-people"></i> Quản lý Tài khoản & Phân quyền</a></li>
-                        <li><a class="dropdown-item fw-bold text-dark" href="#" onclick="loadHistoryView()"><i class="bi bi-card-checklist"></i> Xét duyệt Đăng ký</a></li>
-                        <li><a class="dropdown-item fw-bold text-primary" href="#" onclick="loadAdminNotices()"><i class="bi bi-megaphone"></i> Quản lý Thông báo hệ thống</a></li>
+                        <li><a class="dropdown-item " href="#" onclick="loadAdminAccounts()"><i class="bi bi-people"></i> Quản lý Tài khoản & Phân quyền</a></li>
+                        <li><a class="dropdown-item " href="#" onclick="loadHistoryView()"><i class="bi bi-card-checklist"></i> Xét duyệt Đăng ký</a></li>
+                        <li><a class="dropdown-item " href="#" onclick="loadAdminNotices()"><i class="bi bi-megaphone"></i> Quản lý Thông báo hệ thống</a></li>
                         
                         <li><hr class="dropdown-divider"></li>
                         
@@ -297,7 +297,7 @@
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">Hỗ trợ</a>
                     <ul class="dropdown-menu">
-                        <li><a class="dropdown-item fw-bold text-primary" href="#" onclick="showView('user-guide-view')"><i class="bi bi-book"></i> Hướng dẫn sử dụng</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="showView('user-guide-view')"><i class="bi bi-book"></i> Hướng dẫn sử dụng</a></li>
                         <li><a class="dropdown-item" href="#">Video hướng dẫn</a></li>
                         <li><a class="dropdown-item" href="#" onclick="showView('contact-support-view')"><i class="bi bi-headset"></i> Liên hệ & Báo lỗi Web</a></li>
                         <li><a class="dropdown-item" href="#" onclick="showView('faq-view')"><i class="bi bi-question-circle"></i> Câu hỏi thường gặp (FAQ)</a></li>
