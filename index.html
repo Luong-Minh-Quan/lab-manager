@@ -25,22 +25,50 @@
     height: 65px;
     border-radius: 50%;
     background-color: #003366; /* Màu xanh Bách Khoa */
-    color: white;
-    border: none;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    border: 2px solid rgba(255, 255, 255, 0.8);
+    box-shadow: 0 4px 20px rgba(0, 51, 102, 0.4), 0 0 0 0 rgba(0, 51, 102, 0.4);
     cursor: pointer;
-    z-index: 9999; /* Đảm bảo nút luôn nằm trên cùng */
-    transition: all 0.3s ease;
+    z-index: 9999;
     display: flex;
     align-items: center;
     justify-content: center;
-}
+    overflow: hidden; /* Cắt ảnh thừa nếu sếp chèn ảnh img */
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    
+    /* Hiệu ứng đập nhịp thở (Pulse) nhẹ nhàng tự động */
+    animation: aiPulse 2s infinite;
+    }
 
-.ai-fab:hover {
+    .ai-fab:hover {
+    transform: scale(1.12) rotate(5deg);
+    background-color: #004080;
+    box-shadow: 0 8px 25px rgba(0, 51, 102, 0.6);
+    }
+
+    .ai-fab img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* Đảm bảo ảnh không bị bóp méo tỷ lệ */
+    }
+
+    /* Thuật toán tạo sóng nhịp thở ra xung quanh nút */
+    @keyframes aiPulse {
+    0% {
+        box-shadow: 0 4px 15px rgba(0, 51, 102, 0.4), 0 0 0 0 rgba(0, 51, 102, 0.5);
+    }
+    70% {
+        box-shadow: 0 4px 15px rgba(0, 51, 102, 0.4), 0 0 0 15px rgba(0, 51, 102, 0);
+    }
+    100% {
+        box-shadow: 0 4px 15px rgba(0, 51, 102, 0.4), 0 0 0 0 rgba(0, 51, 102, 0);
+    }
+    }
+
+    .ai-fab:hover {
     transform: scale(1.1);
     background-color: #004080;
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
-}
+    }
         /* Hiệu ứng click chọn giờ trên Lịch Trống */
         .slot-selectable { cursor: pointer; transition: all 0.2s; }
         .slot-selectable:hover { background-color: #e0f0ff !important; box-shadow: inset 0 0 5px rgba(13,110,253,0.3); }
@@ -2066,7 +2094,7 @@
 </div>
 <!-- Nút nổi AI -->
 <button class="ai-fab" onclick="testGeminiAI()" title="Trợ lý AI PTN">
-    <i class="bi bi-robot" style="font-size: 28px;"></i>
+    <img src="AIchatbot.jpg" onerror="this.src='https://cdn-icons-png.flaticon.com/512/4712/4712109.png'" alt="AI Avatar">
 </button>
 
 <script>
