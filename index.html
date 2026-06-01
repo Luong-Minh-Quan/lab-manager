@@ -6045,7 +6045,7 @@ let mChartMulti = null;
         // 2. Dọn dẹp Interval cũ (nếu có) để không bị chạy chồng chéo
         if (livePowerInterval) clearInterval(livePowerInterval);
 
-        // 3. Khởi tạo vòng lặp 5 giây
+        // 3. Khởi tạo vòng lặp 3 giây
         livePowerInterval = setInterval(() => {
             // Nếu người dùng đang đứng ở đúng trang này thì mới update, nếu chuyển trang khác thì tắt
             if (currentView === 'unified-power-view') {
@@ -6053,7 +6053,7 @@ let mChartMulti = null;
             } else {
                 clearInterval(livePowerInterval); 
             }
-        }, 5000); 
+        }, 3000); 
     }
 // CHẾ ĐỘ AI CHO TRANG WEB==========================================
 async function testGeminiAI() {
