@@ -5976,17 +5976,27 @@ let mChartMulti = null;
             // RENDER DANH SÁCH MÁY ĐANG CHẠY & DANH SÁCH CẢNH BÁO
             // ========================================================
             
-            // Render Máy đang chạy
+            // Render Máy đang chạy (Đã tích hợp Cảm biến Quá tải nhấp nháy đỏ)
             document.getElementById('upwr-machine-list').innerHTML = machinesData.map(m => {
                 const exactName = m.machine_name.includes(' - ') ? m.machine_name.split(' - ')[1] : m.machine_name;
-                if(m.power_status) {
+                
+                if (m.power_status) {
+                    const watt = m.live_watt || 0;
+                    const isOverload = watt > 1500; // Ngưỡng báo động: 1500W
+
+                    // Đổi class CSS nếu phát hiện quá tải
+                    const bgClass = isOverload ? 'bg-danger-subtle px-2 py-1 rounded border border-danger animate-flicker mt-1 mb-1' : '';
+                    const nameClass = isOverload ? 'text-danger fw-bold' : 'text-dark fw-bold';
+                    const valueClass = isOverload ? 'text-danger fw-bold' : 'text-dark fw-bold';
+                    const warningIcon = isOverload ? '<i class="bi bi-exclamation-triangle-fill text-danger me-1"></i>' : '';
+
                     return `
-                        <div class="machine-item">
-                            <div class="fw-bold text-dark"><span class="dot dot-on"></span>${exactName}</div>
+                        <div class="machine-item ${bgClass}">
+                            <div class="${nameClass}">${warningIcon}<span class="dot dot-on"></span>${exactName}</div>
                             <div class="d-flex gap-3 small text-muted">
-                                <span><b class="text-dark">${m.live_voltage || 0}</b>V</span>
-                                <span><b class="text-dark">${m.live_current || 0}</b>A</span>
-                                <span><b class="text-dark">${((m.live_watt || 0) / 1000).toFixed(2)}</b>kW</span>
+                                <span><b class="${valueClass}">${m.live_voltage || 0}</b>V</span>
+                                <span><b class="${valueClass}">${m.live_current || 0}</b>A</span>
+                                <span><b class="${valueClass}">${(watt / 1000).toFixed(2)}</b>kW</span>
                             </div>
                         </div>`;
                 } else {
