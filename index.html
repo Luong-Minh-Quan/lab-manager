@@ -218,11 +218,8 @@
                         <li><a class="dropdown-item" href="#" onclick="showView('dm-ptn-view')"><i class="bi bi-building"></i> Danh mục phòng thí nghiệm</a></li>
                         <li><a class="dropdown-item" href="#" onclick="showView('managers-view')"><i class="bi bi-person-badge"></i> Danh mục cán bộ quản lý</a></li>
                         <li><a class="dropdown-item" href="#" onclick="loadMaintenanceSchedule()"><i class="bi bi-calendar-check"></i> Danh mục lịch bảo trì</a></li>
-                        <li class="nav-item role-level-2 hidden">
-                            <a class="dropdown-item" href="#" onclick="loadConsumablesView()">
-                                <i class="bi bi-box-seam"></i> Danh mục vật tư tiêu hao
-                            </a>
-                        </li>
+                        <li class="nav-item role-level-2 hidden"><a class="dropdown-item" href="#" onclick="loadConsumablesView()"><i class="bi bi-box-seam"></i> Danh mục vật tư tiêu hao</a></li>
+                        <li class="nav-item role-level-2 hidden"><a class="dropdown-item" href="#" onclick="loadAssetHealthCards()"><i class="bi bi-heart-pulse"></i> Quản lý Vòng đời & Bảo trì</a></li>
                     </ul>
                 </li>
 
@@ -1521,8 +1518,85 @@
             </div>
         </div>
     </div>
+    <div id="asset-lifecycle-view" class="view-section hidden">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h3 class="fw-bold text-university m-0"><i class="bi bi-heart-pulse-fill text-danger"></i> Quản lý Sức khỏe & Vòng đời Thiết bị</h3>
+            <div class="d-flex gap-2">
+                <select id="filter-health-room" class="form-select border-primary" onchange="loadAssetHealthCards()">
+                    <option value="all">Tất cả các phòng</option>
+                    </select>
+            </div>
+        </div>
+    
+        <ul class="nav nav-tabs mb-4" id="assetTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active fw-bold text-dark" data-bs-toggle="tab" data-bs-target="#health-cards-tab" type="button">
+                    <i class="bi bi-grid-fill text-primary"></i> Tình trạng Thiết bị
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link fw-bold text-dark" data-bs-toggle="tab" data-bs-target="#timeline-tab" type="button">
+                    <i class="bi bi-clock-history text-warning"></i> Lịch sử Sửa chữa
+                </button>
+            </li>
+        </ul>
+    
+        <div class="tab-content">
+            <div class="tab-pane fade show active" id="health-cards-tab">
+                <div class="row g-4" id="asset-cards-container">
+                    <div class="text-center py-5 text-muted"><div class="spinner-border text-primary"></div><br>Đang tải dữ liệu thiết bị...</div>
+                </div>
+            </div>
+    
+            <div class="tab-pane fade" id="timeline-tab">
+                <div class="card shadow-sm border-0 border-top border-4 border-warning">
+                    <div class="card-body">
+                        <p class="text-muted">Chọn "Xem lý lịch" ở mục thiết bị để hiển thị Timeline chi tiết tại đây (Tính năng đang phát triển).</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="modal fade" id="updateAssetModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-university text-white">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-tools"></i> Cập nhật Lý lịch Thiết bị</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="asset-edit-id">
+                    <h6 class="fw-bold text-primary mb-3" id="asset-edit-name">Tên máy</h6>
+                    
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Ngày nhập máy (Mua mới)</label>
+                        <input type="date" id="asset-import-date" class="form-control">
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Ngày bảo trì gần nhất</label>
+                            <input type="date" id="asset-last-maint" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Chu kỳ bảo trì (Tháng)</label>
+                            <select id="asset-cycle" class="form-select border-primary">
+                                <option value="6">6 tháng</option>
+                                <option value="12">12 tháng (1 năm)</option>
+                                <option value="24">24 tháng (2 năm)</option>
+                                <option value="36">36 tháng (3 năm)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary w-100 fw-bold" onclick="saveAssetUpdate()">Lưu cập nhật</button>
+                </div>
+            </div>
+        </div>
+    </div>
     <div id="maintenance-view" class="view-section hidden">
-        <h3 class="fw-bold mb-4 text-danger"><i class="bi bi-tools"></i> Báo cáo & Xử lý Hư hỏng</h3>
+        <h3 class="fw-bold mb-4 text-danger"><i class="bi bi-tools"></i> Kiểm tra & Xử lý Hư hỏng</h3>
         <div class="card shadow-sm border-0 border-top border-4 border-danger">
             <div class="card-body p-0">
                 <div class="table-responsive">
@@ -1568,7 +1642,7 @@
                                             <th>Người báo</th>
                                             <th>Ngày báo</th>
                                             <th>Ngày xong</th>
-                                            <th class="text-start">Mô tả xử lý</th>
+                                            <th class="text-start">Mô tả tình trạng</th>
                                             <th>Trạng thái</th>
                                         </tr>
                                     </thead>
@@ -1666,6 +1740,7 @@
             </div>
         </div>
     </div>
+
     <div id="unified-power-view" class="view-section hidden">
         <style>
             .pwr-badge { font-size: 0.75rem; padding: 4px 12px; border-radius: 20px; font-weight: 600; }
@@ -4467,7 +4542,7 @@ async function simulateQRScan(bookingId, action) {
                     <td class="text-start"><small>${b.condition_note || 'Không có ghi chú'}</small></td>
                     <td>
                         <button class="btn btn-sm btn-warning fw-bold mb-1 w-100" onclick="setMachineMaintenance('${exactMachineName}')">
-                            <i class="bi bi-tools"></i> Đưa vào Bảo trì
+                            <i class="bi bi-tools"></i> Đưa vào danh sách kiểm tra 
                         </button>
                         <button class="btn btn-sm btn-success fw-bold w-100" onclick="resolveMachineRepair('${b.id}', '${exactMachineName}')">
                             <i class="bi bi-check-circle"></i> Đã sửa xong
@@ -5882,6 +5957,169 @@ let mChartMulti = null;
             }
         }, 3000); 
     }
+    // ==============================================================
+// MODULE: QUẢN LÝ VÒNG ĐỜI TÀI SẢN (ASSET LIFECYCLE)
+// ==============================================================
+
+let updateAssetModalInstance = null;
+
+async function loadAssetHealthCards() {
+    showView('asset-lifecycle-view'); // Gọi hiển thị giao diện
+    
+    // 1. Tải danh sách phòng cho Bộ lọc (Nếu chưa có)
+    const roomFilter = document.getElementById('filter-health-room');
+    if (roomFilter.options.length <= 1) {
+        const { data: rooms } = await _supabase.from('rooms').select('id, room_code').eq('status', 'active');
+        if (rooms) {
+            rooms.forEach(r => {
+                roomFilter.innerHTML += `<option value="${r.id}">${r.room_code}</option>`;
+            });
+        }
+    }
+
+    // 2. Lấy dữ liệu Thiết bị từ Supabase
+    const selectedRoomId = roomFilter.value;
+    let query = _supabase.from('machines').select('id, machine_name, room_id, status, import_date, last_maintenance, maintenance_cycle');
+    
+    if (selectedRoomId !== 'all') {
+        query = query.eq('room_id', selectedRoomId);
+    }
+
+    const { data: machines, error } = await query;
+    const container = document.getElementById('asset-cards-container');
+
+    if (error || !machines || machines.length === 0) {
+        return container.innerHTML = '<div class="col-12 text-center py-4 text-muted">Không có dữ liệu thiết bị.</div>';
+    }
+
+    // 3. Xử lý logic và Vẽ Thẻ (Card)
+    const now = new Date();
+    let html = '';
+
+    machines.forEach(m => {
+        // --- LOGIC TÍNH TOÁN NGÀY THÁNG ---
+        let importDateStr = m.import_date ? new Date(m.import_date).toLocaleDateString('vi-VN') : 'Chưa cập nhật';
+        let lastMaintStr = m.last_maintenance ? new Date(m.last_maintenance).toLocaleDateString('vi-VN') : 'Chưa cập nhật';
+        let cycle = m.maintenance_cycle || 12; // Mặc định 12 tháng nếu trống
+        
+        let nextMaintStr = 'Chưa xác định';
+        let daysRemaining = 9999;
+        let progressPercent = 0;
+        let healthColor = 'success'; // Mặc định xanh
+        let statusText = 'Hoạt động ổn định';
+        let icon = 'bi-check-circle-fill';
+
+        // Nếu có ngày bảo trì gần nhất, tính ngày bảo trì tiếp theo
+        if (m.last_maintenance) {
+            let lastDate = new Date(m.last_maintenance);
+            let nextDate = new Date(lastDate.setMonth(lastDate.getMonth() + cycle)); // Cộng thêm số tháng chu kỳ
+            
+            nextMaintStr = nextDate.toLocaleDateString('vi-VN');
+            
+            // Tính số ngày còn lại
+            const diffTime = Math.abs(nextDate - now);
+            daysRemaining = Math.ceil((nextDate - now) / (1000 * 60 * 60 * 24)); 
+            
+            // Tính % thanh tiến độ (Ví dụ chu kỳ 365 ngày. Đã trôi qua bao nhiêu ngày?)
+            const totalDaysInCycle = cycle * 30; // Ước tính 1 tháng 30 ngày
+            const daysPassed = totalDaysInCycle - daysRemaining;
+            progressPercent = (daysPassed / totalDaysInCycle) * 100;
+            if (progressPercent > 100) progressPercent = 100;
+            if (progressPercent < 0) progressPercent = 0;
+
+            // Đổi màu cảnh báo
+            if (daysRemaining < 0) {
+                healthColor = 'danger'; // Quá hạn đỏ lừ
+                statusText = `Quá hạn ${Math.abs(daysRemaining)} ngày!`;
+                icon = 'bi-exclamation-octagon-fill';
+            } else if (daysRemaining <= 180) { 
+                healthColor = 'warning'; // Dưới 6 tháng (180 ngày) cảnh báo vàng
+                statusText = `Cần xin kinh phí (Còn ${daysRemaining} ngày)`;
+                icon = 'bi-exclamation-triangle-fill';
+            } else {
+                statusText = `Còn ${daysRemaining} ngày tới hạn`;
+            }
+        }
+
+        // --- VẼ HTML CHO TỪNG THẺ ---
+        html += `
+        <div class="col-md-6 col-lg-4">
+            <div class="card shadow-sm border-0 border-top border-4 border-${healthColor} h-100 transition-all">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h6 class="fw-bold text-dark m-0 pe-2" style="line-height: 1.4;">${m.machine_name}</h6>
+                        <button class="btn btn-sm btn-light text-primary border" onclick="openUpdateAssetModal('${m.id}', '${m.machine_name}', '${m.import_date}', '${m.last_maintenance}', '${cycle}')" title="Chỉnh sửa lý lịch">
+                            <i class="bi bi-pencil-square"></i>
+                        </button>
+                    </div>
+                    
+                    <p class="small text-muted mb-3">
+                        <i class="bi bi-calendar-plus"></i> Nhập máy: ${importDateStr}<br>
+                        <i class="bi bi-arrow-repeat"></i> Chu kỳ: ${cycle} tháng
+                    </p>
+                    
+                    <div class="d-flex justify-content-between small fw-bold mb-1">
+                        <span class="text-muted"><i class="bi ${icon} text-${healthColor}"></i> Trạng thái bảo trì</span>
+                        <span class="text-${healthColor}">${statusText}</span>
+                    </div>
+                    <div class="progress mb-3" style="height: 8px;">
+                        <div class="progress-bar bg-${healthColor} progress-bar-striped ${healthColor !== 'success' ? 'progress-bar-animated' : ''}" style="width: ${progressPercent}%;"></div>
+                    </div>
+
+                    <div class="bg-light p-2 rounded small d-flex justify-content-between border">
+                        <div><span class="text-muted d-block" style="font-size: 0.7rem;">Lần cuối</span><b>${lastMaintStr}</b></div>
+                        <div class="text-end"><span class="text-muted d-block" style="font-size: 0.7rem;">Kỳ tiếp theo</span><b class="text-${healthColor}">${nextMaintStr}</b></div>
+                    </div>
+                    
+                    <button class="btn btn-sm btn-outline-secondary w-100 mt-3 fw-bold" onclick="Swal.fire('Thông báo', 'Tính năng xem Lịch sử Timeline đang hoàn thiện.', 'info')">
+                        <i class="bi bi-journal-text"></i> Lịch sử sửa chữa
+                    </button>
+                </div>
+            </div>
+        </div>`;
+    });
+
+    container.innerHTML = html;
+}
+
+// Hàm Mở Modal Cập nhật
+function openUpdateAssetModal(id, name, importDate, lastMaint, cycle) {
+    if (!updateAssetModalInstance) {
+        updateAssetModalInstance = new bootstrap.Modal(document.getElementById('updateAssetModal'));
+    }
+    
+    document.getElementById('asset-edit-id').value = id;
+    document.getElementById('asset-edit-name').innerText = name;
+    document.getElementById('asset-import-date').value = importDate !== 'null' ? importDate : '';
+    document.getElementById('asset-last-maint').value = lastMaint !== 'null' ? lastMaint : '';
+    document.getElementById('asset-cycle').value = cycle !== 'null' ? cycle : '12';
+    
+    updateAssetModalInstance.show();
+}
+
+// Hàm Lưu Cập nhật lên Supabase
+async function saveAssetUpdate() {
+    const id = document.getElementById('asset-edit-id').value;
+    const importDate = document.getElementById('asset-import-date').value || null;
+    const lastMaint = document.getElementById('asset-last-maint').value || null;
+    const cycle = parseInt(document.getElementById('asset-cycle').value);
+
+    Swal.fire({ title: 'Đang lưu...', didOpen: () => Swal.showLoading() });
+
+    const { error } = await _supabase.from('machines').update({
+        import_date: importDate,
+        last_maintenance: lastMaint,
+        maintenance_cycle: cycle
+    }).eq('id', id);
+
+    if (error) {
+        Swal.fire('Lỗi', error.message, 'error');
+    } else {
+        Swal.fire({ icon: 'success', title: 'Cập nhật lý lịch thành công!', timer: 1500, showConfirmButton: false });
+        updateAssetModalInstance.hide();
+        loadAssetHealthCards(); // Vẽ lại giao diện Thẻ để thanh Tiến độ cập nhật
+    }
+}
 // CHẾ ĐỘ AI CHO TRANG WEB==========================================
 async function testGeminiAI() {
     const { value: userQuestion } = await Swal.fire({
