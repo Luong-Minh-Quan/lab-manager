@@ -4875,28 +4875,48 @@ async function resolveMachineRepair(bookingId, machineName) {
             }
             
             // ==========================================
-            // CỘT 2: XỬ LÝ MÁY SẮP BẢO TRÌ ĐỊNH KỲ (Báo trước 30 ngày)
             // ==========================================
-            if (m.status === 'available' && m.last_maintenance) {
-                let lastDate = new Date(m.last_maintenance);
-                let cycle = m.maintenance_cycle || 12;
-                let nextDate = new Date(lastDate.setMonth(lastDate.getMonth() + cycle));
+            // CỘT 2: XỬ LÝ LỊCH BẢO TRÌ ĐỊNH KỲ (Hiển thị tất cả)
+            // ==========================================
+            // Lấy ngày làm mốc: Ưu tiên ngày bảo trì gần nhất, nếu không có thì lấy ngày nhập máy
+            let baseDateStr = m.last_maintenance || m.import_date;
+
+            // Bỏ điều kiện m.status === 'available' để máy đang hỏng vẫn có thể xem được lịch định kỳ của nó
+            if (baseDateStr) {
+                let baseDate = new Date(baseDateStr);
+                let cycle = m.maintenance_cycle || 12; // Mặc định 12 tháng
+                let nextDate = new Date(baseDate.setMonth(baseDate.getMonth() + cycle));
                 
                 // Tính số ngày còn lại
                 let daysLeft = Math.ceil((nextDate - now) / (1000 * 60 * 60 * 24));
 
-                // Nếu còn dưới 30 ngày (và chưa quá hạn) thì đưa vào danh sách cảnh báo cho SV
-                if (daysLeft <= 30 && daysLeft >= 0) {
-                    let badgeClass = daysLeft <= 7 ? 'bg-danger pulse' : 'bg-info text-dark';
-                    let statusText = daysLeft <= 7 ? 'Sắp đến hạn' : 'Sắp tới';
-                    
-                    upcomingHtml += `
-                        <tr>
-                            <td class="text-start ps-3 fw-bold text-dark">${m.machine_name}</td>
-                            <td class="fw-bold text-primary">${nextDate.toLocaleDateString('vi-VN')}</td>
-                            <td><span class="badge ${badgeClass}">${statusText} (còn ${daysLeft} ngày)</span></td>
-                        </tr>`;
+                let badgeClass = '';
+                let statusText = '';
+
+                // Cập nhật giao diện theo thời gian còn lại
+                if (daysLeft < 0) {
+                    badgeClass = 'bg-danger';
+                    statusText = `Quá hạn ${Math.abs(daysLeft)} ngày`;
+                } else if (daysLeft <= 7) {
+                    badgeClass = 'bg-danger pulse';
+                    statusText = `Sắp đến hạn (còn ${daysLeft} ngày)`;
+                } else if (daysLeft <= 30) {
+                    badgeClass = 'bg-warning text-dark';
+                    statusText = `Sắp tới (còn ${daysLeft} ngày)`;
+                } else {
+                    badgeClass = 'bg-success';
+                    statusText = `Đang tốt (còn ${daysLeft} ngày)`;
                 }
+                
+                // Chỉ lấy tên máy, bỏ mã phòng nếu có
+                const exactMachineName = m.machine_name.includes(' - ') ? m.machine_name.split(' - ')[1] : m.machine_name;
+
+                upcomingHtml += `
+                    <tr>
+                        <td class="text-start ps-3 fw-bold text-dark">${exactMachineName}</td>
+                        <td class="fw-bold text-primary">${nextDate.toLocaleDateString('vi-VN')}</td>
+                        <td><span class="badge ${badgeClass}">${statusText}</span></td>
+                    </tr>`;
             }
         });
 
