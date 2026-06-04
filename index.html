@@ -1594,27 +1594,65 @@
             </div>
     
             <div class="tab-pane fade" id="timeline-tab">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="fw-bold text-university m-0" id="timeline-machine-title">
-                        <i class="bi bi-clock-history"></i> Vui lòng chọn máy ở mục "Tình trạng Thiết bị"
-                    </h5>
-                    <button class="btn btn-sm btn-outline-secondary fw-bold" onclick="backToHealthCards()">
-                        <i class="bi bi-arrow-left"></i> Quay lại
+                <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+                    <div class="d-flex align-items-center gap-3">
+                        <button class="btn btn-sm btn-outline-secondary fw-bold" onclick="backToHealthCards()">
+                            <i class="bi bi-arrow-left"></i> Quay lại
+                        </button>
+                        <h5 class="fw-bold text-university m-0" id="timeline-machine-title">
+                            <i class="bi bi-clock-history"></i> Vui lòng chọn máy...
+                        </h5>
+                    </div>
+                    <button id="btn-add-timeline" class="btn btn-sm btn-success fw-bold hidden" onclick="openAddMaintenanceLog()">
+                        <i class="bi bi-plus-circle"></i> Thêm mốc bảo trì mới
                     </button>
                 </div>
                 
                 <div class="card shadow-sm border-0 border-top border-4 border-warning">
                     <div class="card-body p-4" id="timeline-container">
                         <div class="text-center py-5 text-muted">
-                            <i class="bi bi-journal-text fs-1"></i><br>
-                            Chọn "Lịch sử sửa chữa" ở một thiết bị để hiển thị hành trình của nó tại đây.
+                            <i class="bi bi-journal-text fs-1"></i><br>Chọn "Lịch sử sửa chữa" ở một thiết bị để hiển thị hành trình.
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-    
+    <div class="modal fade" id="addMaintenanceLogModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-tools"></i> Ghi nhận Bảo trì / Sửa chữa</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="log-machine-name">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Ngày thực hiện</label>
+                        <input type="date" id="log-date" class="form-control border-success">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Phân loại</label>
+                        <select id="log-type" class="form-select">
+                            <option value="Bảo trì định kỳ">Bảo trì định kỳ (Bảo dưỡng)</option>
+                            <option value="Sửa chữa đột xuất">Sửa chữa đột xuất / Nâng cấp</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Đơn vị thực hiện (Vendor)</label>
+                        <input type="text" id="log-vendor" class="form-control" placeholder="VD: Đội kỹ thuật trường, Công ty TNHH ABC...">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-primary">Nội dung & Vật tư thay thế <span class="text-danger">*</span></label>
+                        <textarea id="log-parts" class="form-control border-primary" rows="3" placeholder="VD: Căn chỉnh trục CNC, thay mỡ bôi trơn, thay dây curoa..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-success w-100 fw-bold" onclick="saveMaintenanceLog()"><i class="bi bi-journal-check"></i> Lưu vào Timeline</button>
+                </div>
+            </div>
+        </div>
+    </div>
     <div class="modal fade" id="updateAssetModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content border-0 shadow-lg">
@@ -4628,34 +4666,59 @@ async function simulateQRScan(bookingId, action) {
 
     // 3. Nút "Đã sửa xong": Mở khóa máy và Xóa cảnh báo
    // CẬP NHẬT: Vừa sửa máy vừa lưu vào Nhật ký lịch sử
-   async function resolveMachineRepair(bookingId, machineName) {
-        Swal.fire({ title: 'Đang lưu nhật ký...', didOpen: () => Swal.showLoading() });
-        
-        // 1. Lấy thông tin lỗi hiện tại từ bảng bookings để lưu trữ
-        const { data: currentError } = await _supabase.from('bookings').select('*').eq('id', bookingId).single();
-
-        if (currentError) {
-            // 2. Chèn vào bảng maintenance_history
-            await _supabase.from('maintenance_history').insert([{
-                machine_name: currentError.machine_name,
-                full_name: currentError.full_name,
-                condition_note: currentError.condition_note,
-                reported_at: currentError.created_at,
-                resolved_at: new Date().toISOString(),
-                status: 'Đã hoàn thành'
-            }]);
+   // CẬP NHẬT: Buộc Kỹ thuật viên phải nhập Vật tư & Đơn vị sửa chữa
+async function resolveMachineRepair(bookingId, machineName) {
+    // Gọi Popup nhập liệu nhanh của SweetAlert
+    const { value: formValues } = await Swal.fire({
+        title: 'Chi tiết Sửa chữa',
+        html:
+            '<div class="mb-2"><input id="swal-vendor" class="form-control border-primary" placeholder="Đơn vị sửa (VD: Tự sửa, Cty ABC)"></div>' +
+            '<textarea id="swal-parts" class="form-control border-primary" rows="3" placeholder="Ghi rõ Vật tư đã thay / Nội dung xử lý (*)"></textarea>',
+        focusConfirm: false,
+        showCancelButton: true,
+        confirmButtonText: 'Lưu nhật ký sửa chữa',
+        cancelButtonText: 'Hủy',
+        preConfirm: () => {
+            const parts = document.getElementById('swal-parts').value;
+            if (!parts) { Swal.showValidationMessage('Bạn phải ghi rõ Nội dung/Vật tư đã thay!'); }
+            return {
+                vendor: document.getElementById('swal-vendor').value || 'Đội kỹ thuật nhà trường',
+                parts: parts
+            }
         }
-        
-        // 3. Mở khóa máy và cập nhật bookings như cũ
-        await _supabase.from('machines').update({ status: 'available' }).eq('machine_name', machineName);
-        await _supabase.from('bookings').update({ machine_condition: 'Đã sửa' }).eq('id', bookingId);
-        
-        Swal.fire('Thành công', 'Đã sửa thiết bị và lưu vào nhật ký hệ thống!', 'success');
-        
-        loadMaintenanceReports(); // Load danh sách đang lỗi
-        loadMaintenanceHistory(); // Load bảng Excel lịch sử bên dưới
-        loadDashboardStats(); 
+    });
+
+    if (!formValues) return; // Nếu bấm Hủy thì thoát
+
+    Swal.fire({ title: 'Đang lưu nhật ký...', didOpen: () => Swal.showLoading() });
+    
+    // 1. Lấy thông tin lỗi do sinh viên báo
+    const { data: currentError } = await _supabase.from('bookings').select('*').eq('id', bookingId).single();
+
+    if (currentError) {
+        // 2. Chèn vào bảng Timeline với đầy đủ Thông tin vật tư thay thế
+        await _supabase.from('maintenance_history').insert([{
+            machine_name: currentError.machine_name,
+            full_name: currentError.full_name,
+            condition_note: currentError.condition_note,
+            reported_at: currentError.created_at,
+            resolved_at: new Date().toISOString(),
+            status: 'Đã hoàn thành',
+            maintenance_type: 'Sửa chữa do sinh viên báo',
+            vendor_name: formValues.vendor,
+            replaced_parts: formValues.parts
+        }]);
     }
+    
+    // 3. Mở khóa máy
+    await _supabase.from('machines').update({ status: 'available' }).eq('machine_name', machineName);
+    await _supabase.from('bookings').update({ machine_condition: 'Đã sửa' }).eq('id', bookingId);
+    
+    Swal.fire('Thành công', 'Đã sửa thiết bị và ghi vết vào Timeline!', 'success');
+    
+    loadMaintenanceReports(); 
+    loadMaintenanceHistory();
+}
 
     // Hàm tải dữ liệu bảng Excel bảo trì
     async function loadMaintenanceHistory() {
@@ -6184,49 +6247,43 @@ function backToHealthCards() {
 }
 
 // Hàm tải Timeline Lịch sử
+// Biến lưu tạm dữ liệu của máy đang xem Timeline để load lại
+let currentTimelineMachine = '';
+let currentTimelineImportDate = '';
+let addMaintLogModalInstance = null;
+
 async function loadMachineTimeline(machineName, importDateStr) {
-    // 1. Chuyển sang Tab Timeline
+    currentTimelineMachine = machineName;
+    currentTimelineImportDate = importDateStr;
+
     const triggerEl = document.querySelector('button[data-bs-target="#timeline-tab"]');
     bootstrap.Tab.getOrCreateInstance(triggerEl).show();
 
-    // 2. Cập nhật Tiêu đề và Hiển thị Loading
-    document.getElementById('timeline-machine-title').innerHTML = `<i class="bi bi-cpu-fill text-primary"></i> Lý lịch thiết bị: <span class="text-danger">${machineName}</span>`;
+    // Hiện Tên máy và Hiển thị Nút "Thêm mốc bảo trì"
+    document.getElementById('timeline-machine-title').innerHTML = `<i class="bi bi-cpu-fill text-primary"></i> Lý lịch: <span class="text-danger">${machineName}</span>`;
+    document.getElementById('btn-add-timeline').classList.remove('hidden');
+
     const container = document.getElementById('timeline-container');
-    container.innerHTML = `<div class="text-center py-4"><div class="spinner-border text-primary"></div><br><span class="fw-bold mt-2 d-block">Đang lục tìm hồ sơ máy...</span></div>`;
+    container.innerHTML = `<div class="text-center py-4"><div class="spinner-border text-primary"></div><br><span class="fw-bold mt-2 d-block">Đang lục tìm hồ sơ...</span></div>`;
 
-    // 3. Tải dữ liệu từ bảng maintenance_history
-    const { data, error } = await _supabase
-        .from('maintenance_history')
-        .select('*')
-        .eq('machine_name', machineName)
-        .order('resolved_at', { ascending: false }); // Xếp mới nhất lên trên
+    const { data, error } = await _supabase.from('maintenance_history').select('*').eq('machine_name', machineName).order('resolved_at', { ascending: false });
 
-    if(error) {
-        container.innerHTML = `<div class="text-danger fw-bold text-center p-4"><i class="bi bi-exclamation-triangle"></i> Lỗi Database: ${error.message}</div>`;
-        return;
-    }
+    if(error) return container.innerHTML = `<div class="text-danger fw-bold text-center p-4">Lỗi Database: ${error.message}</div>`;
 
-    // 4. BẮT ĐẦU VẼ ĐƯỜNG TIMELINE
     let html = `<div class="timeline-vertical">`;
 
-    // A. Vẽ các mốc Sửa chữa / Bảo trì (Nếu có)
     if (data && data.length > 0) {
         data.forEach(item => {
             const dateStr = new Date(item.resolved_at).toLocaleDateString('vi-VN');
-            
-            // Xử lý phân loại màu sắc và Icon
-            let icon = 'bi-tools';
-            let color = 'danger'; // Mặc định đỏ (Sửa chữa hư hỏng đột xuất)
+            let icon = 'bi-tools'; let color = 'danger'; 
             let typeText = item.maintenance_type || 'Sửa chữa do sinh viên báo';
 
             if (typeText.toLowerCase().includes('định kỳ') || typeText.toLowerCase().includes('bảo dưỡng')) {
-                color = 'success'; // Xanh lá cho Bảo trì định kỳ
-                icon = 'bi-shield-check';
+                color = 'success'; icon = 'bi-shield-check';
             }
 
-            // Xử lý Ghi chú và Đơn vị
-            const vendor = item.vendor_name ? `Đơn vị sửa chữa: <b>${item.vendor_name}</b>` : `Người báo lỗi ban đầu: <b>${item.full_name || 'Hệ thống'}</b>`;
-            const parts = item.replaced_parts ? `<br>Vật tư thay thế: <b class="text-primary">${item.replaced_parts}</b>` : '';
+            const vendor = item.vendor_name ? `Đơn vị thực hiện: <b class="text-dark">${item.vendor_name}</b>` : `Người báo lỗi: <b>${item.full_name || 'Hệ thống'}</b>`;
+            const parts = item.replaced_parts ? `<br>Vật tư thay thế/Xử lý: <b class="text-primary">${item.replaced_parts}</b>` : '';
 
             html += `
                 <div class="timeline-item">
@@ -6236,39 +6293,74 @@ async function loadMachineTimeline(machineName, importDateStr) {
                             <span class="badge bg-${color}">${typeText}</span>
                             <span class="text-muted small fw-bold"><i class="bi bi-calendar-event"></i> ${dateStr}</span>
                         </div>
-                        <h6 class="fw-bold text-dark mb-2" style="line-height: 1.4;">${item.condition_note || 'Tiến hành bảo trì hệ thống'}</h6>
-                        <div class="small text-muted" style="background: #f1f3f5; padding: 10px; border-radius: 6px; border: 1px dashed #ced4da;">
+                        <h6 class="fw-bold text-dark mb-2" style="line-height: 1.4;">${item.condition_note || 'Bảo trì hệ thống'}</h6>
+                        <div class="small text-muted" style="background: #f8f9fa; padding: 10px; border-radius: 6px; border: 1px dashed #ced4da;">
                             ${vendor} ${parts}
                         </div>
                     </div>
-                </div>
-            `;
+                </div>`;
         });
     }
 
-    // B. Mốc cuối cùng luôn là "Ngày nhập máy"
-    // Nếu chưa cấu hình ngày nhập thì hiển thị Mặc định
-    let importText = importDateStr && importDateStr !== 'null' && importDateStr !== 'Chưa cập nhật' 
-                     ? importDateStr 
-                     : 'Chưa có thông tin nhập máy';
-                     
+    let importText = importDateStr && importDateStr !== 'null' && importDateStr !== 'Chưa cập nhật' ? importDateStr : 'Chưa có thông tin nhập máy';
     html += `
         <div class="timeline-item">
             <div class="timeline-icon bg-primary shadow"><i class="bi bi-box-seam-fill"></i></div>
             <div class="timeline-content border-primary shadow-sm" style="background-color: #f0f8ff;">
                 <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="fw-bold text-primary m-0"><i class="bi bi-truck"></i> Nhập máy & Đưa vào sử dụng</h6>
-                        <small class="text-muted">Bắt đầu tính hao mòn tài sản</small>
-                    </div>
+                    <div><h6 class="fw-bold text-primary m-0"><i class="bi bi-truck"></i> Nhập máy & Đưa vào sử dụng</h6></div>
                     <span class="badge bg-primary fs-6">${importText}</span>
                 </div>
             </div>
-        </div>
-    `;
-
-    html += `</div>`; // Đóng thẻ timeline-vertical
+        </div></div>`;
     container.innerHTML = html;
+}
+
+// ---------------------------------------------------------
+// HÀM LƯU NHẬT KÝ BẢO TRÌ MỚI TỪ NÚT "THÊM"
+// ---------------------------------------------------------
+function openAddMaintenanceLog() {
+    if(!addMaintLogModalInstance) addMaintLogModalInstance = new bootstrap.Modal(document.getElementById('addMaintenanceLogModal'));
+    document.getElementById('log-machine-name').value = currentTimelineMachine;
+    document.getElementById('log-date').value = new Date().toISOString().split('T')[0];
+    document.getElementById('log-parts').value = '';
+    addMaintLogModalInstance.show();
+}
+
+async function saveMaintenanceLog() {
+    const machineName = document.getElementById('log-machine-name').value;
+    const date = document.getElementById('log-date').value;
+    const type = document.getElementById('log-type').value;
+    const vendor = document.getElementById('log-vendor').value || 'Đội kỹ thuật nhà trường';
+    const parts = document.getElementById('log-parts').value;
+
+    if(!date || !parts) return Swal.fire('Lỗi', 'Vui lòng nhập Ngày thực hiện và Nội dung/Vật tư thay thế!', 'warning');
+
+    Swal.fire({ title: 'Đang ghi sổ...', didOpen: () => Swal.showLoading() });
+
+    // 1. Thêm 1 dòng vào Lịch sử Timeline
+    const { error: err1 } = await _supabase.from('maintenance_history').insert([{
+        machine_name: machineName,
+        maintenance_type: type,
+        vendor_name: vendor,
+        replaced_parts: parts,
+        condition_note: 'Bảo trì thiết bị theo kế hoạch',
+        reported_at: date, 
+        resolved_at: date,
+        full_name: currentUserProfile ? currentUserProfile.full_name : 'Quản lý PTN',
+        status: 'Đã hoàn thành'
+    }]);
+
+    if(err1) return Swal.fire('Lỗi', err1.message, 'error');
+
+    // 2. KẾT NỐI VỚI TAB 1: Cập nhật ngày last_maintenance để Thanh Tiến Độ làm mới!
+    await _supabase.from('machines').update({ last_maintenance: date }).eq('machine_name', machineName);
+
+    Swal.fire('Thành công', 'Đã thêm mốc lịch sử mới vào Timeline!', 'success');
+    addMaintLogModalInstance.hide();
+    
+    // Tải lại Timeline ngay lập tức
+    loadMachineTimeline(currentTimelineMachine, currentTimelineImportDate);
 }
 // CHẾ ĐỘ AI CHO TRANG WEB==========================================
 async function testGeminiAI() {
