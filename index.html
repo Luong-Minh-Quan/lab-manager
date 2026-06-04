@@ -265,8 +265,7 @@
                     <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">Báo cáo & Phản hồi</a>
                     <ul class="dropdown-menu">
                         <li><a class="dropdown-item" href="#" onclick="loadHistoryView()"><i class="bi bi-tools"></i> Báo cáo hư hỏng máy</a></li>
-                        <li><a class="dropdown-item" href="#" onclick="openFeedbackModal('labConditionModal')"><i class="bi bi-chat-left-dots"></i> Báo cáo tình trạng PTN</a></li>
-                        <li><a class="dropdown-item" href="#" onclick="openFeedbackModal('studentUsageModal')"><i class="bi bi-person-exclamation"></i> Báo cáo sinh viên sử dụng</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="openUnifiedFeedbackModal()"><i class="bi bi-chat-square-text"></i> Gửi phản hồi & Báo sự cố</a></li>
                     </ul>
                 </li>
 
@@ -2056,31 +2055,7 @@
         </div>
     </div>
 </div>
-<div class="modal fade" id="labConditionModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header bg-university text-white">
-                <h5 class="modal-title fw-bold"><i class="bi bi-chat-left-dots"></i> Báo cáo tình trạng PTN</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div class="mb-3">
-                    <label class="form-label fw-bold">Chọn Phòng Thí Nghiệm</label>
-                    <select id="feedback-room" class="form-select">
-                        <option value="">Đang tải danh sách phòng...</option>
-                    </select>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label fw-bold">Nội dung báo cáo</label>
-                    <textarea id="feedback-content" class="form-control" rows="4" placeholder="Ví dụ: Bóng đèn số 3 bị cháy, điều hòa rỉ nước, vệ sinh chưa sạch..."></textarea>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-primary w-100 fw-bold" onclick="submitGeneralFeedback('lab_condition')">Gửi báo cáo</button>
-            </div>
-        </div>
-    </div>
-</div>
+
 <div class="modal fade" id="addResourceModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content border-0 shadow-lg">
@@ -2121,33 +2096,6 @@
     </div>
 </div>
 
-<div class="modal fade" id="studentUsageModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title fw-bold"><i class="bi bi-person-exclamation"></i> Báo cáo vi phạm nội quy</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div class="mb-3">
-                    <label class="form-label fw-bold">Sinh viên vi phạm (Nếu biết)</label>
-                    <input type="text" id="violation-student" class="form-control" placeholder="Tên hoặc MSSV (Có thể để trống)">
-                </div>
-                <div class="mb-3">
-                    <label class="form-label fw-bold">Phòng xảy ra vi phạm</label>
-                    <input type="text" id="violation-room" class="form-control" placeholder="VD: K101">
-                </div>
-                <div class="mb-3">
-                    <label class="form-label fw-bold">Chi tiết vi phạm</label>
-                    <textarea id="violation-content" class="form-control" rows="3" placeholder="Ví dụ: Mang đồ ăn vào phòng, xả rác bừa bãi..."></textarea>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-danger w-100 fw-bold" onclick="submitGeneralFeedback('violation')">Gửi báo cáo vi phạm</button>
-            </div>
-        </div>
-    </div>
-</div>
 <div class="modal fade" id="fullScheduleModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-scrollable modal-lg">
         <div class="modal-content border-0 shadow-lg">
@@ -2163,6 +2111,47 @@
             <div class="modal-footer bg-light border-0">
                 <p class="small text-muted mt-2 fst-italic">* Chú ý: Đăng nhập để xem chi tiết lịch trong mục Lịch trống</p>
                 <button type="button" class="btn btn-secondary fw-bold" data-bs-dismiss="modal">Đóng lại</button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- MODAL: GỬI PHẢN HỒI & BÁO SỰ CỐ (GỘP CHUNG) -->
+<div class="modal fade" id="unifiedFeedbackModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-university text-white">
+                <h5 class="modal-title fw-bold"><i class="bi bi-chat-square-text"></i> Gửi Phản hồi & Báo sự cố</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label fw-bold small text-muted">Loại vấn đề <span class="text-danger">*</span></label>
+                    <select id="uf-type" class="form-select border-primary fw-bold text-primary" onchange="toggleUnifiedFeedbackFields()">
+                        <option value="lab_condition">🔧 Báo cáo sự cố Cơ sở vật chất PTN</option>
+                        <option value="violation">⚠️ Báo cáo Vi phạm nội quy</option>
+                        <option value="web_bug">💻 Góp ý hệ thống & Lỗi phần mềm Web</option>
+                    </select>
+                </div>
+                
+                <div class="mb-3" id="uf-room-group">
+                    <label class="form-label fw-bold small text-muted">Phòng Thí Nghiệm liên quan</label>
+                    <select id="uf-room" class="form-select">
+                        <option value="">-- Chọn phòng (Không bắt buộc) --</option>
+                    </select>
+                </div>
+
+                <div class="mb-3 hidden" id="uf-target-group">
+                    <label class="form-label fw-bold small text-muted">Người vi phạm (Tên/MSSV)</label>
+                    <input type="text" id="uf-target" class="form-control" placeholder="Không bắt buộc">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold small text-muted">Mô tả chi tiết <span class="text-danger">*</span></label>
+                    <textarea id="uf-content" class="form-control" rows="4" placeholder="Vui lòng mô tả rõ sự cố hoặc ý kiến đóng góp của bạn..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary w-100 fw-bold" onclick="submitUnifiedFeedback()"><i class="bi bi-send-fill"></i> Gửi phản hồi</button>
             </div>
         </div>
     </div>
@@ -3201,66 +3190,71 @@ function startRealtimeTracking() {
         
         shiftSelect.innerHTML = optionsHtml;
     }
-    // Hàm mở Modal Báo cáo chung
-    function openFeedbackModal(modalId) {
-        let modalEl = document.getElementById(modalId);
-        let modalInstance = bootstrap.Modal.getInstance(modalEl);
-        if (!modalInstance) {
-            modalInstance = new bootstrap.Modal(modalEl);
+    
+    // ==========================================
+    // MODULE: PHẢN HỒI & BÁO LỖI (UNIFIED)
+    // ==========================================
+    let unifiedFeedbackModalInstance = null;
+
+    function openUnifiedFeedbackModal() {
+        if (!unifiedFeedbackModalInstance) {
+            unifiedFeedbackModalInstance = new bootstrap.Modal(document.getElementById('unifiedFeedbackModal'));
         }
-        modalInstance.show();
+        // Xóa form cũ
+        document.getElementById('uf-type').value = 'lab_condition';
+        document.getElementById('uf-content').value = '';
+        document.getElementById('uf-target').value = '';
+        
+        toggleUnifiedFeedbackFields();
+        unifiedFeedbackModalInstance.show();
     }
 
-    // Hàm giả lập Gửi báo cáo thành công
-    // Hàm gửi báo cáo thật lên Supabase
-    async function submitGeneralFeedback(type) {
-        let room = "";
-        let content = "";
-        let target = "";
-        let modalId = "";
+    // Tự động ẩn/hiện các ô nhập liệu tùy theo lựa chọn của người dùng
+    function toggleUnifiedFeedbackFields() {
+        const type = document.getElementById('uf-type').value;
+        const roomGroup = document.getElementById('uf-room-group');
+        const targetGroup = document.getElementById('uf-target-group');
 
-        // 1. Phân loại dữ liệu dựa trên Type (Loại báo cáo)
-        if (type === 'lab_condition') {
-            room = document.getElementById('feedback-room').value;
-            content = document.getElementById('feedback-content').value;
-            modalId = 'labConditionModal';
+        if (type === 'web_bug') {
+            roomGroup.classList.add('hidden');
+            targetGroup.classList.add('hidden');
         } else if (type === 'violation') {
-            room = document.getElementById('violation-room').value;
-            content = document.getElementById('violation-content').value;
-            target = document.getElementById('violation-student').value;
-            modalId = 'studentUsageModal';
+            roomGroup.classList.remove('hidden');
+            targetGroup.classList.remove('hidden');
+        } else {
+            // lab_condition
+            roomGroup.classList.remove('hidden');
+            targetGroup.classList.add('hidden');
+        }
+    }
+
+    // Đẩy dữ liệu lên Database
+    async function submitUnifiedFeedback() {
+        const type = document.getElementById('uf-type').value;
+        const room = document.getElementById('uf-room').value;
+        const target = document.getElementById('uf-target').value;
+        const content = document.getElementById('uf-content').value;
+
+        if (!content.trim()) {
+            return Swal.fire('Cảnh báo', 'Vui lòng nhập nội dung chi tiết phản hồi!', 'warning');
         }
 
-        // 2. Kiểm tra dữ liệu trống
-        if (!content.trim()) return Swal.fire('Thông báo', 'Vui lòng nhập nội dung báo cáo!', 'warning');
+        Swal.fire({ title: 'Đang gửi phản hồi...', didOpen: () => Swal.showLoading() });
 
-        Swal.fire({ title: 'Đang gửi báo cáo...', didOpen: () => Swal.showLoading() });
-
-        // 3. Gửi lên Supabase
         const { error } = await _supabase.from('feedbacks').insert([{
-            user_id: currentUserProfile.id,
-            user_name: currentUserProfile.full_name,
+            user_id: currentUserProfile ? currentUserProfile.id : null,
+            user_name: currentUserProfile ? currentUserProfile.full_name : 'Ẩn danh',
             type: type,
-            room_code: room,
-            content: content,
-            target_info: target
+            room_code: type === 'web_bug' ? null : room,
+            target_info: type === 'violation' ? target : null,
+            content: content
         }]);
 
         if (error) {
-            Swal.fire('Lỗi', error.message, 'error');
+            Swal.fire('Lỗi Database', error.message, 'error');
         } else {
-            // Đóng Modal và xóa dữ liệu cũ trong Form
-            const modalInstance = bootstrap.Modal.getInstance(document.getElementById(modalId));
-            modalInstance.hide();
-            
-            // Xóa trắng ô nhập liệu để lần sau dùng tiếp
-            if(type === 'lab_condition') document.getElementById('feedback-content').value = "";
-            else {
-                document.getElementById('violation-content').value = "";
-                document.getElementById('violation-student').value = "";
-            }
-
-            Swal.fire('Thành công', 'Báo cáo của bạn đã được gửi đến Ban quản lý.', 'success');
+            unifiedFeedbackModalInstance.hide();
+            Swal.fire('Thành công', 'Cảm ơn phản hồi của bạn. Chúng tôi sẽ ghi nhận và xử lý sớm nhất.', 'success');
         }
     }
     // 1. BIẾN LƯU TRỮ BIỂU ĐỒ (Để tránh bị lỗi khi vẽ đè lên nhau)
@@ -4101,6 +4095,11 @@ async function simulateQRScan(bookingId, action) {
             powerHtml += '<option value="ACTIVE_ONLY" class="text-success fw-bold"> Máy đang hoạt động</option>';
             
             powerFilter.innerHTML = powerHtml;
+        }
+        // Đổ dữ liệu vào Modal Phản hồi Gộp
+        const ufRoomSelect = document.getElementById('uf-room');
+        if (ufRoomSelect) {
+            ufRoomSelect.innerHTML = '<option value="">-- Chọn phòng (Không bắt buộc) --</option>' + optionsLiveHtml;
         }
     }
     let energyChartObj = null;
