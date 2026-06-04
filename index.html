@@ -518,7 +518,7 @@
                     </select>
                     <input type="month" id="filter-consumable-month" class="form-control form-control-sm border-primary" style="width: 150px;" onchange="loadConsumablesData()">
                 </div>
-                <button class="btn btn-primary fw-bold shadow-sm mt-3 mt-md-0" onclick="openAddConsumableModal()">
+                <button id="btn-add-consumable" class="btn btn-primary fw-bold shadow-sm mt-3 mt-md-0 hidden" onclick="openAddConsumableModal()">
                     <i class="bi bi-plus-circle-fill"></i> Thêm nhật ký mới
                 </button>
             </div>
@@ -5390,6 +5390,13 @@ async function emergencyStop(bookingId, machineName) {
         document.getElementById('new-con-room').innerHTML = modalOpts;
 
         loadConsumablesData();
+        // HIỂN THỊ NÚT THÊM NẾU LÀ QUẢN LÝ PTN
+        if (currentUserProfile && currentUserProfile.role === 'manager') {
+            document.getElementById('btn-add-consumable').classList.remove('hidden');
+        } else {
+            document.getElementById('btn-add-consumable').classList.add('hidden');
+        }
+
     }
 
     // 2. TẢI DỮ LIỆU, ÁP DỤNG BỘ LỌC KÉP & TÍNH TOÁN KPI
@@ -5456,7 +5463,10 @@ async function emergencyStop(bookingId, machineName) {
                     <td class="text-start"><small class="text-muted">${item.note || ''}</small></td>
                     <td><small>${creator}</small></td>
                     <td>
-                        <button class="btn btn-sm btn-outline-danger" onclick="deleteConsumable('${item.id}')" title="Xóa dòng nhập sai"><i class="bi bi-trash"></i></button>
+                        ${currentUserProfile.role === 'manager' 
+                            ? `<button class="btn btn-sm btn-outline-danger" onclick="deleteConsumable('${item.id}')" title="Xóa dòng nhập sai"><i class="bi bi-trash"></i></button>`
+                            : `<i class="bi bi-lock text-muted" title="Chỉ Quản lý PTN mới có quyền xóa"></i>`
+                        }
                     </td>
                 </tr>
             `;
@@ -6239,9 +6249,10 @@ async function loadAssetHealthCards() {
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-start mb-2">
                         <h6 class="fw-bold text-dark m-0 pe-2" style="line-height: 1.4;">${m.machine_name}</h6>
+                        ${currentUserProfile.role === 'manager' ? `
                         <button class="btn btn-sm btn-light text-primary border" onclick="openUpdateAssetModal('${m.id}', '${m.machine_name}', '${m.import_date}', '${m.last_maintenance}', '${cycle}')" title="Chỉnh sửa lý lịch">
                             <i class="bi bi-pencil-square"></i>
-                        </button>
+                        </button>` : ''}
                     </div>
                     
                     <p class="small text-muted mb-3">
@@ -6332,7 +6343,13 @@ async function loadMachineTimeline(machineName, importDateStr) {
 
     // Hiện Tên máy và Hiển thị Nút "Thêm mốc bảo trì"
     document.getElementById('timeline-machine-title').innerHTML = `<i class="bi bi-cpu-fill text-primary"></i> Lý lịch: <span class="text-danger">${machineName}</span>`;
-    document.getElementById('btn-add-timeline').classList.remove('hidden');
+    
+    // CHỈ QUẢN LÝ PTN MỚI THẤY NÚT THÊM VÀO TIMELINE
+    if (currentUserProfile && currentUserProfile.role === 'manager') {
+        document.getElementById('btn-add-timeline').classList.remove('hidden');
+    } else {
+        document.getElementById('btn-add-timeline').classList.add('hidden');
+    }
 
     const container = document.getElementById('timeline-container');
     container.innerHTML = `<div class="text-center py-4"><div class="spinner-border text-primary"></div><br><span class="fw-bold mt-2 d-block">Đang lục tìm hồ sơ...</span></div>`;
