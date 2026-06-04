@@ -267,8 +267,7 @@
                     <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">Báo cáo & Thống kê</a>
                     <ul class="dropdown-menu">
                         <li><a class="dropdown-item" href="#" onclick="loadMaintenanceReports()"><i class="bi bi-wrench-adjustable"></i> Quản lý bảo trì & Hư hỏng</a></li>
-                        <li><a class="dropdown-item" href="#" onclick="loadLabStats()"><i class="bi bi-graph-up"></i> Thống kê tình trạng PTN</a></li>
-                        <li><a class="dropdown-item" href="#" onclick="loadUsageStats()"><i class="bi bi-pie-chart"></i> Thống kê lượt sử dụng</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="loadReportCenter()"><i class="bi bi-bar-chart-fill"></i> Trung tâm Báo cáo </a></li>
                                                 
                     </ul>
                 </li>
@@ -332,66 +331,7 @@
             </div>
         </div>
     </div>
-    <div id="stats-lab-view" class="view-section hidden">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h3 class="fw-bold text-university mb-0"><i class="bi bi-graph-up"></i> Thống kê tình trạng cơ sở vật chất</h3>
-            <button class="btn btn-success fw-bold" onclick="exportData('feedbacks')">
-                <i class="bi bi-file-earmark-excel"></i> Xuất Excel Toàn bộ Hộp thư góp ý
-            </button>
-        </div>
-        <div class="row g-4">
-            <div class="col-md-4">
-                <div class="card shadow-sm border-0 p-3">
-                    <h6 class="fw-bold text-muted">Tỉ lệ phản hồi theo phòng</h6>
-                    <canvas id="chartLabFeedback"></canvas>
-                </div>
-            </div>
-            <div class="col-md-8">
-                <div class="card shadow-sm border-0 p-3 h-100">
-                    <h6 class="fw-bold text-muted">Danh sách vấn đề tồn đọng (Chưa xử lý)</h6>
-                    <div class="table-responsive">
-                        <table class="table table-sm align-middle mt-2 text-center">
-                            <thead>
-                                <tr class="table-light">
-                                    <th>Phòng</th>
-                                    <th class="text-start">Vấn đề</th>
-                                    <th>Thời gian</th>
-                                    <th>Trạng thái</th>
-                                    <th>Thao tác</th>
-                                </tr>
-                            </thead>
-                            <tbody id="stats-lab-list"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
     
-        <div class="mt-5 pt-4 border-top">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h5 class="fw-bold text-success"><i class="bi bi-archive-fill"></i> Nhật ký xử lý phản hồi (Đã hoàn thành)</h5>
-                <button class="btn btn-sm btn-success fw-bold" onclick="exportFeedbackHistoryExcel()">
-                    <i class="bi bi-file-earmark-excel"></i> Xuất Excel Lịch sử
-                </button>
-            </div>
-            <div class="card shadow-sm border-0">
-                <div class="card-body p-0">
-                    <table class="table table-sm align-middle text-center mb-0">
-                        <thead class="table-light">
-                            <tr class="small">
-                                <th>Phòng</th>
-                                <th class="text-start">Nội dung</th>
-                                <th>Người báo</th>
-                                <th>Ngày xong</th>
-                                <th>Trạng thái</th>
-                            </tr>
-                        </thead>
-                        <tbody id="feedback-history-list" class="small"></tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
     <div id="faq-view" class="view-section hidden">
         <h3 class="fw-bold mb-4 text-university text-center"><i class="bi bi-patch-question-fill text-primary"></i> Câu hỏi thường gặp (FAQ)</h3>
         <p class="text-center text-muted mb-5">Tổng hợp các giải đáp nhanh cho những vấn đề phổ biến nhất khi sử dụng hệ thống.</p>
@@ -1039,27 +979,22 @@
             </div>
         </div>
     </div>
-    <div id="stats-usage-view" class="view-section hidden">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h3 class="fw-bold text-university m-0"><i class="bi bi-pie-chart-fill"></i> Phân tích Hiệu suất Sử dụng PTN</h3>
-            <div class="d-flex gap-2">
-                <select id="filter-usage-month" class="form-select form-select-sm border-primary" onchange="loadUsageStats()">
+    <div id="report-center-view" class="view-section hidden">
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+            <h3 class="fw-bold text-university m-0"><i class="bi bi-bar-chart-fill"></i> Trung tâm Báo cáo & Thống kê</h3>
+            <div class="d-flex flex-wrap gap-2">
+                <select id="filter-report-month" class="form-select border-primary" style="width: 160px;" onchange="loadReportCenter()">
                     <option value="all">Tất cả các tháng</option>
-                    <option value="01">Tháng 1</option>
-                    <option value="02">Tháng 2</option>
-                    <option value="03">Tháng 3</option>
-                    <option value="04">Tháng 4</option>
-                    <option value="05">Tháng 5</option>
-                    <option value="06">Tháng 6</option>
-                    <option value="07">Tháng 7</option>
-                    <option value="08">Tháng 8</option>
-                    <option value="09">Tháng 9</option>
-                    <option value="10">Tháng 10</option>
-                    <option value="11">Tháng 11</option>
-                    <option value="12">Tháng 12</option>
+                    <option value="01">Tháng 1</option><option value="02">Tháng 2</option><option value="03">Tháng 3</option>
+                    <option value="04">Tháng 4</option><option value="05">Tháng 5</option><option value="06">Tháng 6</option>
+                    <option value="07">Tháng 7</option><option value="08">Tháng 8</option><option value="09">Tháng 9</option>
+                    <option value="10">Tháng 10</option><option value="11">Tháng 11</option><option value="12">Tháng 12</option>
                 </select>
-                <button class="btn btn-sm btn-success fw-bold" onclick="exportData('bookings')">
-                    <i class="bi bi-file-earmark-excel"></i> Xuất Excel
+                <button class="btn btn-success fw-bold" onclick="exportData('bookings')">
+                    <i class="bi bi-file-earmark-excel"></i> Xuất Excel Lượt dùng
+                </button>
+                <button class="btn btn-warning fw-bold text-dark" onclick="exportData('feedbacks')">
+                    <i class="bi bi-file-earmark-excel"></i> Xuất Excel Phản hồi
                 </button>
             </div>
         </div>
@@ -1069,7 +1004,7 @@
                 <div class="card shadow-sm border-0 border-start border-4 border-primary h-100">
                     <div class="card-body">
                         <div class="text-muted small fw-bold text-uppercase mb-1">Tổng lượt dùng</div>
-                        <h3 class="fw-bold text-primary mb-0" id="usage-kpi-total">0 <small class="fs-6 text-muted">lượt</small></h3>
+                        <h3 class="fw-bold text-primary mb-0" id="report-kpi-total">0</h3>
                     </div>
                 </div>
             </div>
@@ -1077,16 +1012,16 @@
                 <div class="card shadow-sm border-0 border-start border-4 border-success h-100">
                     <div class="card-body">
                         <div class="text-muted small fw-bold text-uppercase mb-1">Tổng giờ hoạt động</div>
-                        <h3 class="fw-bold text-success mb-0" id="usage-kpi-hours">0 <small class="fs-6 text-muted">giờ</small></h3>
+                        <h3 class="fw-bold text-success mb-0" id="report-kpi-hours">0</h3>
                     </div>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="card shadow-sm border-0 border-start border-4 border-info h-100">
                     <div class="card-body">
-                        <div class="text-muted small fw-bold text-uppercase mb-1">Thành viên tích cực nhất</div>
-                        <h6 class="fw-bold text-info mb-0 text-truncate" id="usage-kpi-top-user">--</h6>
-                        <small class="text-muted" id="usage-kpi-top-user-val">0 lượt đăng ký</small>
+                        <div class="text-muted small fw-bold text-uppercase mb-1">SV tích cực nhất</div>
+                        <h6 class="fw-bold text-info mb-0 text-truncate" id="report-kpi-top-user">--</h6>
+                        <small class="text-muted" id="report-kpi-top-user-val">0 lượt đăng ký</small>
                     </div>
                 </div>
             </div>
@@ -1094,23 +1029,62 @@
                 <div class="card shadow-sm border-0 bg-warning-subtle h-100">
                     <div class="card-body">
                         <div class="text-warning-emphasis small fw-bold text-uppercase mb-1"><i class="bi bi-lightbulb-fill"></i> Insight Vận hành</div>
-                        <div class="small fw-bold text-dark" id="usage-kpi-insight">Đang phân tích...</div>
+                        <div class="small fw-bold text-dark" id="report-kpi-insight">Đang phân tích...</div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="row g-4">
-            <div class="col-md-8">
+        <div class="row g-4 mb-4">
+            <div class="col-md-4">
                 <div class="card shadow-sm border-0 p-3 h-100">
-                    <h6 class="fw-bold text-muted mb-3">Tần suất sử dụng các loại máy (Lượt)</h6>
-                    <canvas id="chartMachineUsage" style="max-height: 280px;"></canvas>
+                    <h6 class="fw-bold text-muted mb-3"><i class="bi bi-bar-chart-steps"></i> Tần suất sử dụng máy (Lượt)</h6>
+                    <canvas id="chartMachineUsage" style="max-height: 250px;"></canvas>
                 </div>
             </div>
             <div class="col-md-4">
                 <div class="card shadow-sm border-0 p-3 h-100">
-                    <h6 class="fw-bold text-muted mb-3">Phân bổ Mục đích sử dụng</h6>
-                    <canvas id="chartPurpose" style="max-height: 280px;"></canvas>
+                    <h6 class="fw-bold text-muted mb-3"><i class="bi bi-pie-chart-fill"></i> Tỉ lệ phản hồi theo phòng</h6>
+                    <canvas id="chartLabFeedback" style="max-height: 250px;"></canvas>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card shadow-sm border-0 p-3 h-100">
+                    <h6 class="fw-bold text-muted mb-3"><i class="bi bi-bullseye"></i> Phân bổ Mục đích sử dụng</h6>
+                    <canvas id="chartPurpose" style="max-height: 250px;"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-md-6">
+                <div class="card shadow-sm border-0 h-100 border-top border-4 border-warning">
+                    <div class="card-header bg-white fw-bold text-dark py-3">
+                        <i class="bi bi-exclamation-triangle-fill text-warning"></i> Phản hồi tồn đọng (Chưa xử lý)
+                    </div>
+                    <div class="card-body p-0 table-responsive" style="max-height: 350px; overflow-y: auto;">
+                        <table class="table table-sm align-middle mt-0 text-center mb-0">
+                            <thead class="table-light" style="position: sticky; top: 0;">
+                                <tr><th>Phòng</th><th class="text-start">Vấn đề</th><th>Thời gian</th><th>Xử lý</th></tr>
+                            </thead>
+                            <tbody id="report-lab-list"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card shadow-sm border-0 h-100 border-top border-4 border-success">
+                    <div class="card-header bg-white fw-bold text-success py-3">
+                        <i class="bi bi-check-circle-fill"></i> Lịch sử xử lý phản hồi
+                    </div>
+                    <div class="card-body p-0 table-responsive" style="max-height: 350px; overflow-y: auto;">
+                        <table class="table table-sm align-middle text-center mb-0">
+                            <thead class="table-light" style="position: sticky; top: 0;">
+                                <tr><th class="text-start ps-3">Phòng</th><th class="text-start">Nội dung đã sửa</th><th>Ngày xong</th></tr>
+                            </thead>
+                            <tbody id="report-history-list" class="small"></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -3154,139 +3128,43 @@ function startRealtimeTracking() {
     // 1. BIẾN LƯU TRỮ BIỂU ĐỒ (Để tránh bị lỗi khi vẽ đè lên nhau)
     let labChartObj = null, usageChartObj = null, purposeChartObj = null;
 
-    // 2. HÀM THỐNG KÊ TÌNH TRẠNG PTN
-    // 1. Tải danh sách phản hồi chưa xử lý và Lịch sử đã xử lý
-    async function loadLabStats() {
-        showView('stats-lab-view');
-        
-        // Lấy các phản hồi chưa xử lý (status = 'pending')
-        const { data, error } = await _supabase.from('feedbacks').select('*').eq('status', 'pending');
+    // ==========================================
+    // TRUNG TÂM BÁO CÁO (GỘP THỐNG KÊ PTN & LƯỢT SỬ DỤNG)
+    // ==========================================
+    async function loadReportCenter() {
+        showView('report-center-view');
+        // Chạy song song 2 luồng tải dữ liệu để Web load cực nhanh
+        fetchUsageDataForReport();
+        fetchLabDataForReport();
+    }
+
+    async function fetchUsageDataForReport() {
+        const monthFilter = document.getElementById('filter-report-month').value;
+        const { data, error } = await _supabase.from('bookings').select('*').eq('status', 'approved');
         if (error || !data) return;
 
-        // Vẽ biểu đồ tròn (Giữ nguyên logic cũ của sếp)
-        const stats = {};
-        data.forEach(f => { stats[f.room_code] = (stats[f.room_code] || 0) + 1; });
-        if(labChartObj) labChartObj.destroy();
-        labChartObj = new Chart(document.getElementById('chartLabFeedback'), {
-            type: 'pie',
-            data: {
-                labels: Object.keys(stats),
-                datasets: [{ data: Object.values(stats), backgroundColor: ['#003366', '#cc0000', '#ffc107', '#198754'] }]
-            }
-        });
-
-        // Đổ vào bảng Tồn đọng kèm nút Tick
-        document.getElementById('stats-lab-list').innerHTML = data.map(f => `
-            <tr>
-                <td><b>${f.room_code}</b></td>
-                <td class="text-start"><small>${f.content}</small></td>
-                <td><small>${new Date(f.created_at).toLocaleDateString('vi-VN')}</small></td>
-                <td><span class="badge bg-warning">pending</span></td>
-                <td>
-                    <button class="btn btn-sm btn-outline-success" onclick="resolveFeedback('${f.id}')" title="Đánh dấu đã xử lý">
-                        <i class="bi bi-check-lg"></i>
-                    </button>
-                </td>
-            </tr>
-        `).join('') || '<tr><td colspan="5" class="p-3 text-muted">Không có vấn đề tồn đọng.</td></tr>';
-
-        // Gọi thêm hàm tải lịch sử bên dưới
-        loadFeedbackHistory();
-    }
-
-    // 2. Hàm xử lý: Di chuyển phản hồi sang bảng History
-    async function resolveFeedback(feedbackId) {
-        Swal.fire({ title: 'Đang lưu trữ...', didOpen: () => Swal.showLoading() });
-
-        // Lấy thông tin phản hồi hiện tại
-        const { data: item } = await _supabase.from('feedbacks').select('*').eq('id', feedbackId).single();
-
-        if (item) {
-            // Lưu vào bảng feedback_history
-            await _supabase.from('feedback_history').insert([{
-                room_code: item.room_code,
-                content: item.content,
-                user_name: item.user_name,
-                type: item.type,
-                reported_at: item.created_at,
-                status: 'Đã hoàn tất'
-            }]);
-
-            // Cập nhật trạng thái trong bảng gốc để nó biến mất khỏi bảng "Tồn đọng"
-            await _supabase.from('feedbacks').update({ status: 'resolved' }).eq('id', feedbackId);
-        }
-
-        Swal.fire('Thành công', 'Đã xử lý và lưu vào lịch sử!', 'success');
-        loadLabStats(); // Tải lại cả 2 bảng
-    }
-
-    // 3. Hàm tải bảng Lịch sử Phản hồi
-    async function loadFeedbackHistory() {
-        const { data, error } = await _supabase.from('feedback_history').select('*').order('resolved_at', { ascending: false });
-        if (error || !data) return;
-
-        document.getElementById('feedback-history-list').innerHTML = data.map(h => `
-            <tr>
-                <td><b>${h.room_code}</b></td>
-                <td class="text-start"><small>${h.content}</small></td>
-                <td>${h.user_name || '...'}</td>
-                <td>${new Date(h.resolved_at).toLocaleDateString('vi-VN')}</td>
-                <td><span class="badge bg-success-subtle text-success border border-success">DONE</span></td>
-            </tr>
-        `).join('') || '<tr><td colspan="5" class="p-3 text-muted">Chưa có lịch sử xử lý.</td></tr>';
-    }
-
-    // 4. Hàm Xuất Excel cho riêng phần Phản hồi này
-    function exportFeedbackHistoryExcel() {
-        const tbody = document.getElementById('feedback-history-list');
-        if (tbody.rows.length === 0 || tbody.rows[0].cells.length < 5) {
-            return Swal.fire('Thông báo', 'Không có dữ liệu lịch sử để xuất!', 'info');
-        }
-
-        const wb = XLSX.utils.table_to_book(document.getElementById('stats-lab-view').querySelector('table:last-of-type'));
-        XLSX.writeFile(wb, `Lich_Su_Phan_Hoi_CSVC_${new Date().getFullYear()}.xlsx`);
-    }
-
-    // 3. HÀM THỐNG KÊ LƯỢT SỬ DỤNG
-    async function loadUsageStats() {
-        showView('stats-usage-view');
-        
-        const monthFilter = document.getElementById('filter-usage-month').value;
-        let query = _supabase.from('bookings').select('*').eq('status', 'approved');
-        
-        const { data, error } = await query;
-        if (error || !data) return;
-
-        // --- ĐÃ THÊM: CHỈ LẤY NHỮNG CA ĐÃ KẾT THÚC (QUÁ KHỨ) ---
-        // --- CHUẨN HÓA THỜI GIAN THEO MÚI GIỜ VIỆT NAM (Tránh lệch ngày UTC) ---
         const now = new Date();
-        const year = now.getFullYear();
-        const month = String(now.getMonth() + 1).padStart(2, '0');
-        const day = String(now.getDate()).padStart(2, '0');
-        const todayStr = `${year}-${month}-${day}`; 
+        const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
         const currentMins = now.getHours() * 60 + now.getMinutes();
 
+        // Lọc bỏ tương lai
         let pastData = data.filter(b => {
-            const dbDate = b.booking_date.split('T')[0]; // Đề phòng chuỗi ngày bị dính chữ T
-
-            if (dbDate < todayStr) return true; // Các ngày trong quá khứ
+            const dbDate = b.booking_date.split('T')[0];
+            if (dbDate < todayStr) return true;
             if (dbDate === todayStr) {
-                // Nếu là hôm nay, phải qua giờ kết thúc
                 if (!b.end_time) return true; 
                 const endMins = parseInt(b.end_time.split(':')[0]) * 60 + parseInt(b.end_time.split(':')[1]);
                 return endMins <= currentMins; 
             }
-            return false; // Tương lai -> Bỏ qua
+            return false;
         });
-        // -------------------------------------------------------------
 
-        // Lọc theo tháng (Sử dụng mảng pastData đã lọc ở trên)
+        // Lọc theo tháng
         let filteredData = pastData;
         if (monthFilter !== 'all') {
             filteredData = pastData.filter(b => b.booking_date.split('-')[1] === monthFilter);
         }
 
-        // --- BỘ ĐẾM (COUNTERS) ---
         const machineStats = {};
         const purposeStats = { "Thực hành": 0, "Nghiên cứu": 0, "Giảng dạy": 0 };
         const userStats = {};
@@ -3295,7 +3173,6 @@ function startRealtimeTracking() {
         let totalHours = 0;
 
         filteredData.forEach(b => {
-            // Xử lý Tên máy & Phòng
             const exactMachine = b.machine_name.substring(b.machine_name.indexOf(' - ') + 3) || b.machine_name;
             const roomCode = b.machine_name.split(' - ')[0];
 
@@ -3304,40 +3181,34 @@ function startRealtimeTracking() {
             userStats[b.full_name] = (userStats[b.full_name] || 0) + 1;
             roomStats[roomCode] = (roomStats[roomCode] || 0) + 1;
 
-            // Xử lý Giờ hoạt động
             const startMins = parseInt(b.start_time.split(':')[0]) * 60 + parseInt(b.start_time.split(':')[1]);
             const endMins = parseInt(b.end_time.split(':')[0]) * 60 + parseInt(b.end_time.split(':')[1]);
             totalHours += (endMins - startMins) / 60;
 
-            // Xử lý Khung giờ cao điểm (Lấy giờ bắt đầu)
             const startHour = b.start_time.split(':')[0] + ":00";
             hourStats[startHour] = (hourStats[startHour] || 0) + 1;
         });
 
-        // --- TÌM CÁC CHỈ SỐ TOP 1 ---
         const getTop = (obj) => Object.entries(obj).sort((a,b) => b[1] - a[1])[0] || ["--", 0];
         
         const [topUser, topUserCount] = getTop(userStats);
         const [peakHour, peakHourCount] = getTop(hourStats);
         const [hotRoom, hotRoomCount] = getTop(roomStats);
 
-        // Đổ dữ liệu lên KPI Cards
-        document.getElementById('usage-kpi-total').innerHTML = `${filteredData.length} <small class="fs-6 text-muted">lượt</small>`;
-        document.getElementById('usage-kpi-hours').innerHTML = `${totalHours.toFixed(1)} <small class="fs-6 text-muted">giờ</small>`;
-        document.getElementById('usage-kpi-top-user').innerText = topUser;
-        document.getElementById('usage-kpi-top-user-val').innerText = `${topUserCount} lượt đăng ký`;
+        document.getElementById('report-kpi-total').innerHTML = `${filteredData.length} <small class="fs-6 text-muted">lượt</small>`;
+        document.getElementById('report-kpi-hours').innerHTML = `${totalHours.toFixed(1)} <small class="fs-6 text-muted">giờ</small>`;
+        document.getElementById('report-kpi-top-user').innerText = topUser;
+        document.getElementById('report-kpi-top-user-val').innerText = `${topUserCount} lượt`;
 
-        // Insight ngẫu nhiên (Giữa Giờ cao điểm và Phòng Hot)
         const isShowPeak = Math.random() > 0.5;
         if (isShowPeak && peakHour !== "--") {
-            document.getElementById('usage-kpi-insight').innerHTML = `Khung giờ <b>${peakHour}</b> đang quá tải (${peakHourCount} lượt). Cần phân luồng sinh viên.`;
+            document.getElementById('report-kpi-insight').innerHTML = `Khung giờ <b>${peakHour}</b> đang quá tải (${peakHourCount} lượt). Cần phân luồng sinh viên.`;
         } else if (hotRoom !== "--") {
-            document.getElementById('usage-kpi-insight').innerHTML = `Phòng <b>${hotRoom}</b> hoạt động tối đa công suất (${hotRoomCount} lượt). Cần kiểm tra vật tư.`;
+            document.getElementById('report-kpi-insight').innerHTML = `Phòng <b>${hotRoom}</b> hoạt động tối đa công suất (${hotRoomCount} lượt). Cần kiểm tra vật tư.`;
         } else {
-            document.getElementById('usage-kpi-insight').innerHTML = "Chưa đủ dữ liệu phân tích.";
+            document.getElementById('report-kpi-insight').innerHTML = "Chưa đủ dữ liệu phân tích.";
         }
 
-        // --- VẼ BIỂU ĐỒ ---
         if(usageChartObj) usageChartObj.destroy();
         usageChartObj = new Chart(document.getElementById('chartMachineUsage'), {
             type: 'bar',
@@ -3355,9 +3226,72 @@ function startRealtimeTracking() {
                 labels: Object.keys(purposeStats),
                 datasets: [{ data: Object.values(purposeStats), backgroundColor: ['#0d6efd', '#fd7e14', '#6f42c1'] }]
             },
-            options: { cutout: '65%' } // Tạo hình Donut đẹp hơn
+            options: { cutout: '65%' }
         });
     }
+
+    async function fetchLabDataForReport() {
+        const { data, error } = await _supabase.from('feedbacks').select('*').eq('status', 'pending');
+        if (error || !data) return;
+
+        const stats = {};
+        data.forEach(f => { stats[f.room_code] = (stats[f.room_code] || 0) + 1; });
+        
+        if(labChartObj) labChartObj.destroy();
+        labChartObj = new Chart(document.getElementById('chartLabFeedback'), {
+            type: 'pie',
+            data: {
+                labels: Object.keys(stats),
+                datasets: [{ data: Object.values(stats), backgroundColor: ['#dc3545', '#ffc107', '#198754', '#0dcaf0', '#6c757d'] }]
+            }
+        });
+
+        document.getElementById('report-lab-list').innerHTML = data.map(f => `
+            <tr>
+                <td class="fw-bold">${f.room_code}</td>
+                <td class="text-start"><small>${f.content}</small></td>
+                <td><small>${new Date(f.created_at).toLocaleDateString('vi-VN')}</small></td>
+                <td>
+                    <button class="btn btn-sm btn-outline-success fw-bold" onclick="resolveFeedback('${f.id}')" title="Đã xử lý xong">
+                        <i class="bi bi-check-lg"></i> Xong
+                    </button>
+                </td>
+            </tr>
+        `).join('') || '<tr><td colspan="4" class="p-3 text-muted">Không có vấn đề tồn đọng.</td></tr>';
+
+        // Tải lịch sử phản hồi
+        const { data: historyData } = await _supabase.from('feedback_history').select('*').order('resolved_at', { ascending: false });
+        if (historyData) {
+            document.getElementById('report-history-list').innerHTML = historyData.map(h => `
+                <tr>
+                    <td class="fw-bold text-start ps-3">${h.room_code}</td>
+                    <td class="text-start"><small>${h.content}</small></td>
+                    <td><small>${new Date(h.resolved_at).toLocaleDateString('vi-VN')}</small></td>
+                </tr>
+            `).join('') || '<tr><td colspan="3" class="p-3 text-muted">Chưa có lịch sử.</td></tr>';
+        }
+    }
+
+    async function resolveFeedback(feedbackId) {
+        Swal.fire({ title: 'Đang lưu trữ...', didOpen: () => Swal.showLoading() });
+
+        const { data: item } = await _supabase.from('feedbacks').select('*').eq('id', feedbackId).single();
+        if (item) {
+            await _supabase.from('feedback_history').insert([{
+                room_code: item.room_code,
+                content: item.content,
+                user_name: item.user_name,
+                type: item.type,
+                reported_at: item.created_at,
+                status: 'Đã hoàn tất'
+            }]);
+            await _supabase.from('feedbacks').update({ status: 'resolved' }).eq('id', feedbackId);
+        }
+
+        Swal.fire('Thành công', 'Đã xử lý và lưu vào lịch sử!', 'success');
+        fetchLabDataForReport(); // Cập nhật lại 2 bảng Lab ngay lập tức
+    }
+    
     // HÀM XUẤT EXCEL TỔNG QUÁT
     // HÀM XUẤT EXCEL TỔNG QUÁT (Bản Full - Hỗ trợ mọi bảng)
     async function exportData(type) {
@@ -3371,7 +3305,7 @@ function startRealtimeTracking() {
         // 1. XUẤT LỊCH SỬ ĐĂNG KÝ
         if (type === 'bookings') {
             const { data: res } = await _supabase.from('bookings').select('*').eq('status', 'approved').order('booking_date', {ascending: false});
-            const monthFilter = document.getElementById('filter-usage-month').value;
+            const monthFilter = document.getElementById('filter-report-month').value;
             const currentMins = now.getHours() * 60 + now.getMinutes();
             const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
 
