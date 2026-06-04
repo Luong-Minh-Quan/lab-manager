@@ -6330,7 +6330,7 @@ function openAddMaintenanceLog() {
 async function saveMaintenanceLog() {
     const machineName = document.getElementById('log-machine-name').value;
     const date = document.getElementById('log-date').value;
-    const type = document.getElementById('log-type').value;
+    const type = document.getElementById('log-type').value; // Lấy loại: "Bảo trì định kỳ" hoặc "Sửa chữa đột xuất"
     const vendor = document.getElementById('log-vendor').value || 'Đội kỹ thuật nhà trường';
     const parts = document.getElementById('log-parts').value;
 
@@ -6338,13 +6338,13 @@ async function saveMaintenanceLog() {
 
     Swal.fire({ title: 'Đang ghi sổ...', didOpen: () => Swal.showLoading() });
 
-    // 1. Thêm 1 dòng vào Lịch sử Timeline
+    // 1. LUÔN THÊM VÀO TIMELINE: Dù là bảo trì hay sửa đột xuất đều phải ghi vết
     const { error: err1 } = await _supabase.from('maintenance_history').insert([{
         machine_name: machineName,
         maintenance_type: type,
         vendor_name: vendor,
         replaced_parts: parts,
-        condition_note: 'Bảo trì thiết bị theo kế hoạch',
+        condition_note: type === 'Bảo trì định kỳ' ? 'Bảo trì thiết bị theo kế hoạch' : 'Sửa chữa/Thay thế phát sinh',
         reported_at: date, 
         resolved_at: date,
         full_name: currentUserProfile ? currentUserProfile.full_name : 'Quản lý PTN',
@@ -6353,8 +6353,10 @@ async function saveMaintenanceLog() {
 
     if(err1) return Swal.fire('Lỗi', err1.message, 'error');
 
-    // 2. KẾT NỐI VỚI TAB 1: Cập nhật ngày last_maintenance để Thanh Tiến Độ làm mới!
-    await _supabase.from('machines').update({ last_maintenance: date }).eq('machine_name', machineName);
+    // 2. CHẶN LOGIC: Chì khi nào là "Bảo trì định kỳ" thì mới reset lại chu kỳ của máy
+    if (type === 'Bảo trì định kỳ') {
+        await _supabase.from('machines').update({ last_maintenance: date }).eq('machine_name', machineName);
+    }
 
     Swal.fire('Thành công', 'Đã thêm mốc lịch sử mới vào Timeline!', 'success');
     addMaintLogModalInstance.hide();
