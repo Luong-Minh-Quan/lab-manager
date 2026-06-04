@@ -217,7 +217,6 @@
                     <ul class="dropdown-menu">
                         <li><a class="dropdown-item" href="#" onclick="showView('dm-ptn-view')"><i class="bi bi-building"></i> Danh mục phòng thí nghiệm</a></li>
                         <li><a class="dropdown-item" href="#" onclick="showView('managers-view')"><i class="bi bi-person-badge"></i> Danh mục cán bộ quản lý</a></li>
-                        <li><a class="dropdown-item" href="#" onclick="showView('departments-view')"><i class="bi bi-diagram-3"></i> Danh mục khoa / bộ môn</a></li>
                         <li><a class="dropdown-item" href="#" onclick="loadMaintenanceSchedule()"><i class="bi bi-calendar-check"></i> Danh mục lịch bảo trì</a></li>
                         <li class="nav-item role-level-2 hidden">
                             <a class="dropdown-item" href="#" onclick="loadConsumablesView()">
@@ -233,8 +232,7 @@
                         <li><a class="dropdown-item" href="#" onclick="showView('dm-ptn-view')">Đăng ký phòng/máy</a></li>
                         <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item" href="#" onclick="showAvailableSchedule()">Lịch trống</a></li>
-                        <li><a class="dropdown-item" href="#" onclick="loadHistoryView('upcoming')">Lịch đã đăng ký</a></li>
-                        <li><a class="dropdown-item" href="#" onclick="loadHistoryView('history')">Lịch sử sử dụng</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="loadHistoryView()">Quản lý lịch đặt của tôi</a></li>
                     </ul>
                 </li>
                 <li class="nav-item role-only-manager hidden">
@@ -262,9 +260,7 @@
                 </li>
 
                 <li class="nav-item role-only-student hidden">
-                    <a class="nav-link" href="#" onclick="openUnifiedFeedbackModal()">
-                        <i class="bi bi-chat-square-text"></i> Gửi Phản hồi
-                    </a>
+                    <a class="nav-link" href="#" onclick="openUnifiedFeedbackModal()"></i> Gửi Phản hồi</a>
                 </li>
 
                 <li class="nav-item dropdown role-level-2 hidden">
@@ -1208,118 +1204,7 @@
         </div>
     </div>
 
-    <div id="departments-view" class="view-section hidden">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h3 class="fw-bold text-university m-0"><i class="bi bi-diagram-3-fill"></i> Kiến trúc Hệ thống Phòng Thí Nghiệm</h3>
-            <span class="badge bg-danger px-3 py-2 fs-6 shadow-sm"><i class="bi bi-shield-check"></i> Quản lý bởi Đại học Bách khoa</span>
-        </div>
-
-        <div class="row g-4 mb-4">
-            <div class="col-md-4">
-                <div class="card shadow-sm border-0 h-100 border-top border-4 border-primary bg-light">
-                    <div class="card-header bg-transparent border-0 pt-4 pb-0 text-center">
-                        <div class="d-inline-block bg-primary text-white rounded-circle p-3 mb-3 shadow-sm">
-                            <i class="bi bi-cpu fs-3"></i>
-                        </div>
-                        <h5 class="fw-bold text-primary">Tổ Tự động hóa & Cơ điện tử</h5>
-                        <small class="text-muted">Nhóm PTN Trọng điểm Mạng lưới IoT & Robot</small>
-                    </div>
-                    <div class="card-body">
-                        <div class="system-spine">
-                            <div class="system-node">
-                                <div class="fw-bold text-dark">PTN SMC Automation</div>
-                                <span class="badge bg-primary mt-1">M201</span>
-                            </div>
-                            <div class="system-node">
-                                <div class="fw-bold text-dark">PTN Vi điều khiển & Nhúng</div>
-                                <span class="badge bg-primary mt-1">M201</span>
-                            </div>
-                            <div class="system-node">
-                                <div class="fw-bold text-dark">PTN Điều khiển tự động</div>
-                                <span class="badge bg-primary mt-1">M102</span>
-                            </div>
-                            <div class="system-node mb-0">
-                                <div class="fw-bold text-dark">PTN Kỹ thuật xung số</div>
-                                <span class="badge bg-primary mt-1">M207</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-md-4">
-                <div class="card shadow-sm border-0 h-100 border-top border-4 border-danger bg-light">
-                    <div class="card-header bg-transparent border-0 pt-4 pb-0 text-center">
-                        <div class="d-inline-block bg-danger text-white rounded-circle p-3 mb-3 shadow-sm">
-                            <i class="bi bi-gear-wide-connected fs-3"></i>
-                        </div>
-                        <h5 class="fw-bold text-danger">Tổ Gia công & Chế tạo</h5>
-                        <small class="text-muted">Nhóm PTN & Xưởng Thực hành Cốt lõi</small>
-                    </div>
-                    <div class="card-body">
-                        <div class="system-spine" style="border-left-color: #cc0000;">
-                            <div class="system-node">
-                                <div class="fw-bold text-dark">PTN CNC</div>
-                                <span class="badge bg-danger mt-1">M204, M104, M106</span>
-                            </div>
-                            <div class="system-node">
-                                <div class="fw-bold text-dark">PTN Chế tạo máy</div>
-                                <span class="badge bg-danger mt-1">M206</span>
-                            </div>
-                            <div class="system-node">
-                                <div class="fw-bold text-dark">PTN Hàn & Gia công áp lực</div>
-                                <span class="badge bg-danger mt-1">K106</span>
-                            </div>
-                            <div class="system-node">
-                                <div class="fw-bold text-dark">PTN Lắp ráp máy bay</div>
-                                <span class="badge bg-danger mt-1">K102</span>
-                            </div>
-                            <div class="system-node mb-0">
-                                <div class="fw-bold text-dark">PTN Đúc & Xưởng Cơ khí</div>
-                                <span class="badge bg-danger mt-1">Xưởng Đúc</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-md-4">
-                <div class="card shadow-sm border-0 h-100 border-top border-4 border-success bg-light">
-                    <div class="card-header bg-transparent border-0 pt-4 pb-0 text-center">
-                        <div class="d-inline-block bg-success text-white rounded-circle p-3 mb-3 shadow-sm">
-                            <i class="bi bi-speedometer2 fs-3"></i>
-                        </div>
-                        <h5 class="fw-bold text-success">Tổ Đo lường & Mô phỏng</h5>
-                        <small class="text-muted">Nhóm PTN Phân tích Dữ liệu & Vật liệu</small>
-                    </div>
-                    <div class="card-body">
-                        <div class="system-spine" style="border-left-color: #198754;">
-                            <div class="system-node">
-                                <div class="fw-bold text-dark">PTN Đo lường & Xử lý số liệu</div>
-                                <span class="badge bg-success mt-1">M101</span>
-                            </div>
-                            <div class="system-node">
-                                <div class="fw-bold text-dark">PTN Kim loại học</div>
-                                <span class="badge bg-success mt-1">Tầng 2 Xưởng Đúc</span>
-                            </div>
-                            <div class="system-node mb-0">
-                                <div class="fw-bold text-dark">PTN Mô phỏng và Lập trình</div>
-                                <span class="badge bg-success mt-1">M202</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="alert alert-secondary border-0 shadow-sm d-flex align-items-center">
-            <i class="bi bi-info-circle-fill text-university fs-4 me-3"></i>
-            <div>
-                <strong>Lưu ý:</strong> Cấu trúc trên được phân nhóm dựa theo chuyên môn kỹ thuật để thuận tiện cho việc tra cứu. Mọi hoạt động quản lý nhân sự, cấp phát vật tư và xét duyệt lịch đều quy về <b>Ban Chủ nhiệm Khoa</b>.
-            </div>
-        </div>
-    </div>
-
+    
     <div id="user-guide-view" class="view-section hidden">
         <h3 class="fw-bold mb-4 text-university"><i class="bi bi-book-half"></i> Sổ tay Hướng dẫn sử dụng Hệ thống</h3>
         
@@ -1538,84 +1423,89 @@
     </div> 
     <div id="history-view" class="view-section hidden">
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h3 class="fw-bold text-university m-0" id="history-title"><i class="bi bi-clock-history"></i> Quản lý Lịch & Xét duyệt</h3>
-            
+            <h3 class="fw-bold text-university m-0" id="history-title"><i class="bi bi-calendar-range"></i> Quản lý lịch đặt của tôi</h3>
             <div class="input-group shadow-sm" style="max-width: 350px;">
                 <span class="input-group-text bg-white border-primary text-primary"><i class="bi bi-search"></i></span>
-                <input type="text" id="search-history" class="form-control border-primary" placeholder="Tìm tên SV, mã máy..." onkeyup="filterTableData('search-history', 'history-list')">
+                <input type="text" id="search-history" class="form-control border-primary" placeholder="Tìm kiếm nhanh..." onkeyup="filterTableData('search-history', 'history-list')">
             </div>
         </div>
 
-        <!-- BẢNG 1: DANH SÁCH ĐƠN CHỜ DUYỆT -->
-        <div class="card shadow-sm border-0 mb-5">
-            <div class="card-header bg-warning-subtle fw-bold text-dark py-3" id="header-table-1">
-                <i class="bi bi-hourglass-split"></i> Danh sách cần xử lý
-            </div>
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table align-middle table-hover text-center mb-0 table-custom">
-                        <thead>
-                            <tr>
-                                <th class="text-start ps-4">Người đăng ký</th>
-                                <th class="text-start">Thiết bị & Mục đích</th>
-                                <th>Thời gian (Ca)</th>
-                                <th>Trạng thái</th>
-                                <th>Hành động</th>
-                            </tr>
-                        </thead>
-                        <tbody id="history-list"></tbody>
-                    </table>
+        <div id="student-tabs-section" class="hidden">
+            <ul class="nav nav-pills mb-3" id="studentHistoryTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active fw-bold px-4" id="upcoming-tab" data-bs-toggle="pill" data-bs-target="#upcoming-pane" type="button" role="tab">
+                        <i class="bi bi-calendar-check"></i> Sắp tới & Chờ duyệt
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link fw-bold px-4" id="past-tab" data-bs-toggle="pill" data-bs-target="#past-pane" type="button" role="tab">
+                        <i class="bi bi-clock-history"></i> Lịch sử đã qua
+                    </button>
+                </li>
+            </ul>
+            <div class="tab-content" id="studentHistoryTabsContent">
+                <div class="tab-pane fade show active" id="upcoming-pane" role="tabpanel">
+                    <div class="card shadow-sm border-0 border-top border-4 border-primary">
+                        <div class="card-body p-0 table-responsive">
+                            <table class="table align-middle table-hover text-center mb-0 table-custom">
+                                <thead class="table-light">
+                                    <tr><th class="text-start ps-4">Thiết bị & Mục đích</th><th>Thời gian (Ca)</th><th>Trạng thái</th><th>Hành động</th></tr>
+                                </thead>
+                                <tbody id="student-upcoming-list"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="tab-pane fade" id="past-pane" role="tabpanel">
+                    <div class="card shadow-sm border-0 border-top border-4 border-secondary">
+                        <div class="card-body p-0 table-responsive">
+                            <table class="table align-middle table-hover text-center mb-0 table-custom">
+                                <thead class="table-light">
+                                    <tr><th class="text-start ps-4">Thiết bị & Mục đích</th><th>Thời gian (Ca)</th><th>Trạng thái</th><th>Hành động</th></tr>
+                                </thead>
+                                <tbody id="student-past-list"></tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- BẢNG 2: DANH SÁCH LỊCH ĐÃ DUYỆT (CHỈ HIỆN CHO QUẢN LÝ/ADMIN) -->
+        <div class="card shadow-sm border-0 mb-5 hidden" id="manager-pending-section">
+            <div class="card-header bg-warning-subtle fw-bold text-dark py-3" id="header-table-1">
+                <i class="bi bi-hourglass-split"></i> Danh sách đơn chờ duyệt
+            </div>
+            <div class="card-body p-0 table-responsive">
+                <table class="table align-middle table-hover text-center mb-0 table-custom">
+                    <thead class="table-light">
+                        <tr><th class="text-start ps-4">Người đăng ký</th><th class="text-start">Thiết bị & Mục đích</th><th>Thời gian (Ca)</th><th>Trạng thái</th><th>Hành động</th></tr>
+                    </thead>
+                    <tbody id="history-list"></tbody> </table>
+            </div>
+        </div>
+
         <div id="manager-approved-section" class="hidden border-top pt-4">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h4 class="fw-bold text-success m-0"><i class="bi bi-calendar-check-fill"></i> Lịch sử dụng sắp tới (Đã duyệt)</h4>
                 <div class="d-flex gap-2">
                     <select id="filter-approved-month" class="form-select form-select-sm border-success" onchange="loadHistoryView()">
                         <option value="all">Tất cả các tháng</option>
-                    <option value="01">Tháng 1</option>
-                    <option value="02">Tháng 2</option>
-                    <option value="03">Tháng 3</option>
-                    <option value="04">Tháng 4</option>
-                    <option value="05">Tháng 5</option>
-                    <option value="06">Tháng 6</option>
-                    <option value="07">Tháng 7</option>
-                    <option value="08">Tháng 8</option>
-                    <option value="09">Tháng 9</option>
-                    <option value="10">Tháng 10</option>
-                    <option value="11">Tháng 11</option>
-                    <option value="12">Tháng 12</option>
+                        <option value="01">Tháng 1</option><option value="02">Tháng 2</option><option value="03">Tháng 3</option>
+                        <option value="04">Tháng 4</option><option value="05">Tháng 5</option><option value="06">Tháng 6</option>
+                        <option value="07">Tháng 7</option><option value="08">Tháng 8</option><option value="09">Tháng 9</option>
+                        <option value="10">Tháng 10</option><option value="11">Tháng 11</option><option value="12">Tháng 12</option>
                     </select>
-                    <button class="btn btn-sm btn-success fw-bold" onclick="exportApprovedUpcoming()">
-                        <i class="bi bi-file-earmark-excel"></i> Xuất Excel
-                    </button>
+                    <button class="btn btn-sm btn-success fw-bold" onclick="exportApprovedUpcoming()"><i class="bi bi-file-earmark-excel"></i> Xuất Excel</button>
                 </div>
             </div>
-
-            <div class="input-group shadow-sm mb-3" style="max-width: 350px;">
-                <span class="input-group-text bg-white border-success text-success"><i class="bi bi-search"></i></span>
-                <input type="text" id="search-approved" class="form-control border-success" placeholder="Tìm nhanh trong lịch đã duyệt..." onkeyup="filterTableData('search-approved', 'approved-upcoming-list')">
-            </div>
-
             <div class="card shadow-sm border-0 border-top border-4 border-success">
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table align-middle table-hover text-center mb-0 table-custom">
-                            <thead class="table-light">
-                                <tr>
-                                    <th class="text-start ps-4">Người đăng ký</th>
-                                    <th class="text-start">Thiết bị & Mục đích</th>
-                                    <th>Thời gian (Ca)</th>
-                                    <th>Người duyệt đơn</th>
-                                    <th>Trạng thái</th>
-                                </tr>
-                            </thead>
-                            <tbody id="approved-upcoming-list"></tbody>
-                        </table>
-                    </div>
+                <div class="card-body p-0 table-responsive">
+                    <table class="table align-middle table-hover text-center mb-0 table-custom">
+                        <thead class="table-light">
+                            <tr><th class="text-start ps-4">Người đăng ký</th><th class="text-start">Thiết bị & Mục đích</th><th>Thời gian (Ca)</th><th>Người duyệt đơn</th><th>Trạng thái</th></tr>
+                        </thead>
+                        <tbody id="approved-upcoming-list"></tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -2125,9 +2015,9 @@
                 <div class="mb-3">
                     <label class="form-label fw-bold small text-muted">Loại vấn đề <span class="text-danger">*</span></label>
                     <select id="uf-type" class="form-select border-primary fw-bold text-primary" onchange="toggleUnifiedFeedbackFields()">
-                        <option value="lab_condition">🔧 Báo cáo sự cố Cơ sở vật chất PTN</option>
-                        <option value="violation">⚠️ Báo cáo Vi phạm nội quy</option>
-                        <option value="web_bug">💻 Góp ý hệ thống & Lỗi phần mềm Web</option>
+                        <option value="lab_condition">Báo cáo sự cố Cơ sở vật chất PTN</option>
+                        <option value="violation">Báo cáo Vi phạm nội quy</option>
+                        <option value="web_bug">Góp ý hệ thống & Lỗi phần mềm Web</option>
                     </select>
                 </div>
                 
@@ -2621,110 +2511,109 @@
     }
 
     // 5. TẢI LỊCH SỬ VÀ XÉT DUYỆT ĐƠN
-    // 5. TẢI LỊCH SỬ VÀ XÉT DUYỆT ĐƠN (ĐÃ NÂNG CẤP KIẾN TRÚC 2 BẢNG CHO QUẢN LÝ)
-    async function loadHistoryView(viewType = 'upcoming') {
+    // ==============================================
+    // 5. TẢI LỊCH SỬ VÀ XÉT DUYỆT ĐƠN (TAB UI CHO SINH VIÊN)
+    // ==============================================
+    async function loadHistoryView() {
         showView('history-view'); 
 
-        const tbody = document.getElementById('history-list');
-        const tbodyApproved = document.getElementById('approved-upcoming-list');
-        const managerSection = document.getElementById('manager-approved-section');
-        const headerTable1 = document.getElementById('header-table-1');
+        const titleEl = document.getElementById('history-title');
+        const studentTabsSection = document.getElementById('student-tabs-section');
+        const managerPendingSection = document.getElementById('manager-pending-section');
+        const managerApprovedSection = document.getElementById('manager-approved-section');
 
-        // 1. Giao diện Tiêu đề
-        const titleEl = document.querySelector('#history-view h3');
-        if (titleEl) {
-            if (currentUserProfile.role !== 'student') {
-                titleEl.innerHTML = '<i class="bi bi-card-checklist"></i> Xét duyệt & Lịch sắp tới';
-                headerTable1.innerHTML = '<i class="bi bi-hourglass-split"></i> Đơn chờ xét duyệt';
-                managerSection.classList.remove('hidden'); // Mở khóa Bảng 2 cho Quản lý
-            } else {
-                titleEl.innerHTML = viewType === 'upcoming' ? '<i class="bi bi-calendar-check"></i> Lịch đã đăng ký' : '<i class="bi bi-clock-history"></i> Lịch sử sử dụng';
-                headerTable1.innerHTML = '<i class="bi bi-list-task"></i> Danh sách ca thực hành';
-                managerSection.classList.add('hidden'); // Giấu Bảng 2 đi đối với Sinh viên
-            }
-        }
+        const tbodyStudentUpcoming = document.getElementById('student-upcoming-list');
+        const tbodyStudentPast = document.getElementById('student-past-list');
+        const tbodyManagerPending = document.getElementById('history-list');
+        const tbodyManagerApproved = document.getElementById('approved-upcoming-list');
 
-        tbody.innerHTML = `<tr><td colspan="100%" class="text-center py-5"><div class="spinner-border text-primary" role="status"></div><div class="mt-2 fw-bold text-muted small">ĐANG TẢI DỮ LIỆU...</div></td></tr>`;
-        if (tbodyApproved && currentUserProfile.role !== 'student') {
-            tbodyApproved.innerHTML = `<tr><td colspan="100%" class="text-center py-5"><div class="spinner-border text-success" role="status"></div><div class="mt-2 fw-bold text-muted small">ĐANG TẢI LỊCH SẮP TỚI...</div></td></tr>`;
+        // 1. Giao diện Tiêu đề và Phân luồng
+        if (currentUserProfile.role !== 'student') {
+            titleEl.innerHTML = '<i class="bi bi-card-checklist"></i> Xét duyệt & Lịch sắp tới';
+            studentTabsSection.classList.add('hidden');
+            managerPendingSection.classList.remove('hidden');
+            managerApprovedSection.classList.remove('hidden');
+            tbodyManagerPending.innerHTML = `<tr><td colspan="5" class="text-center py-4"><div class="spinner-border text-primary"></div></td></tr>`;
+        } else {
+            titleEl.innerHTML = '<i class="bi bi-calendar-range"></i> Quản lý lịch đặt của tôi';
+            studentTabsSection.classList.remove('hidden');
+            managerPendingSection.classList.add('hidden');
+            managerApprovedSection.classList.add('hidden');
+            tbodyStudentUpcoming.innerHTML = `<tr><td colspan="4" class="text-center py-4"><div class="spinner-border text-primary"></div></td></tr>`;
+            tbodyStudentPast.innerHTML = `<tr><td colspan="4" class="text-center py-4"><div class="spinner-border text-secondary"></div></td></tr>`;
+            
+            // Xử lý thanh Search cho Sinh viên (Search cả 2 bảng)
+            document.getElementById('search-history').setAttribute('onkeyup', "filterTableData('search-history', 'student-upcoming-list'); filterTableData('search-history', 'student-past-list');");
         }
 
         // 2. Fetch Data từ Supabase
         let query = _supabase.from('bookings').select('*');
-        if (currentUserProfile.role === 'student') {
-            query = query.eq('user_id', currentUserProfile.id);
-        } else {
-            // Quản lý/Admin lấy CẢ đơn Pending và đơn Approved
-            query = query.in('status', ['pending', 'approved', 'rejected']); 
-        }
+        if (currentUserProfile.role === 'student') query = query.eq('user_id', currentUserProfile.id);
+        else query = query.in('status', ['pending', 'approved', 'rejected']); 
 
         const { data, error } = await query.order('booking_date', { ascending: true });
-        if (error || !data) return tbody.innerHTML = `<tr><td colspan="5" class="text-danger">Lỗi: ${error.message}</td></tr>`;
+        if (error || !data) return;
 
-        // 3. Chuẩn hóa thời gian thực
         const now = new Date();
         const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
         const currentMins = now.getHours() * 60 + now.getMinutes();
 
-        // 4. CHIA NHÁNH RENDER GIAO DIỆN
-        
-        // --- TRƯỜNG HỢP A: LÀ SINH VIÊN (Chỉ có 1 bảng) ---
+        // 3. ĐỔ DỮ LIỆU
+        // --- NẾU LÀ SINH VIÊN (CHIA 2 TAB) ---
         if (currentUserProfile.role === 'student') {
-            let filteredData = data.filter(b => {
+            let upcomingData = [];
+            let pastData = [];
+
+            data.forEach(b => {
                 const dbDate = b.booking_date.split('T')[0];
                 let isPast = dbDate < todayStr || (dbDate === todayStr && parseInt(b.end_time.split(':')[0]) * 60 + parseInt(b.end_time.split(':')[1]) < currentMins);
-                return viewType === 'upcoming' ? !isPast : isPast;
+                
+                if (isPast) pastData.push(b);
+                else upcomingData.push(b);
             });
 
-            if (filteredData.length === 0) return tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-muted">Hiện không có dữ liệu.</td></tr>`;
-            tbody.innerHTML = renderTableRows(filteredData, 'student', viewType);
-        } 
-        
-        // --- TRƯỜNG HỢP B: LÀ QUẢN LÝ / ADMIN (Có 2 bảng) ---
-        else {
-            // Bảng 1: Lọc Đơn đang chờ duyệt (Pending)
-            const pendingData = data.filter(b => b.status === 'pending');
-            tbody.innerHTML = pendingData.length > 0 ? renderTableRows(pendingData, 'manager', 'pending') : `<tr><td colspan="5" class="p-4 text-success fw-bold"><i class="bi bi-check-circle"></i> Đã duyệt hết tất cả các đơn đăng ký!</td></tr>`;
+            // Sắp xếp Lịch sử (mới nhất lên đầu)
+            pastData.sort((a, b) => new Date(b.booking_date) - new Date(a.booking_date));
 
-            // Bảng 2: Lọc Đơn đã duyệt VÀ thuộc về tương lai (Upcoming Approved)
+            tbodyStudentUpcoming.innerHTML = upcomingData.length > 0 ? renderTableRows(upcomingData, 'student', 'upcoming') : `<tr><td colspan="4" class="p-4 text-muted">Bạn không có lịch nào sắp diễn ra.</td></tr>`;
+            tbodyStudentPast.innerHTML = pastData.length > 0 ? renderTableRows(pastData, 'student', 'history') : `<tr><td colspan="4" class="p-4 text-muted">Bạn chưa sử dụng phòng thí nghiệm lần nào.</td></tr>`;
+        } 
+        // --- NẾU LÀ QUẢN LÝ (CHIA 2 BẢNG TRÊN DƯỚI) ---
+        else {
+            const pendingData = data.filter(b => b.status === 'pending');
+            tbodyManagerPending.innerHTML = pendingData.length > 0 ? renderTableRows(pendingData, 'manager', 'pending') : `<tr><td colspan="5" class="p-4 text-success fw-bold"><i class="bi bi-check-circle"></i> Đã duyệt hết tất cả đơn!</td></tr>`;
+
             let approvedData = data.filter(b => {
                 if (b.status !== 'approved') return false;
                 const dbDate = b.booking_date.split('T')[0];
-                if (dbDate < todayStr) return false; // Lọc bỏ quá khứ
+                if (dbDate < todayStr) return false;
                 if (dbDate === todayStr && parseInt(b.end_time.split(':')[0]) * 60 + parseInt(b.end_time.split(':')[1]) < currentMins) return false;
                 return true;
             });
 
-            // Ép thêm bộ lọc Tháng cho Bảng 2
             const monthFilter = document.getElementById('filter-approved-month').value;
-            if (monthFilter !== 'all') {
-                approvedData = approvedData.filter(b => b.booking_date.split('-')[1] === monthFilter);
-            }
+            if (monthFilter !== 'all') approvedData = approvedData.filter(b => b.booking_date.split('-')[1] === monthFilter);
 
-            tbodyApproved.innerHTML = approvedData.length > 0 ? renderTableRows(approvedData, 'manager', 'approved_upcoming') : `<tr><td colspan="5" class="p-4 text-muted">Tháng này chưa có lịch sử dụng nào sắp tới.</td></tr>`;
+            tbodyManagerApproved.innerHTML = approvedData.length > 0 ? renderTableRows(approvedData, 'manager', 'approved_upcoming') : `<tr><td colspan="5" class="p-4 text-muted">Tháng này chưa có lịch sử dụng nào sắp tới.</td></tr>`;
         }
     }
 
-    // HÀM VẼ GIAO DIỆN HÀNG TRONG BẢNG (Giúp code gọn gàng, không bị lặp lại)
+    // HÀM VẼ GIAO DIỆN HÀNG TRONG BẢNG
     function renderTableRows(dataArray, userRole, viewContext) {
         return dataArray.map(b => {
-            // Màu sắc trạng thái
             let statusColor = 'bg-danger'; let statusText = 'Từ chối';
             if (b.status === 'approved') { statusColor = 'bg-success'; statusText = 'Đã duyệt'; }
             else if (b.status === 'pending') { statusColor = 'bg-warning text-dark'; statusText = 'Chờ duyệt'; }
             else if (b.status === 'cancelled') { statusColor = 'bg-secondary'; statusText = 'Đã hủy'; }
 
-            // Ghi chú & Lý do
             const noteDisplay = b.student_note ? `<br><div class="text-muted mt-1 small" style="background:#f8f9fa; padding:4px; border-left:2px solid #0d6efd;"><b>Ghi chú:</b> ${b.student_note}</div>` : '';
             const rejectDisplay = (b.status === 'rejected' && b.condition_note) ? `<br><div class="text-danger mt-1 small" style="background:#fff5f5; padding:4px; border-left:2px solid #dc3545;"><b>Lý do:</b> ${b.condition_note}</div>` : '';
 
-            // Cột "Người duyệt đơn" (Chỉ vẽ khi ở Bảng 2 của Quản lý)
             let approvedByCol = '';
             if (viewContext === 'approved_upcoming') {
                 approvedByCol = `<td><span class="badge bg-light text-primary border"><i class="bi bi-person-check-fill"></i> ${b.approved_by || 'Hệ thống'}</span></td>`;
             }
 
-            // Nút Thao tác (Hành động)
             let actionBtn = '';
             if (userRole === 'manager' && b.status === 'pending') {
                 actionBtn = `
@@ -2733,7 +2622,12 @@
                         <button class="btn btn-sm btn-outline-danger fw-bold" onclick="rejectBooking('${b.id}')"><i class="bi bi-x-circle"></i> Từ chối</button>
                     </div>`;
             } else if (userRole === 'student') {
-                if (b.status === 'approved') actionBtn = `<button class="btn btn-sm btn-outline-success mb-1 w-100" onclick="viewMyQR('${b.id}')"><i class="bi bi-qr-code"></i> Xem QR</button>`;
+                if (b.status === 'approved' && viewContext === 'upcoming') {
+                    actionBtn = `<button class="btn btn-sm btn-outline-success mb-1 w-100 fw-bold" onclick="viewMyQR('${b.id}')"><i class="bi bi-qr-code"></i> Mã mở cửa</button>`;
+                } else if (viewContext === 'history' && b.status === 'approved') {
+                    // Ở tab lịch sử, cho phép khai báo máy hỏng
+                    actionBtn = `<button class="btn btn-sm btn-warning w-100 fw-bold" onclick="openReportModal('${b.id}', '${b.machine_name}')"><i class="bi bi-tools"></i> Khai báo lỗi máy</button>`;
+                }
                 if ((b.status === 'pending' || b.status === 'approved') && viewContext === 'upcoming') {
                     actionBtn += `<button class="btn btn-sm btn-outline-danger w-100 mt-1" onclick="cancelBooking('${b.id}')"><i class="bi bi-x-circle"></i> Hủy lịch</button>`;
                 }
@@ -2741,25 +2635,27 @@
                 actionBtn = `<span class="badge bg-success pulse"><i class="bi bi-clock-history"></i> Sắp diễn ra</span>`;
             }
 
-            // --- LẮP RÁP HÀNG ---
+            // Ẩn cột tên người đăng ký nếu người đang xem là Sinh viên
+            const nameColumn = userRole !== 'student' ? `<td class="text-start ps-4"><b>${b.full_name}</b><br><small class="text-muted">${b.email}</small></td>` : '';
+            const paddingClass = userRole === 'student' ? 'ps-4 text-start' : 'text-start';
+
             return `
                 <tr>
-                    <td class="text-start ps-4"><b>${b.full_name}</b><br><small class="text-muted">${b.email}</small></td>
-                    <td class="text-start">
-                        <b>${b.machine_name}</b><br>
+                    ${nameColumn}
+                    <td class="${paddingClass}">
+                        <b class="text-primary">${b.machine_name}</b><br>
                         <span class="badge bg-light text-dark border mb-1">${b.purpose}</span>
                         <span class="badge bg-info text-dark mb-1"><i class="bi bi-people-fill"></i> ${b.participants || 1} SV</span>
                         ${noteDisplay}${rejectDisplay}
                     </td>
-                    <td><span class="text-primary fw-bold">${b.booking_date}</span><br><small>${b.start_time.substring(0,5)} - ${b.end_time.substring(0,5)}</small></td>
+                    <td><span class="text-dark fw-bold">${new Date(b.booking_date).toLocaleDateString('vi-VN')}</span><br><small class="text-muted">${b.start_time.substring(0,5)} - ${b.end_time.substring(0,5)}</small></td>
                     ${approvedByCol}
                     ${viewContext !== 'approved_upcoming' ? `<td><span class="badge ${statusColor}">${statusText}</span></td>` : ''}
-                    <td>${actionBtn}</td>
+                    <td style="width: 140px;">${actionBtn}</td>
                 </tr>
             `;
         }).join('');
     }
-
     // HÀM XUẤT EXCEL CHO BẢNG "LỊCH ĐÃ DUYỆT SẮP TỚI"
     async function exportApprovedUpcoming() {
         Swal.fire({ title: 'Đang tạo Excel...', didOpen: () => Swal.showLoading() });
