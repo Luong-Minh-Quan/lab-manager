@@ -475,7 +475,7 @@
         </div>
 
         <div class="row g-3 mb-4">
-            <div class="col-md-3">
+            <div class="col-md-4">
                 <div class="card border-0 border-start border-4 border-success shadow-sm h-100">
                     <div class="card-body py-3">
                         <div class="text-muted small fw-bold text-uppercase mb-1">Tổng lượt nhập kỳ này</div>
@@ -483,32 +483,23 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-4">
                 <div class="card border-0 border-start border-4 border-primary shadow-sm h-100">
                     <div class="card-body py-3">
-                        <div class="text-muted small fw-bold text-uppercase mb-1">Số phòng có dữ liệu</div>
+                        <div class="text-muted small fw-bold text-uppercase mb-1">Số phòng có xuất vật tư</div>
                         <h4 class="fw-bold text-primary mb-0" id="con-kpi-rooms">0</h4>
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-4">
                 <div class="card border-0 border-start border-4 border-warning shadow-sm h-100">
                     <div class="card-body py-3">
-                        <div class="text-muted small fw-bold text-uppercase mb-1">Tồn kho thấp (< 5)</div>
+                        <div class="text-muted small fw-bold text-uppercase mb-1">Cảnh báo Tồn kho thấp (< 5)</div>
                         <h4 class="fw-bold text-warning mb-0" id="con-kpi-low">0</h4>
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
-                <div class="card border-0 border-start border-4 border-danger shadow-sm h-100">
-                    <div class="card-body py-3">
-                        <div class="text-muted small fw-bold text-uppercase mb-1">Cần thay thế sớm</div>
-                        <h4 class="fw-bold text-danger mb-0" id="con-kpi-due">0</h4>
-                    </div>
-                </div>
-            </div>
         </div>
-
         <div class="card shadow-sm border-0 mb-4 bg-light">
             <div class="card-body d-flex flex-wrap justify-content-between align-items-center py-3">
                 <div class="d-flex gap-2 align-items-center">
@@ -536,7 +527,6 @@
                                 <th>Đơn vị</th>
                                 <th>SL Đã dùng</th>
                                 <th>Tồn kho</th>
-                                <th>Tình trạng</th>
                                 <th>Ghi chú</th>
                                 <th>Người nhập</th>
                                 <th>Thao tác</th>
@@ -5400,36 +5390,31 @@ async function emergencyStop(bookingId, machineName) {
     }
 
     // 2. TẢI DỮ LIỆU, ÁP DỤNG BỘ LỌC KÉP & TÍNH TOÁN KPI
-    async function loadConsumablesData() {
+   // 2. TẢI DỮ LIỆU SỔ NHẬT KÝ VẬT TƯ (Bản chuẩn)
+   async function loadConsumablesData() {
         const monthVal = document.getElementById('filter-consumable-month').value;
         const roomVal = document.getElementById('filter-consumable-room').value;
         const tbody = document.getElementById('consumables-list');
 
-        tbody.innerHTML = `<tr><td colspan="10" class="text-center py-5"><div class="spinner-border text-primary"></div><div class="mt-2 fw-bold text-muted small">ĐANG TẢI SỔ NHẬT KÝ...</div></td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="9" class="text-center py-5"><div class="spinner-border text-primary"></div><div class="mt-2 fw-bold text-muted small">ĐANG TẢI SỔ NHẬT KÝ...</div></td></tr>`;
 
         // Truy vấn dữ liệu cơ bản từ Supabase (Mới nhất xếp trên cùng)
         let query = _supabase.from('consumables').select('*').order('created_at', { ascending: false });
         
-        // Tối ưu hóa: Nếu chọn phòng cụ thể, lọc luôn từ Server cho nhẹ
         if (roomVal !== 'all') query = query.eq('room_code', roomVal);
-        // Lọc theo tháng
         if (monthVal) query = query.eq('report_month', monthVal);
 
         const { data, error } = await query;
-        if (error || !data) return tbody.innerHTML = `<tr><td colspan="10" class="p-4 text-danger">Lỗi kết nối CSDL: ${error?.message}</td></tr>`;
+        if (error || !data) return tbody.innerHTML = `<tr><td colspan="9" class="p-4 text-danger">Lỗi kết nối CSDL: ${error?.message}</td></tr>`;
 
         // TÍNH TOÁN KPI CARDS
         const totalEntries = data.length;
         const uniqueRooms = new Set(data.map(d => d.room_code)).size;
         const lowStockCount = data.filter(d => (d.stock_remaining || 0) < 5).length;
-        
-        const todayStr = new Date().toISOString().split('T')[0];
-        const expiredCount = data.filter(d => d.replacement_date && d.replacement_date <= todayStr).length;
 
         document.getElementById('con-kpi-total').innerText = totalEntries;
         document.getElementById('con-kpi-rooms').innerText = uniqueRooms;
         document.getElementById('con-kpi-low').innerText = lowStockCount;
-        document.getElementById('con-kpi-due').innerText = expiredCount;
 
         // VẼ BẢNG
         let html = '';
@@ -5442,14 +5427,14 @@ async function emergencyStop(bookingId, machineName) {
             else if (stock <= 9) stockBadge = `<span class="badge bg-warning text-dark fs-6">${stock}</span>`;
             else stockBadge = `<span class="badge bg-success fs-6">${stock}</span>`;
 
-            // Xử lý màu sắc Tình trạng (Hạn thay thế)
-            let dateBadge = `<span class="badge bg-success-subtle text-success border border-success">Mới cấp</span>`;
-            if (item.replacement_date && item.replacement_date <= todayStr) {
-                dateBadge = `<span class="badge bg-danger-subtle text-danger border border-danger">Đến hạn/Đã dùng</span>`;
-            }
-
             const repDate = item.replacement_date ? new Date(item.replacement_date).toLocaleDateString('vi-VN') : '--';
             const creator = item.created_by || 'Khuyết danh';
+
+            // KHÓA NÚT XÓA NẾU KHÔNG PHẢI LÀ MANAGER
+            let deleteBtn = `<i class="bi bi-lock text-muted" title="Chỉ Quản lý PTN mới có quyền xóa"></i>`;
+            if (currentUserProfile && currentUserProfile.role === 'manager') {
+                deleteBtn = `<button class="btn btn-sm btn-outline-danger" onclick="deleteConsumable('${item.id}')" title="Xóa dòng nhập sai"><i class="bi bi-trash"></i></button>`;
+            }
 
             html += `
                 <tr>
@@ -5459,20 +5444,14 @@ async function emergencyStop(bookingId, machineName) {
                     <td>${item.unit || '-'}</td>
                     <td>${item.quantity_used || 0}</td>
                     <td>${stockBadge}</td>
-                    <td>${dateBadge}</td>
                     <td class="text-start"><small class="text-muted">${item.note || ''}</small></td>
                     <td><small>${creator}</small></td>
-                    <td>
-                        ${currentUserProfile.role === 'manager' 
-                            ? `<button class="btn btn-sm btn-outline-danger" onclick="deleteConsumable('${item.id}')" title="Xóa dòng nhập sai"><i class="bi bi-trash"></i></button>`
-                            : `<i class="bi bi-lock text-muted" title="Chỉ Quản lý PTN mới có quyền xóa"></i>`
-                        }
-                    </td>
+                    <td>${deleteBtn}</td>
                 </tr>
             `;
         });
 
-        tbody.innerHTML = html || '<tr><td colspan="10" class="p-4 text-muted fst-italic">Kỳ này chưa có phát sinh nhập/xuất vật tư nào.</td></tr>';
+        tbody.innerHTML = html || '<tr><td colspan="9" class="p-4 text-muted fst-italic">Kỳ này chưa có phát sinh xuất vật tư nào.</td></tr>';
     }
 
     // 3. MỞ MODAL THÊM MỚI
