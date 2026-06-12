@@ -323,8 +323,8 @@
                         
                         <li><hr class="dropdown-divider"></li>
                         
-                        <li><a class="dropdown-item text-muted" href="#" onclick="Swal.fire('Thông tin', 'Tính năng quản lý IP phần cứng đang được phát triển ở giai đoạn 2.', 'info')"><i class="bi bi-cpu"></i> Quản lý Node mạng KC868/ESP32 (Bản Beta)</a></li>
-                        <li><a class="dropdown-item text-muted" href="#" onclick="window.open('https://supabase.com', '_blank')"><i class="bi bi-cloud-arrow-down"></i> Backup Database (Supabase Console)</a></li>
+                        
+                        
                     </ul>
                 </li>
 
@@ -606,9 +606,9 @@
                         <div class="mb-3">
                             <label class="form-label fw-bold">Mức độ</label>
                             <select id="notice-type" class="form-select">
-                                <option value="info">Bình thường (Chữ xanh đen)</option>
-                                <option value="danger">Quan trọng (Chữ đỏ)</option>
-                                <option value="warning">Lưu ý (Chữ vàng)</option>
+                                <option value="info">Bình thường</option>
+                                <option value="danger">Quan trọng </option>
+                                <option value="warning">Lưu ý</option>
                             </select>
                         </div>
                         <div class="mb-3">
@@ -2787,7 +2787,7 @@
                     actionBtn = `<button class="btn btn-sm btn-outline-success mb-1 w-100 fw-bold" onclick="viewMyQR('${b.id}')"><i class="bi bi-qr-code"></i> Mã mở cửa</button>`;
                 } else if (viewContext === 'history' && b.status === 'approved') {
                     // Ở tab lịch sử, cho phép khai báo máy hỏng
-                    actionBtn = `<button class="btn btn-sm btn-warning w-100 fw-bold" onclick="openReportModal('${b.id}', '${b.machine_name}')"><i class="bi bi-tools"></i> Khai báo lỗi máy</button>`;
+                    actionBtn = `<button class="btn btn-sm btn-warning w-100 fw-bold" onclick="openReportModal('${b.id}', '${b.machine_name}')"><i class="bi bi-tools"></i> Khai báo tình trạng máy</button>`;
                 }
                 if ((b.status === 'pending' || b.status === 'approved') && viewContext === 'upcoming') {
                     actionBtn += `<button class="btn btn-sm btn-outline-danger w-100 mt-1" onclick="cancelBooking('${b.id}')"><i class="bi bi-x-circle"></i> Hủy lịch</button>`;
