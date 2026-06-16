@@ -1553,15 +1553,22 @@
         </div>
     </div>
     <div id="asset-lifecycle-view" class="view-section hidden">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h3 class="fw-bold text-university m-0"><i class="bi bi-heart-pulse-fill text-danger"></i> Quản lý Sức khỏe & Vòng đời Thiết bị</h3>
-            <div class="d-flex gap-2">
-                <select id="filter-health-room" class="form-select border-primary" onchange="loadAssetHealthCards()">
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+            <h3 class="fw-bold text-university m-0"><i class="bi bi-heart-pulse-fill text-danger"></i> Quản lý Vòng đời & Bảo trì Thiết bị</h3>
+            <div class="d-flex gap-2 align-items-center">
+                <select id="filter-health-room" class="form-select border-primary" style="width:auto;" onchange="loadAssetHealthCards()">
                     <option value="all">Tất cả các phòng</option>
-                    </select>
+                </select>
+                <select id="filter-health-status" class="form-select border-secondary" style="width:auto;" onchange="loadAssetHealthCards()">
+                    <option value="all">Tất cả trạng thái</option>
+                    <option value="urgent">⚠️ Cần nộp đơn ngay</option>
+                    <option value="warning">🔔 Sắp đến hạn</option>
+                    <option value="overdue">🔴 Quá hạn</option>
+                    <option value="ok">✅ Bình thường</option>
+                </select>
             </div>
         </div>
-    
+
         <ul class="nav nav-tabs mb-4" id="assetTabs" role="tablist">
             <li class="nav-item" role="presentation">
                 <button class="nav-link active fw-bold text-dark" data-bs-toggle="tab" data-bs-target="#health-cards-tab" type="button">
@@ -1570,18 +1577,19 @@
             </li>
             <li class="nav-item" role="presentation">
                 <button class="nav-link fw-bold text-dark" data-bs-toggle="tab" data-bs-target="#timeline-tab" type="button">
-                    <i class="bi bi-clock-history text-warning"></i> Lịch sử Sửa chữa
+                    <i class="bi bi-clock-history text-warning"></i> Lịch sử Bảo trì
                 </button>
             </li>
         </ul>
-    
+
         <div class="tab-content">
             <div class="tab-pane fade show active" id="health-cards-tab">
+                <div id="lifecycle-alert-banner"></div>
                 <div class="row g-4" id="asset-cards-container">
                     <div class="text-center py-5 text-muted"><div class="spinner-border text-primary"></div><br>Đang tải dữ liệu thiết bị...</div>
                 </div>
             </div>
-    
+
             <div class="tab-pane fade" id="timeline-tab">
                 <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
                     <div class="d-flex align-items-center gap-3">
@@ -1596,85 +1604,135 @@
                         <i class="bi bi-plus-circle"></i> Thêm mốc bảo trì mới
                     </button>
                 </div>
-                
                 <div class="card shadow-sm border-0 border-top border-4 border-warning">
                     <div class="card-body p-4" id="timeline-container">
                         <div class="text-center py-5 text-muted">
-                            <i class="bi bi-journal-text fs-1"></i><br>Chọn "Lịch sử sửa chữa" ở một thiết bị để hiển thị hành trình.
+                            <i class="bi bi-journal-text fs-1"></i><br>Chọn "Lịch sử bảo trì" ở một thiết bị để hiển thị hành trình.
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- MODAL: Ghi nhận bảo trì mới (Nâng cấp) -->
     <div class="modal fade" id="addMaintenanceLogModal" tabindex="-1">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content border-0 shadow-lg">
                 <div class="modal-header bg-success text-white">
-                    <h5 class="modal-title fw-bold"><i class="bi bi-tools"></i> Ghi nhận Bảo trì / Sửa chữa</h5>
+                    <h5 class="modal-title fw-bold"><i class="bi bi-journal-plus"></i> Ghi nhận Bảo trì / Sửa chữa</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <input type="hidden" id="log-machine-name">
-                    <div class="mb-3">
-                        <label class="form-label small fw-bold">Ngày thực hiện</label>
-                        <input type="date" id="log-date" class="form-control border-success">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label small fw-bold">Phân loại</label>
-                        <select id="log-type" class="form-select">
-                            <option value="Bảo trì định kỳ">Bảo trì định kỳ (Bảo dưỡng)</option>
-                            <option value="Sửa chữa đột xuất">Sửa chữa đột xuất / Nâng cấp</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label small fw-bold">Đơn vị thực hiện (Vendor)</label>
-                        <input type="text" id="log-vendor" class="form-control" placeholder="VD: Đội kỹ thuật trường, Công ty TNHH ABC...">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label small fw-bold text-primary">Nội dung & Vật tư thay thế <span class="text-danger">*</span></label>
-                        <textarea id="log-parts" class="form-control border-primary" rows="3" placeholder="VD: Căn chỉnh trục CNC, thay mỡ bôi trơn, thay dây curoa..."></textarea>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Phân loại <span class="text-danger">*</span></label>
+                            <select id="log-type" class="form-select">
+                                <option value="Bảo trì lớn">🔧 Bảo trì lớn (Đại tu định kỳ)</option>
+                                <option value="Bảo trì nhỏ">🔩 Bảo trì nhỏ (Bảo dưỡng định kỳ)</option>
+                                <option value="Sửa chữa đột xuất">⚡ Sửa chữa đột xuất / Nâng cấp</option>
+                                <option value="Báo lỗi sinh viên">📋 Kiểm tra theo báo cáo sinh viên</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Ngày thực hiện <span class="text-danger">*</span></label>
+                            <input type="date" id="log-date" class="form-control border-success">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Đơn vị thực hiện (Vendor)</label>
+                            <input type="text" id="log-vendor" class="form-control" placeholder="VD: Đội kỹ thuật trường, Công ty TNHH ABC...">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Số hợp đồng / Biên bản</label>
+                            <input type="text" id="log-contract" class="form-control" placeholder="VD: HĐ/2024/001">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Chi phí thực tế (VND)</label>
+                            <input type="number" id="log-cost" class="form-control" placeholder="VD: 5000000" min="0">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Ngày dự kiến hoàn thành</label>
+                            <input type="date" id="log-planned-date" class="form-control">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-bold text-primary">Nội dung & Vật tư thay thế <span class="text-danger">*</span></label>
+                            <textarea id="log-parts" class="form-control border-primary" rows="3" placeholder="VD: Căn chỉnh trục chính, thay mỡ bôi trơn, kiểm tra hệ thống làm mát..."></textarea>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-success w-100 fw-bold" onclick="saveMaintenanceLog()"><i class="bi bi-journal-check"></i> Lưu vào Timeline</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-success fw-bold" onclick="saveMaintenanceLog()"><i class="bi bi-journal-check"></i> Lưu vào Timeline</button>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- MODAL: Cập nhật lý lịch thiết bị (Nâng cấp) -->
     <div class="modal fade" id="updateAssetModal" tabindex="-1">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content border-0 shadow-lg">
                 <div class="modal-header bg-university text-white">
-                    <h5 class="modal-title fw-bold"><i class="bi bi-tools"></i> Cập nhật Lý lịch Thiết bị</h5>
+                    <h5 class="modal-title fw-bold"><i class="bi bi-card-checklist"></i> Cập nhật Lý lịch Thiết bị</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <input type="hidden" id="asset-edit-id">
                     <h6 class="fw-bold text-primary mb-3" id="asset-edit-name">Tên máy</h6>
-                    
-                    <div class="mb-3">
-                        <label class="form-label small fw-bold">Ngày nhập máy (Mua mới)</label>
-                        <input type="date" id="asset-import-date" class="form-control">
-                    </div>
-                    <div class="row mb-3">
+
+                    <p class="small text-muted fw-bold mb-2 text-uppercase" style="letter-spacing:.05em;">Thông tin nhập máy</p>
+                    <div class="row g-3 mb-3">
                         <div class="col-md-6">
-                            <label class="form-label small fw-bold">Ngày bảo trì gần nhất</label>
+                            <label class="form-label small fw-bold">Ngày nhập máy</label>
+                            <input type="date" id="asset-import-date" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Nhà sản xuất / Năm SX</label>
+                            <input type="text" id="asset-manufacturer" class="form-control" placeholder="VD: Haas Automation, 2019">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Ngày hết bảo hành</label>
+                            <input type="date" id="asset-warranty" class="form-control">
+                        </div>
+                    </div>
+
+                    <p class="small text-muted fw-bold mb-2 text-uppercase" style="letter-spacing:.05em;">Chu kỳ bảo trì nhỏ (Bảo dưỡng định kỳ)</p>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Lần bảo trì nhỏ gần nhất</label>
                             <input type="date" id="asset-last-maint" class="form-control">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label small fw-bold">Chu kỳ bảo trì (Tháng)</label>
-                            <select id="asset-cycle" class="form-select border-primary">
+                            <label class="form-label small fw-bold">Chu kỳ bảo trì nhỏ (Tháng)</label>
+                            <select id="asset-cycle" class="form-select">
                                 <option value="6">6 tháng</option>
                                 <option value="12">12 tháng (1 năm)</option>
                                 <option value="24">24 tháng (2 năm)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <p class="small text-muted fw-bold mb-2 text-uppercase" style="letter-spacing:.05em;">Chu kỳ bảo trì lớn (Đại tu)</p>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Lần bảo trì lớn gần nhất</label>
+                            <input type="date" id="asset-last-major" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Chu kỳ bảo trì lớn (Tháng)</label>
+                            <select id="asset-major-cycle" class="form-select border-danger">
+                                <option value="24">24 tháng (2 năm)</option>
                                 <option value="36">36 tháng (3 năm)</option>
+                                <option value="48">48 tháng (4 năm)</option>
+                                <option value="60">60 tháng (5 năm)</option>
                             </select>
                         </div>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-primary w-100 fw-bold" onclick="saveAssetUpdate()">Lưu cập nhật</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-primary fw-bold" onclick="saveAssetUpdate()"><i class="bi bi-save"></i> Lưu cập nhật</button>
                 </div>
             </div>
         </div>
@@ -1791,13 +1849,25 @@
         </div>
     </div>
     <div id="dm-ptn-view" class="view-section hidden">
-        <h3 class="fw-bold mb-4 text-university"><i class="bi bi-building"></i> Danh mục Phòng Thí Nghiệm</h3>
-        <div class="card shadow-sm border-0">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h3 class="fw-bold text-university m-0"><i class="bi bi-building"></i> Danh mục Phòng Thí Nghiệm</h3>
+            <div class="d-flex gap-2">
+                <span class="badge bg-primary align-self-center" style="font-size:0.75rem;"><i class="bi bi-info-circle"></i> PTN: Bình thường &nbsp;|&nbsp; PTN: Trọng điểm</span>
+            </div>
+        </div>
+
+        <!-- Nhóm 1: PTN Bình thường (1–13) -->
+        <div class="mb-2 d-flex align-items-center gap-2">
+            <span class="badge bg-secondary" style="font-size:0.75rem; letter-spacing:.04em;">PHÒNG THÍ NGHIỆM THỰC HÀNH </span>
+            <hr class="flex-grow-1 m-0" style="border-color:#dee2e6;">
+        </div>
+        <div class="card shadow-sm border-0 mb-4">
             <div class="card-body p-0">
                 <table class="table table-hover align-middle table-custom mb-0 text-center">
                     <thead>
                         <tr>
-                            <th class="text-start ps-4">Mã phòng</th>
+                            <th style="width:50px;" class="text-center ps-3">STT</th>
+                            <th class="text-start ps-3">Mã phòng</th>
                             <th class="text-start">Tên phòng</th>
                             <th>Khoa</th>
                             <th>Quản lý</th>
@@ -1805,7 +1875,31 @@
                             <th>Thao tác nhanh</th>
                         </tr>
                     </thead>
-                    <tbody id="dm-ptn-tbody"></tbody>
+                    <tbody id="dm-ptn-tbody-normal"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Nhóm 2: PTN Trọng điểm (14–21) -->
+        <div class="mb-2 d-flex align-items-center gap-2">
+            <span class="badge text-white" style="background:#8B0000; font-size:0.75rem; letter-spacing:.04em;">PHÒNG THÍ NGHIỆM TRỌNG ĐIỂM</span>
+            <hr class="flex-grow-1 m-0" style="border-color:#dee2e6;">
+        </div>
+        <div class="card shadow-sm border-0" style="border-top: 3px solid #8B0000 !important;">
+            <div class="card-body p-0">
+                <table class="table table-hover align-middle table-custom mb-0 text-center">
+                    <thead style="background:#fff8f8;">
+                        <tr>
+                            <th style="width:50px;" class="text-center ps-3">STT</th>
+                            <th class="text-start ps-3">Mã phòng</th>
+                            <th class="text-start">Tên phòng</th>
+                            <th>Khoa</th>
+                            <th>Quản lý</th>
+                            <th>Trạng thái</th>
+                            <th>Thao tác nhanh</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dm-ptn-tbody-special"></tbody>
                 </table>
             </div>
         </div>
@@ -2438,16 +2532,24 @@
         const { data: rooms, error } = await _supabase.from('rooms').select('*').order('room_code');
         if (error) return;
 
-        const tbody = document.getElementById('dm-ptn-tbody');
-        let html = '';
-        
-        // SỬA Ở ĐÂY: Kiểm tra xem có user đăng nhập không rồi mới soi Role
+        const tbodyNormal  = document.getElementById('dm-ptn-tbody-normal');
+        const tbodySpecial = document.getElementById('dm-ptn-tbody-special');
+        let htmlNormal = '', htmlSpecial = '';
+        let sttNormal = 1, sttSpecial = 14;
+
         const isStaff = currentUserProfile ? (currentUserProfile.role !== 'student') : false;
 
         rooms.forEach(room => {
-            html += `
+            const isSpecial = room.is_key_lab === true || room.room_type === 'key';
+            const stt = isSpecial ? sttSpecial++ : sttNormal++;
+            const sttBadge = isSpecial
+                ? `<span class="badge text-white" style="background:#8B0000; min-width:28px;">${stt}</span>`
+                : `<span class="badge bg-secondary" style="min-width:28px;">${stt}</span>`;
+
+            const row = `
                 <tr>
-                    <td class="text-start ps-4 fw-bold text-primary">${room.room_code || 'N/A'}</td>
+                    <td class="text-center ps-3">${sttBadge}</td>
+                    <td class="text-start ps-3 fw-bold text-primary">${room.room_code || 'N/A'}</td>
                     <td class="text-start">${room.room_name}</td>
                     <td>${room.department || 'Bách Khoa'}</td>
                     <td>${room.manager_name || 'Chưa rõ'}</td>
@@ -2458,15 +2560,18 @@
                             ${isStaff ? `<button class="btn btn-sm btn-outline-warning"><i class="bi bi-door-open"></i></button>` : ''}
                         </div>
                     </td>
-                </tr>
-            `;
+                </tr>`;
+
+            if (isSpecial) htmlSpecial += row;
+            else htmlNormal += row;
         });
-        tbody.innerHTML = html;
+
+        tbodyNormal.innerHTML  = htmlNormal  || '<tr><td colspan="7" class="text-center text-muted py-3">Chưa có dữ liệu.</td></tr>';
+        tbodySpecial.innerHTML = htmlSpecial || '<tr><td colspan="7" class="text-center text-muted py-3">Chưa có phòng trọng điểm.</td></tr>';
     }
 
-    // Xem chi tiết máy trong phòng và Nút Đặt Lịch
+    // Xem chi tiết máy trong phòng — modal nâng cấp với STT, model, năm nhập
     async function viewRoomDetails(roomId, roomCode, roomName) {
-        // --- CHẶN KHÁCH VÃNG LAI ---
         if (!currentUserProfile) {
             return Swal.fire({
                 title: 'Yêu cầu đăng nhập',
@@ -2476,41 +2581,71 @@
                 confirmButtonText: 'Đăng nhập ngay',
                 cancelButtonText: 'Đóng lại',
                 confirmButtonColor: '#003366'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    showView('auth-view'); // Nhảy thẳng sang màn hình đăng nhập
-                }
-            });
+            }).then(r => { if (r.isConfirmed) showView('auth-view'); });
         }
-        // -----------------------------
 
-        Swal.fire({ title: `Đang tải thiết bị...`, didOpen: () => Swal.showLoading() });
-        const { data: machines, error } = await _supabase.from('machines').select('*').eq('room_id', roomId);
+        Swal.fire({ title: 'Đang tải thiết bị...', didOpen: () => Swal.showLoading() });
+        const { data: machines, error } = await _supabase
+            .from('machines')
+            .select('id, machine_name, technical_specs, import_date, status, manufacturer')
+            .eq('room_id', roomId)
+            .order('machine_name');
         Swal.close();
         if (error) return;
 
-        let machineListHtml = machines.length > 0 ? `
-            <div class="table-responsive">
-                <table class="table table-sm text-start align-middle">
-                    <thead><tr class="table-light"><th>Tên máy</th><th>Trạng thái</th><th>Hành động</th></tr></thead>
-                    <tbody>
-                        ${machines.map(m => `
-                            <tr>
-                                <td><b>${m.machine_name}</b><br><small class="text-muted">${m.technical_specs || ''}</small></td>
-                                <td><span class="badge ${m.status === 'available' ? 'bg-success' : 'bg-danger'}">${m.status === 'available' ? 'Sẵn sàng' : 'Bảo trì'}</span></td>
-                                <td>
-                                    ${m.status === 'available' ? 
-                                    `<button class="btn btn-sm btn-primary fw-bold" onclick="Swal.close(); openBookingModal('${roomCode}', '${m.machine_name}')">Đặt lịch</button>` 
-                                    : '<button class="btn btn-sm btn-secondary" disabled>Bảo trì</button>'}
-                                </td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
+        let machineListHtml;
+        if (machines && machines.length > 0) {
+            const rows = machines.map((m, idx) => {
+                const importYear = m.import_date ? new Date(m.import_date).getFullYear() : '—';
+                const model = m.technical_specs
+                    ? `<small class="text-muted d-block" style="font-size:0.75rem; line-height:1.3;">${m.technical_specs.substring(0, 60)}${m.technical_specs.length > 60 ? '…' : ''}</small>`
+                    : '<small class="text-muted">—</small>';
+                const statusBadge = m.status === 'available'
+                    ? '<span class="badge bg-success">Sẵn sàng</span>'
+                    : '<span class="badge bg-danger">Bảo trì</span>';
+                const actionBtn = m.status === 'available'
+                    ? `<button class="btn btn-sm btn-primary fw-bold" onclick="Swal.close(); openBookingModal('${roomCode}', '${m.machine_name.replace(/'/g,"\\'")}')"><i class="bi bi-calendar-plus"></i> Đặt lịch</button>`
+                    : `<button class="btn btn-sm btn-secondary" disabled><i class="bi bi-lock"></i> Bảo trì</button>`;
+
+                return `<tr>
+                    <td class="text-center fw-bold text-muted">${idx + 1}</td>
+                    <td class="text-start"><b>${m.machine_name}</b>${m.manufacturer ? `<small class="text-muted d-block" style="font-size:0.7rem;">${m.manufacturer}</small>` : ''}</td>
+                    <td class="text-start">${model}</td>
+                    <td class="text-center">${importYear}</td>
+                    <td class="text-center">${statusBadge}</td>
+                    <td class="text-center">${actionBtn}</td>
+                </tr>`;
+            }).join('');
+
+            machineListHtml = `
+            <div class="table-responsive" style="max-height:420px; overflow-y:auto;">
+                <table class="table table-sm table-hover align-middle mb-0" style="font-size:0.85rem;">
+                    <thead class="table-light sticky-top">
+                        <tr>
+                            <th style="width:40px;" class="text-center">STT</th>
+                            <th class="text-start" style="min-width:150px;">Tên máy</th>
+                            <th class="text-start" style="min-width:160px;">Model / Thông số</th>
+                            <th style="width:70px;" class="text-center">Năm nhập</th>
+                            <th style="width:90px;" class="text-center">Trạng thái</th>
+                            <th style="width:100px;" class="text-center">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
                 </table>
             </div>
-        ` : '<p>Phòng này chưa có thiết bị được đăng ký.</p>';
+            <p class="text-muted small mt-2 mb-0"><i class="bi bi-info-circle"></i> Tổng cộng <b>${machines.length}</b> thiết bị trong phòng này.</p>`;
+        } else {
+            machineListHtml = '<div class="text-center text-muted py-4"><i class="bi bi-inbox fs-2"></i><br>Phòng này chưa có thiết bị nào được đăng ký.</div>';
+        }
 
-        Swal.fire({ title: `<span class="text-university">${roomName}</span>`, html: machineListHtml, width: '600px', confirmButtonText: 'Đóng' });
+        Swal.fire({
+            title: `<i class="bi bi-building text-primary"></i> <span class="text-university">${roomName}</span>`,
+            html: machineListHtml,
+            width: '750px',
+            confirmButtonText: '<i class="bi bi-x-lg"></i> Đóng',
+            confirmButtonColor: '#003366',
+            customClass: { popup: 'text-start' }
+        });
     }
 
     // 4. LUỒNG ĐĂNG KÝ VÀ CHỐNG TRÙNG LỊCH (BOOKING)
@@ -6138,122 +6273,178 @@ let mChartMulti = null;
         }, 3000); 
     }
     // ==============================================================
-// MODULE: QUẢN LÝ VÒNG ĐỜI TÀI SẢN (ASSET LIFECYCLE)
+// MODULE: QUẢN LÝ VÒNG ĐỜI TÀI SẢN (ASSET LIFECYCLE) — v2
 // ==============================================================
 
 let updateAssetModalInstance = null;
 
+// ── Hàm tiện ích: tính số ngày còn lại đến hạn bảo trì ──
+function _calcTrack(lastDateStr, cycleMonths) {
+    if (!lastDateStr || !cycleMonths) return { daysRemaining: null, progressPercent: 0, nextDateStr: 'Chưa xác định' };
+    const now = new Date();
+    const last = new Date(lastDateStr);
+    const next = new Date(last);
+    next.setMonth(next.getMonth() + cycleMonths);
+    const daysRemaining = Math.ceil((next - now) / (1000 * 60 * 60 * 24));
+    const totalDays = cycleMonths * 30.44;
+    const daysPassed = totalDays - daysRemaining;
+    let progressPercent = Math.min(100, Math.max(0, (daysPassed / totalDays) * 100));
+    const nextDateStr = next.toLocaleDateString('vi-VN');
+    return { daysRemaining, progressPercent, nextDateStr };
+}
+
+// ── Hàm tiện ích: trả về màu + text + icon theo ngưỡng ──
+function _trackStatus(daysRemaining, trackLabel) {
+    if (daysRemaining === null) return { color: 'secondary', text: 'Chưa có dữ liệu', icon: 'bi-dash-circle', level: 'none' };
+    if (daysRemaining < 0)   return { color: 'danger',  text: `Quá hạn ${Math.abs(daysRemaining)} ngày!`,        icon: 'bi-exclamation-octagon-fill', level: 'overdue' };
+    if (daysRemaining <= 150) return { color: 'danger',  text: `⚠️ Còn ${daysRemaining} ngày — cần nộp đơn!`,  icon: 'bi-exclamation-octagon-fill', level: 'urgent' };
+    if (daysRemaining <= 180) return { color: 'warning', text: `Còn ${daysRemaining} ngày — chuẩn bị hồ sơ`,    icon: 'bi-exclamation-triangle-fill', level: 'warning' };
+    return { color: 'success', text: `Còn ${daysRemaining} ngày`,  icon: 'bi-check-circle-fill', level: 'ok' };
+}
+
+// ── Lấy "mức độ nghiêm trọng nhất" của 1 máy (để sort / filter) ──
+function _worstLevel(levels) {
+    if (levels.includes('overdue')) return 'overdue';
+    if (levels.includes('urgent'))  return 'urgent';
+    if (levels.includes('warning')) return 'warning';
+    if (levels.includes('ok'))      return 'ok';
+    return 'none';
+}
+
 async function loadAssetHealthCards() {
-    showView('asset-lifecycle-view'); // Gọi hiển thị giao diện
-    
-    // 1. Tải danh sách phòng cho Bộ lọc (Nếu chưa có)
+    showView('asset-lifecycle-view');
+
+    // 1. Tải danh sách phòng cho bộ lọc
     const roomFilter = document.getElementById('filter-health-room');
     if (roomFilter.options.length <= 1) {
         const { data: rooms } = await _supabase.from('rooms').select('id, room_code').eq('status', 'active');
-        if (rooms) {
-            rooms.forEach(r => {
-                roomFilter.innerHTML += `<option value="${r.id}">${r.room_code}</option>`;
-            });
-        }
+        if (rooms) rooms.forEach(r => { roomFilter.innerHTML += `<option value="${r.id}">${r.room_code}</option>`; });
     }
 
-    // 2. Lấy dữ liệu Thiết bị từ Supabase
+    // 2. Lấy dữ liệu thiết bị — bao gồm các cột mới
     const selectedRoomId = roomFilter.value;
-    let query = _supabase.from('machines').select('id, machine_name, room_id, status, import_date, last_maintenance, maintenance_cycle');
-    
-    if (selectedRoomId !== 'all') {
-        query = query.eq('room_id', selectedRoomId);
-    }
+    const statusFilter   = document.getElementById('filter-health-status').value;
+    let query = _supabase.from('machines').select(
+        'id, machine_name, room_id, status, import_date, technical_specs, manufacturer, warranty_expiry,' +
+        'last_maintenance, maintenance_cycle,' +
+        'last_major_maintenance, major_maintenance_cycle'
+    );
+    if (selectedRoomId !== 'all') query = query.eq('room_id', selectedRoomId);
 
     const { data: machines, error } = await query;
     const container = document.getElementById('asset-cards-container');
-
     if (error || !machines || machines.length === 0) {
+        document.getElementById('lifecycle-alert-banner').innerHTML = '';
         return container.innerHTML = '<div class="col-12 text-center py-4 text-muted">Không có dữ liệu thiết bị.</div>';
     }
 
-    // 3. Xử lý logic và Vẽ Thẻ (Card)
-    const now = new Date();
+    // 3. Tính toán từng máy
+    const computed = machines.map(m => {
+        const minorCycle = m.maintenance_cycle || 12;
+        const majorCycle = m.major_maintenance_cycle || 36;
+        const minor = _calcTrack(m.last_maintenance, minorCycle);
+        const major = _calcTrack(m.last_major_maintenance, majorCycle);
+        const minorStatus = _trackStatus(minor.daysRemaining, 'nhỏ');
+        const majorStatus = _trackStatus(major.daysRemaining, 'lớn');
+        const worst = _worstLevel([majorStatus.level, minorStatus.level]);
+        return { m, minorCycle, majorCycle, minor, major, minorStatus, majorStatus, worst };
+    });
+
+    // 4. Xây banner cảnh báo tổng hợp
+    const urgentList = computed.filter(c => c.worst === 'urgent' || c.worst === 'overdue');
+    const bannerEl = document.getElementById('lifecycle-alert-banner');
+    if (urgentList.length > 0) {
+        const names = urgentList.map(c => `<b>${c.m.machine_name}</b>`).join(', ');
+        bannerEl.innerHTML = `
+        <div class="alert alert-danger border-0 d-flex align-items-start gap-3 mb-4 shadow-sm" role="alert">
+            <i class="bi bi-bell-fill fs-4 mt-1 text-danger"></i>
+            <div>
+                <div class="fw-bold mb-1">⚠️ ${urgentList.length} thiết bị cần nộp đơn xin bảo trì trong vòng 5 tháng tới!</div>
+                <div class="small">${names}</div>
+                <div class="small text-muted mt-1">Quy trình nhà trường yêu cầu nộp đơn trước ít nhất <b>5 tháng</b>. Vui lòng chuẩn bị hồ sơ ngay.</div>
+            </div>
+        </div>`;
+    } else {
+        bannerEl.innerHTML = '';
+    }
+
+    // 5. Lọc theo filter-health-status
+    let filtered = computed;
+    if (statusFilter !== 'all') filtered = computed.filter(c => c.worst === statusFilter);
+
+    if (filtered.length === 0) {
+        return container.innerHTML = '<div class="col-12 text-center py-4 text-muted">Không có thiết bị nào khớp với bộ lọc.</div>';
+    }
+
+    // 6. Vẽ card
     let html = '';
+    filtered.forEach(({ m, minorCycle, majorCycle, minor, major, minorStatus, majorStatus, worst }) => {
+        const importDateStr   = m.import_date ? new Date(m.import_date).toLocaleDateString('vi-VN') : 'Chưa cập nhật';
+        const lastMinorStr    = m.last_maintenance ? new Date(m.last_maintenance).toLocaleDateString('vi-VN') : 'Chưa có';
+        const lastMajorStr    = m.last_major_maintenance ? new Date(m.last_major_maintenance).toLocaleDateString('vi-VN') : 'Chưa có';
+        const warrantyStr     = m.warranty_expiry ? new Date(m.warranty_expiry).toLocaleDateString('vi-VN') : null;
+        const warrantyBadge   = warrantyStr ? `<span class="badge bg-info text-dark ms-1" style="font-size:0.65rem;">BH đến ${warrantyStr}</span>` : '';
 
-    machines.forEach(m => {
-        // --- LOGIC TÍNH TOÁN NGÀY THÁNG ---
-        let importDateStr = m.import_date ? new Date(m.import_date).toLocaleDateString('vi-VN') : 'Chưa cập nhật';
-        let lastMaintStr = m.last_maintenance ? new Date(m.last_maintenance).toLocaleDateString('vi-VN') : 'Chưa cập nhật';
-        let cycle = m.maintenance_cycle || 12; // Mặc định 12 tháng nếu trống
-        
-        let nextMaintStr = 'Chưa xác định';
-        let daysRemaining = 9999;
-        let progressPercent = 0;
-        let healthColor = 'success'; // Mặc định xanh
-        let statusText = 'Hoạt động ổn định';
-        let icon = 'bi-check-circle-fill';
+        const borderColor = worst === 'overdue' || worst === 'urgent' ? 'danger' : worst === 'warning' ? 'warning' : 'success';
 
-        // Nếu có ngày bảo trì gần nhất, tính ngày bảo trì tiếp theo
-        if (m.last_maintenance) {
-            let lastDate = new Date(m.last_maintenance);
-            let nextDate = new Date(lastDate.setMonth(lastDate.getMonth() + cycle)); // Cộng thêm số tháng chu kỳ
-            
-            nextMaintStr = nextDate.toLocaleDateString('vi-VN');
-            
-            // Tính số ngày còn lại
-            const diffTime = Math.abs(nextDate - now);
-            daysRemaining = Math.ceil((nextDate - now) / (1000 * 60 * 60 * 24)); 
-            
-            // Tính % thanh tiến độ (Ví dụ chu kỳ 365 ngày. Đã trôi qua bao nhiêu ngày?)
-            const totalDaysInCycle = cycle * 30; // Ước tính 1 tháng 30 ngày
-            const daysPassed = totalDaysInCycle - daysRemaining;
-            progressPercent = (daysPassed / totalDaysInCycle) * 100;
-            if (progressPercent > 100) progressPercent = 100;
-            if (progressPercent < 0) progressPercent = 0;
+        // Cảnh báo 5 tháng — hiện nút gợi ý tạo đơn
+        const needsUrgentBadge = (majorStatus.level === 'urgent' || majorStatus.level === 'overdue' || minorStatus.level === 'urgent' || minorStatus.level === 'overdue');
+        const urgentNotice = needsUrgentBadge ? `
+            <div class="alert alert-danger py-2 px-3 mb-3 small fw-bold d-flex align-items-center gap-2" style="border-radius:8px;">
+                <i class="bi bi-file-earmark-text-fill"></i>
+                Cần nộp đơn xin bảo trì — <a href="#" class="text-danger" onclick="alert('Tính năng tạo đơn sẽ có ở Giai đoạn 3!'); return false;">Tạo đơn ngay →</a>
+            </div>` : '';
 
-            // Đổi màu cảnh báo
-            if (daysRemaining < 0) {
-                healthColor = 'danger'; // Quá hạn đỏ lừ
-                statusText = `Quá hạn ${Math.abs(daysRemaining)} ngày!`;
-                icon = 'bi-exclamation-octagon-fill';
-            } else if (daysRemaining <= 180) { 
-                healthColor = 'warning'; // Dưới 6 tháng (180 ngày) cảnh báo vàng
-                statusText = `Cần xin kinh phí (Còn ${daysRemaining} ngày)`;
-                icon = 'bi-exclamation-triangle-fill';
-            } else {
-                statusText = `Còn ${daysRemaining} ngày tới hạn`;
-            }
-        }
+        const editBtn = (currentUserProfile && currentUserProfile.role === 'manager') ? `
+            <button class="btn btn-sm btn-light text-primary border" 
+                onclick="openUpdateAssetModal('${m.id}','${m.machine_name}','${m.import_date}','${m.last_maintenance}','${minorCycle}','${m.last_major_maintenance}','${majorCycle}','${m.manufacturer||''}','${m.warranty_expiry||''}')" 
+                title="Chỉnh sửa lý lịch"><i class="bi bi-pencil-square"></i></button>` : '';
 
-        // --- VẼ HTML CHO TỪNG THẺ ---
         html += `
         <div class="col-md-6 col-lg-4">
-            <div class="card shadow-sm border-0 border-top border-4 border-${healthColor} h-100 transition-all">
+            <div class="card shadow-sm border-0 border-top border-4 border-${borderColor} h-100">
                 <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-start mb-2">
-                        <h6 class="fw-bold text-dark m-0 pe-2" style="line-height: 1.4;">${m.machine_name}</h6>
-                        ${currentUserProfile.role === 'manager' ? `
-                        <button class="btn btn-sm btn-light text-primary border" onclick="openUpdateAssetModal('${m.id}', '${m.machine_name}', '${m.import_date}', '${m.last_maintenance}', '${cycle}')" title="Chỉnh sửa lý lịch">
-                            <i class="bi bi-pencil-square"></i>
-                        </button>` : ''}
+                    <div class="d-flex justify-content-between align-items-start mb-1">
+                        <h6 class="fw-bold text-dark m-0 pe-2" style="line-height:1.4;">${m.machine_name}</h6>
+                        ${editBtn}
                     </div>
-                    
-                    <p class="small text-muted mb-3">
-                        <i class="bi bi-calendar-plus"></i> Nhập máy: ${importDateStr}<br>
-                        <i class="bi bi-arrow-repeat"></i> Chu kỳ: ${cycle} tháng
-                    </p>
-                    
-                    <div class="d-flex justify-content-between small fw-bold mb-1">
-                        <span class="text-muted"><i class="bi ${icon} text-${healthColor}"></i> Trạng thái bảo trì</span>
-                        <span class="text-${healthColor}">${statusText}</span>
-                    </div>
-                    <div class="progress mb-3" style="height: 8px;">
-                        <div class="progress-bar bg-${healthColor} progress-bar-striped ${healthColor !== 'success' ? 'progress-bar-animated' : ''}" style="width: ${progressPercent}%;"></div>
+                    <p class="small text-muted mb-0"><i class="bi bi-calendar-plus"></i> Nhập máy: <b>${importDateStr}</b>${warrantyBadge}</p>
+                    ${m.manufacturer ? `<p class="small text-muted mb-2"><i class="bi bi-building"></i> ${m.manufacturer}</p>` : '<div class="mb-2"></div>'}
+
+                    ${urgentNotice}
+
+                    <!-- Track: Bảo trì NHỎ -->
+                    <div class="mb-2">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="small fw-bold text-muted"><i class="bi bi-tools"></i> Bảo trì nhỏ <span class="badge bg-secondary" style="font-size:0.6rem;">${minorCycle} tháng</span></span>
+                            <span class="small fw-bold text-${minorStatus.color}">${minorStatus.text}</span>
+                        </div>
+                        <div class="progress mb-1" style="height:6px;">
+                            <div class="progress-bar bg-${minorStatus.color} ${minorStatus.color!=='success'?'progress-bar-animated':''}" style="width:${minor.progressPercent.toFixed(0)}%;"></div>
+                        </div>
+                        <div class="d-flex justify-content-between" style="font-size:0.7rem; color:#6c757d;">
+                            <span>Lần cuối: <b>${lastMinorStr}</b></span>
+                            <span>Kỳ tới: <b class="text-${minorStatus.color}">${minor.nextDateStr}</b></span>
+                        </div>
                     </div>
 
-                    <div class="bg-light p-2 rounded small d-flex justify-content-between border">
-                        <div><span class="text-muted d-block" style="font-size: 0.7rem;">Lần cuối</span><b>${lastMaintStr}</b></div>
-                        <div class="text-end"><span class="text-muted d-block" style="font-size: 0.7rem;">Kỳ tiếp theo</span><b class="text-${healthColor}">${nextMaintStr}</b></div>
+                    <!-- Track: Bảo trì LỚN -->
+                    <div class="mb-3 pt-2" style="border-top:1px dashed #dee2e6;">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="small fw-bold text-muted"><i class="bi bi-shield-exclamation"></i> Bảo trì lớn <span class="badge bg-dark text-white" style="font-size:0.6rem;">${majorCycle} tháng</span></span>
+                            <span class="small fw-bold text-${majorStatus.color}">${majorStatus.text}</span>
+                        </div>
+                        <div class="progress mb-1" style="height:8px;">
+                            <div class="progress-bar bg-${majorStatus.color} progress-bar-striped ${majorStatus.color!=='success'?'progress-bar-animated':''}" style="width:${major.progressPercent.toFixed(0)}%;"></div>
+                        </div>
+                        <div class="d-flex justify-content-between" style="font-size:0.7rem; color:#6c757d;">
+                            <span>Lần cuối: <b>${lastMajorStr}</b></span>
+                            <span>Kỳ tới: <b class="text-${majorStatus.color}">${major.nextDateStr}</b></span>
+                        </div>
                     </div>
-                    
-                    <button class="btn btn-sm btn-outline-secondary w-100 mt-3 fw-bold" onclick="loadMachineTimeline('${m.machine_name}', '${importDateStr}')">
-                    <i class="bi bi-journal-text"></i> Lịch sử sửa chữa
+
+                    <button class="btn btn-sm btn-outline-secondary w-100 fw-bold" onclick="loadMachineTimeline('${m.machine_name}','${importDateStr}')">
+                        <i class="bi bi-journal-text"></i> Lịch sử bảo trì
                     </button>
                 </div>
             </div>
@@ -6263,67 +6454,68 @@ async function loadAssetHealthCards() {
     container.innerHTML = html;
 }
 
-// Hàm Mở Modal Cập nhật
-function openUpdateAssetModal(id, name, importDate, lastMaint, cycle) {
-    if (!updateAssetModalInstance) {
-        updateAssetModalInstance = new bootstrap.Modal(document.getElementById('updateAssetModal'));
-    }
-    
-    document.getElementById('asset-edit-id').value = id;
-    document.getElementById('asset-edit-name').innerText = name;
-    document.getElementById('asset-import-date').value = importDate !== 'null' ? importDate : '';
-    document.getElementById('asset-last-maint').value = lastMaint !== 'null' ? lastMaint : '';
-    document.getElementById('asset-cycle').value = cycle !== 'null' ? cycle : '12';
-    
+// ── Mở Modal Cập nhật (mở rộng tham số) ──
+function openUpdateAssetModal(id, name, importDate, lastMaint, cycle, lastMajor, majorCycle, manufacturer, warrantyExpiry) {
+    if (!updateAssetModalInstance) updateAssetModalInstance = new bootstrap.Modal(document.getElementById('updateAssetModal'));
+    document.getElementById('asset-edit-id').value       = id;
+    document.getElementById('asset-edit-name').innerText  = name;
+    document.getElementById('asset-import-date').value    = importDate && importDate !== 'null' ? importDate : '';
+    document.getElementById('asset-last-maint').value     = lastMaint && lastMaint !== 'null' ? lastMaint : '';
+    document.getElementById('asset-cycle').value          = cycle && cycle !== 'null' ? cycle : '12';
+    document.getElementById('asset-last-major').value     = lastMajor && lastMajor !== 'null' ? lastMajor : '';
+    document.getElementById('asset-major-cycle').value    = majorCycle && majorCycle !== 'null' ? majorCycle : '36';
+    document.getElementById('asset-manufacturer').value   = manufacturer && manufacturer !== 'null' ? manufacturer : '';
+    document.getElementById('asset-warranty').value       = warrantyExpiry && warrantyExpiry !== 'null' ? warrantyExpiry : '';
     updateAssetModalInstance.show();
 }
 
-// Hàm Lưu Cập nhật lên Supabase
+// ── Lưu lý lịch thiết bị lên Supabase ──
 async function saveAssetUpdate() {
-    const id = document.getElementById('asset-edit-id').value;
-    const importDate = document.getElementById('asset-import-date').value || null;
-    const lastMaint = document.getElementById('asset-last-maint').value || null;
-    const cycle = parseInt(document.getElementById('asset-cycle').value);
+    const id           = document.getElementById('asset-edit-id').value;
+    const importDate   = document.getElementById('asset-import-date').value || null;
+    const lastMaint    = document.getElementById('asset-last-maint').value || null;
+    const cycle        = parseInt(document.getElementById('asset-cycle').value) || 12;
+    const lastMajor    = document.getElementById('asset-last-major').value || null;
+    const majorCycle   = parseInt(document.getElementById('asset-major-cycle').value) || 36;
+    const manufacturer = document.getElementById('asset-manufacturer').value.trim() || null;
+    const warrantyExp  = document.getElementById('asset-warranty').value || null;
 
     Swal.fire({ title: 'Đang lưu...', didOpen: () => Swal.showLoading() });
 
     const { error } = await _supabase.from('machines').update({
-        import_date: importDate,
-        last_maintenance: lastMaint,
-        maintenance_cycle: cycle
+        import_date:              importDate,
+        last_maintenance:         lastMaint,
+        maintenance_cycle:        cycle,
+        last_major_maintenance:   lastMajor,
+        major_maintenance_cycle:  majorCycle,
+        manufacturer:             manufacturer,
+        warranty_expiry:          warrantyExp
     }).eq('id', id);
 
-    if (error) {
-        Swal.fire('Lỗi', error.message, 'error');
-    } else {
-        Swal.fire({ icon: 'success', title: 'Cập nhật lý lịch thành công!', timer: 1500, showConfirmButton: false });
-        updateAssetModalInstance.hide();
-        loadAssetHealthCards(); // Vẽ lại giao diện Thẻ để thanh Tiến độ cập nhật
-    }
-}
-// Hàm Quay lại Tab 1
-function backToHealthCards() {
-    const triggerEl = document.querySelector('button[data-bs-target="#health-cards-tab"]');
-    bootstrap.Tab.getOrCreateInstance(triggerEl).show();
+    if (error) { Swal.fire('Lỗi', error.message, 'error'); return; }
+    Swal.fire({ icon: 'success', title: 'Cập nhật lý lịch thành công!', timer: 1500, showConfirmButton: false });
+    updateAssetModalInstance.hide();
+    loadAssetHealthCards();
 }
 
-// Hàm tải Timeline Lịch sử
-// Biến lưu tạm dữ liệu của máy đang xem Timeline để load lại
+// ── Quay lại tab Tình trạng ──
+function backToHealthCards() {
+    bootstrap.Tab.getOrCreateInstance(document.querySelector('button[data-bs-target="#health-cards-tab"]')).show();
+}
+
+// ── Timeline lịch sử bảo trì ──
 let currentTimelineMachine = '';
 let currentTimelineImportDate = '';
 let addMaintLogModalInstance = null;
 
 async function loadMachineTimeline(machineName, importDateStr) {
-    currentTimelineMachine = machineName;
+    currentTimelineMachine    = machineName;
     currentTimelineImportDate = importDateStr;
 
-    const triggerEl = document.querySelector('button[data-bs-target="#timeline-tab"]');
-    bootstrap.Tab.getOrCreateInstance(triggerEl).show();
+    bootstrap.Tab.getOrCreateInstance(document.querySelector('button[data-bs-target="#timeline-tab"]')).show();
+    document.getElementById('timeline-machine-title').innerHTML =
+        `<i class="bi bi-cpu-fill text-primary"></i> Lý lịch: <span class="text-danger">${machineName}</span>`;
 
-    // Hiện Tên máy và Hiển thị Nút "Thêm mốc bảo trì"
-    document.getElementById('timeline-machine-title').innerHTML = `<i class="bi bi-cpu-fill text-primary"></i> Lý lịch: <span class="text-danger">${machineName}</span>`;
-    
-    // CHỈ QUẢN LÝ PTN MỚI THẤY NÚT THÊM VÀO TIMELINE
     if (currentUserProfile && currentUserProfile.role === 'manager') {
         document.getElementById('btn-add-timeline').classList.remove('hidden');
     } else {
@@ -6334,101 +6526,114 @@ async function loadMachineTimeline(machineName, importDateStr) {
     container.innerHTML = `<div class="text-center py-4"><div class="spinner-border text-primary"></div><br><span class="fw-bold mt-2 d-block">Đang lục tìm hồ sơ...</span></div>`;
 
     const { data, error } = await _supabase.from('maintenance_history').select('*').eq('machine_name', machineName).order('resolved_at', { ascending: false });
+    if (error) return container.innerHTML = `<div class="text-danger fw-bold text-center p-4">Lỗi Database: ${error.message}</div>`;
 
-    if(error) return container.innerHTML = `<div class="text-danger fw-bold text-center p-4">Lỗi Database: ${error.message}</div>`;
+    const typeConfig = {
+        'Bảo trì lớn':          { color: 'primary', icon: 'bi-shield-fill-check' },
+        'Bảo trì nhỏ':          { color: 'success', icon: 'bi-tools' },
+        'Bảo trì định kỳ':      { color: 'success', icon: 'bi-shield-check' },
+        'Sửa chữa đột xuất':    { color: 'danger',  icon: 'bi-wrench-adjustable' },
+        'Báo lỗi sinh viên':    { color: 'warning', icon: 'bi-person-exclamation' },
+    };
 
     let html = `<div class="timeline-vertical">`;
-
     if (data && data.length > 0) {
         data.forEach(item => {
-            const dateStr = new Date(item.resolved_at).toLocaleDateString('vi-VN');
-            let icon = 'bi-tools'; let color = 'danger'; 
-            let typeText = item.maintenance_type || 'Sửa chữa do sinh viên báo';
-
-            if (typeText.toLowerCase().includes('định kỳ') || typeText.toLowerCase().includes('bảo dưỡng')) {
-                color = 'success'; icon = 'bi-shield-check';
-            }
-
-            const vendor = item.vendor_name ? `Đơn vị thực hiện: <b class="text-dark">${item.vendor_name}</b>` : `Người báo lỗi: <b>${item.full_name || 'Hệ thống'}</b>`;
-            const parts = item.replaced_parts ? `<br>Vật tư thay thế/Xử lý: <b class="text-primary">${item.replaced_parts}</b>` : '';
-
+            const typeText = item.maintenance_type || 'Sửa chữa / Kiểm tra';
+            const cfg = typeConfig[typeText] || { color: 'danger', icon: 'bi-tools' };
+            const dateStr = item.resolved_at ? new Date(item.resolved_at).toLocaleDateString('vi-VN') : '—';
+            const vendor  = item.vendor_name ? `Đơn vị: <b>${item.vendor_name}</b>` : `Người báo: <b>${item.full_name || 'Hệ thống'}</b>`;
+            const parts   = item.replaced_parts ? `<br>Nội dung/Vật tư: <b class="text-primary">${item.replaced_parts}</b>` : '';
+            const cost    = item.actual_cost ? `<br>Chi phí: <b class="text-success">${Number(item.actual_cost).toLocaleString('vi-VN')} ₫</b>` : '';
+            const contract= item.contract_number ? `<br>Số HĐ/Biên bản: <b>${item.contract_number}</b>` : '';
             html += `
                 <div class="timeline-item">
-                    <div class="timeline-icon bg-${color} shadow"><i class="bi ${icon}"></i></div>
-                    <div class="timeline-content border-${color} shadow-sm">
+                    <div class="timeline-icon bg-${cfg.color} shadow"><i class="bi ${cfg.icon}"></i></div>
+                    <div class="timeline-content border-${cfg.color} shadow-sm">
                         <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span class="badge bg-${color}">${typeText}</span>
+                            <span class="badge bg-${cfg.color}">${typeText}</span>
                             <span class="text-muted small fw-bold"><i class="bi bi-calendar-event"></i> ${dateStr}</span>
                         </div>
-                        <h6 class="fw-bold text-dark mb-2" style="line-height: 1.4;">${item.condition_note || 'Bảo trì hệ thống'}</h6>
-                        <div class="small text-muted" style="background: #f8f9fa; padding: 10px; border-radius: 6px; border: 1px dashed #ced4da;">
-                            ${vendor} ${parts}
+                        <h6 class="fw-bold text-dark mb-2" style="line-height:1.4;">${item.condition_note || 'Bảo trì hệ thống'}</h6>
+                        <div class="small text-muted" style="background:#f8f9fa; padding:10px; border-radius:6px; border:1px dashed #ced4da;">
+                            ${vendor}${parts}${cost}${contract}
                         </div>
                     </div>
                 </div>`;
         });
     }
 
-    let importText = importDateStr && importDateStr !== 'null' && importDateStr !== 'Chưa cập nhật' ? importDateStr : 'Chưa có thông tin nhập máy';
+    const importText = importDateStr && importDateStr !== 'null' && importDateStr !== 'Chưa cập nhật' ? importDateStr : 'Chưa có thông tin';
     html += `
         <div class="timeline-item">
             <div class="timeline-icon bg-primary shadow"><i class="bi bi-box-seam-fill"></i></div>
-            <div class="timeline-content border-primary shadow-sm" style="background-color: #f0f8ff;">
+            <div class="timeline-content border-primary shadow-sm" style="background-color:#f0f8ff;">
                 <div class="d-flex justify-content-between align-items-center">
-                    <div><h6 class="fw-bold text-primary m-0"><i class="bi bi-truck"></i> Nhập máy & Đưa vào sử dụng</h6></div>
+                    <h6 class="fw-bold text-primary m-0"><i class="bi bi-truck"></i> Nhập máy & Đưa vào sử dụng</h6>
                     <span class="badge bg-primary fs-6">${importText}</span>
                 </div>
             </div>
-        </div></div>`;
+        </div>
+    </div>`;
     container.innerHTML = html;
 }
 
-// ---------------------------------------------------------
-// HÀM LƯU NHẬT KÝ BẢO TRÌ MỚI TỪ NÚT "THÊM"
-// ---------------------------------------------------------
+// ── Mở modal ghi nhận bảo trì mới ──
 function openAddMaintenanceLog() {
-    if(!addMaintLogModalInstance) addMaintLogModalInstance = new bootstrap.Modal(document.getElementById('addMaintenanceLogModal'));
-    document.getElementById('log-machine-name').value = currentTimelineMachine;
-    document.getElementById('log-date').value = new Date().toISOString().split('T')[0];
-    document.getElementById('log-parts').value = '';
+    if (!addMaintLogModalInstance) addMaintLogModalInstance = new bootstrap.Modal(document.getElementById('addMaintenanceLogModal'));
+    document.getElementById('log-machine-name').value  = currentTimelineMachine;
+    document.getElementById('log-date').value          = new Date().toISOString().split('T')[0];
+    document.getElementById('log-type').value          = 'Bảo trì nhỏ';
+    document.getElementById('log-vendor').value        = '';
+    document.getElementById('log-contract').value      = '';
+    document.getElementById('log-cost').value          = '';
+    document.getElementById('log-planned-date').value  = '';
+    document.getElementById('log-parts').value         = '';
     addMaintLogModalInstance.show();
 }
 
+// ── Lưu nhật ký bảo trì mới ──
 async function saveMaintenanceLog() {
-    const machineName = document.getElementById('log-machine-name').value;
-    const date = document.getElementById('log-date').value;
-    const type = document.getElementById('log-type').value; // Lấy loại: "Bảo trì định kỳ" hoặc "Sửa chữa đột xuất"
-    const vendor = document.getElementById('log-vendor').value || 'Đội kỹ thuật nhà trường';
-    const parts = document.getElementById('log-parts').value;
+    const machineName  = document.getElementById('log-machine-name').value;
+    const date         = document.getElementById('log-date').value;
+    const type         = document.getElementById('log-type').value;
+    const vendor       = document.getElementById('log-vendor').value.trim() || 'Đội kỹ thuật nhà trường';
+    const contract     = document.getElementById('log-contract').value.trim() || null;
+    const cost         = parseFloat(document.getElementById('log-cost').value) || null;
+    const plannedDate  = document.getElementById('log-planned-date').value || null;
+    const parts        = document.getElementById('log-parts').value.trim();
 
-    if(!date || !parts) return Swal.fire('Lỗi', 'Vui lòng nhập Ngày thực hiện và Nội dung/Vật tư thay thế!', 'warning');
+    if (!date || !parts) return Swal.fire('Thiếu thông tin', 'Vui lòng nhập Ngày thực hiện và Nội dung/Vật tư!', 'warning');
 
     Swal.fire({ title: 'Đang ghi sổ...', didOpen: () => Swal.showLoading() });
 
-    // 1. LUÔN THÊM VÀO TIMELINE: Dù là bảo trì hay sửa đột xuất đều phải ghi vết
     const { error: err1 } = await _supabase.from('maintenance_history').insert([{
-        machine_name: machineName,
+        machine_name:     machineName,
         maintenance_type: type,
-        vendor_name: vendor,
-        replaced_parts: parts,
-        condition_note: type === 'Bảo trì định kỳ' ? 'Bảo trì thiết bị theo kế hoạch' : 'Sửa chữa/Thay thế phát sinh',
-        reported_at: date, 
-        resolved_at: date,
-        full_name: currentUserProfile ? currentUserProfile.full_name : 'Quản lý PTN',
-        status: 'Đã hoàn thành'
+        vendor_name:      vendor,
+        contract_number:  contract,
+        actual_cost:      cost,
+        planned_date:     plannedDate,
+        replaced_parts:   parts,
+        condition_note:   type === 'Bảo trì lớn' ? 'Đại tu thiết bị theo kế hoạch' :
+                          type === 'Bảo trì nhỏ' ? 'Bảo dưỡng định kỳ theo kế hoạch' : 'Sửa chữa / Kiểm tra',
+        reported_at:      date,
+        resolved_at:      date,
+        full_name:        currentUserProfile ? currentUserProfile.full_name : 'Quản lý PTN',
+        status:           'Đã hoàn thành'
     }]);
 
-    if(err1) return Swal.fire('Lỗi', err1.message, 'error');
+    if (err1) return Swal.fire('Lỗi', err1.message, 'error');
 
-    // 2. CHẶN LOGIC: Chì khi nào là "Bảo trì định kỳ" thì mới reset lại chu kỳ của máy
-    if (type === 'Bảo trì định kỳ') {
+    // Cập nhật ngày bảo trì gần nhất theo loại
+    if (type === 'Bảo trì lớn') {
+        await _supabase.from('machines').update({ last_major_maintenance: date }).eq('machine_name', machineName);
+    } else if (type === 'Bảo trì nhỏ' || type === 'Bảo trì định kỳ') {
         await _supabase.from('machines').update({ last_maintenance: date }).eq('machine_name', machineName);
     }
 
-    Swal.fire('Thành công', 'Đã thêm mốc lịch sử mới vào Timeline!', 'success');
+    Swal.fire({ icon: 'success', title: 'Đã ghi nhận vào Timeline!', timer: 1500, showConfirmButton: false });
     addMaintLogModalInstance.hide();
-    
-    // Tải lại Timeline ngay lập tức
     loadMachineTimeline(currentTimelineMachine, currentTimelineImportDate);
 }
 // CHẾ ĐỘ AI CHO TRANG WEB==========================================
