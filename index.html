@@ -243,10 +243,11 @@
         <img src="logo-dut.jpg" onerror="this.src='https://via.placeholder.com/65x65?text=DUT'" alt="Logo Bách Khoa" style="width: 65px; height: 65px; object-fit: contain; margin-right: 15px;">
         <div>
             <h4 class="mb-0 text-university fw-bold text-uppercase" style="letter-spacing: 0.5px;">HỆ THỐNG QUẢN LÝ CƠ SỞ VẬT CHẤT PHÒNG THÍ NGHIỆM</h4>
-            <small class="text-muted fw-semibold">ĐẠI HỌC BÁCH KHOA</small>
+            <small class="text-muted fw-semibold">TRƯỜNG ĐẠI HỌC BÁCH KHOA</small>
         </div>
     </div>
 </div>
+
 
 <nav class="navbar navbar-expand-lg navbar-custom sticky-top" id="main-nav">
     <div class="container">
@@ -2076,7 +2077,7 @@
             
             <div class="input-group shadow-sm" style="max-width: 350px;">
                 <span class="input-group-text bg-white border-danger text-danger"><i class="bi bi-search"></i></span>
-                <input type="text" id="search-remote" class="form-control border-danger" placeholder="Tìm tên máy, phòng..." onkeyup="filterTableData('search-remote', 'remote-control-list')">
+                <input type="text" id="search-remote" class="form-control border-danger" id="searchInput" placeholder="Tìm tên máy, phòng..." onkeyup="filterTableData('search-remote', 'remote-control-list')">
             </div>
         </div>
         <div class="row">
@@ -2804,6 +2805,7 @@
             Swal.fire('Thành công', 'Đã gửi yêu cầu đăng ký!', 'success');
             loadHistoryView('upcoming');
         }
+        
     }
 
     // 5. TẢI LỊCH SỬ VÀ XÉT DUYỆT ĐƠN
@@ -2919,7 +2921,9 @@
                     </div>`;
             } else if (userRole === 'student') {
                 if (b.status === 'approved' && viewContext === 'upcoming') {
-                    actionBtn = `<button class="btn btn-sm btn-outline-success mb-1 w-100 fw-bold" onclick="viewMyQR('${b.id}')"><i class="bi bi-qr-code"></i> Mã mở cửa</button>`;
+                    // Xử lý an toàn tên máy để không làm hỏng nút bấm
+                    const safeMachineName = b.machine_name.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+                    actionBtn = `<button class="btn btn-sm btn-outline-success mb-1 w-100 fw-bold" onclick="viewMyQR('${b.id}', '${safeMachineName}')"><i class="bi bi-qr-code"></i> Mã mở cửa</button>`;
                 } else if (viewContext === 'history' && b.status === 'approved') {
                     // Ở tab lịch sử, cho phép khai báo máy hỏng
                     actionBtn = `<button class="btn btn-sm btn-warning w-100 fw-bold" onclick="openReportModal('${b.id}', '${b.machine_name}')"><i class="bi bi-tools"></i> Khai báo tình trạng máy</button>`;
@@ -3132,13 +3136,47 @@
     }
 
     // 8. XEM MÃ QR
-    function viewMyQR(qrToken) {
-        Swal.fire({
-            title: 'Mã QR Mở Cửa',
-            text: 'Vui lòng đưa mã này vào máy quét tại phòng Lab',
-            imageUrl: `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${qrToken}`,
-            imageWidth: 250, imageHeight: 250, confirmButtonText: 'Đóng'
-        });
+    // 8. XEM MÃ QR & MÃ PIN (CHỈ HIỂN THỊ PIN CHO PHÒNG PC)
+    function viewMyQR(qrToken, machineName) {
+        try {
+            // Dòng chữ hướng dẫn mặc định
+            let finalHtml = `<p class="text-muted mb-2">Vui lòng đưa mã này vào máy quét tại phòng Lab</p>`;
+
+            // ĐIỀU KIỆN: Chỉ tạo mã PIN nếu tên máy có chứa chữ "PC" và chữ "DELL"
+            if (machineName && machineName.includes("PC")) {
+                let pcPin = "------";
+                if (qrToken) {
+                    const cleanId = qrToken.replace(/-/g, '');
+                    pcPin = (cleanId.substring(0, 3) + cleanId.substring(cleanId.length - 3)).toUpperCase();
+                }
+
+                // Nối thêm khối giao diện mã PIN
+                finalHtml += `
+                    <div class="alert alert-info mt-3 border-primary text-center shadow-sm" style="padding: 15px;">
+                        <p class="mb-1 small fw-bold text-uppercase text-muted"><i class="bi bi-keyboard"></i> Mật khẩu mở PC</p>
+                        <h2 class="text-primary fw-bold mb-1" style="letter-spacing: 0.2em;">${pcPin}</h2>
+                        <p class="small text-danger mb-0 text-start">
+                            <i class="bi bi-exclamation-triangle"></i> Lưu ý: Dùng mã này để đăng nhập vào máy tính.
+                        </p>
+                    </div>
+                `;
+            }
+
+            // Render Popup SweetAlert: Load ảnh cực nhanh
+            Swal.fire({
+                title: 'Mã QR Mở Cửa',
+                imageUrl: `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${qrToken}`,
+                imageWidth: 220,
+                imageHeight: 220,
+                html: finalHtml,
+                width: '450px',
+                confirmButtonText: 'Đóng',
+                confirmButtonColor: '#003366'
+            });
+        } catch (err) {
+            console.error("Lỗi khi mở popup QR:", err);
+            Swal.fire('Lỗi hệ thống', 'Không thể mở mã QR. Vui lòng tải lại trang.', 'error');
+        }
     }
     // Biến toàn cục chứa Modal Báo cáo
     let reportModalInstance = null;
@@ -6727,6 +6765,40 @@ async function testGeminiAI() {
     } catch (err) {
         Swal.fire('Lỗi kết nối', 'Không thể gọi Cloud Backend: ' + err.message, 'error');
     }
+}
+// Hàm trích xuất 6 ký tự để làm mã PIN (Ví dụ lấy 3 ký tự đầu + 3 ký tự cuối)
+function generatePcPinFromBookingId(bookingId) {
+    if (!bookingId) return "------";
+    // Xóa dấu gạch ngang
+    const cleanId = bookingId.replace(/-/g, ''); 
+    // Lấy 3 đầu, 3 cuối
+    const first3 = cleanId.substring(0, 3);
+    const last3 = cleanId.substring(cleanId.length - 3);
+    return (first3 + last3).toUpperCase();
+}
+/// Hàm tìm kiếm đa năng: Cứ gọi onkeyup="filterTableData()" là chạy
+function filterTableData() {
+    // 1. Tự động bắt lấy cái ô Input mà người dùng ĐANG gõ
+    const e = window.event;
+    if (!e || !e.target) return;
+    
+    const searchInput = e.target;
+    const keyword = searchInput.value.toLowerCase().trim();
+    
+    // 2. Tìm tất cả các dòng thiết bị/đơn duyệt trên màn hình
+    // Quét cả thẻ tr (dòng của bảng) và thẻ .card (dạng lưới)
+    const deviceItems = document.querySelectorAll("tbody tr, .card");
+    
+    // 3. Lặp qua từng dòng để ẩn/hiện
+    deviceItems.forEach(function(item) {
+        const itemText = item.textContent.toLowerCase();
+        
+        if (itemText.includes(keyword)) {
+            item.style.display = ""; // Có chứa từ khóa -> Hiện
+        } else {
+            item.style.display = "none"; // Không chứa -> Ẩn
+        }
+    });
 }
 </script>
 </body>
